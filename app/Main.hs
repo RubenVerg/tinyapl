@@ -1,6 +1,6 @@
 module Main where
 
-import TinyAPL
+import TinyAPL.Array
 import Data.Complex
 
 main :: IO ()

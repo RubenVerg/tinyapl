@@ -20,10 +20,13 @@ maintainer:         me@rubenverg.com
 extra-source-files: CHANGELOG.md
 
 library
-    exposed-modules:  TinyAPL, TinyAPL.Glyphs
-
-    -- Modules included in this library but not exported.
-    -- other-modules:
+    exposed-modules:  TinyAPL.Glyphs
+                    , TinyAPL.Array
+                    , TinyAPL.Error
+                    , TinyAPL.Function
+                    , TinyAPL.Operator
+                    , TinyAPL.Primitives
+    other-modules: TinyAPL.Util
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

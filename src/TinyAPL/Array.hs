@@ -1,32 +1,35 @@
 {-# LANGUAGE LambdaCase #-}
-module TinyAPL where
+module TinyAPL.Array where
+import TinyAPL.Error
+import TinyAPL.Util
 import qualified TinyAPL.Glyphs as G
 import Data.Complex ( magnitude, realPart, Complex(..) )
 import Numeric.Natural
 import Data.List
-import GHC.Stack (HasCallStack)
 import Control.Monad
+import Data.Maybe (catMaybes)
 
-(.:) f g x y = f $ g x y
-
-{-
-Scalars:
- * complex numbers (internally represented as `Complex Double`s
- * characters
- * array boxes (enclosures)
+{-|
+  Scalars:
+   * complex numbers (internally represented as @Complex Double@s)
+   * characters
+   * array boxes (enclosures)
 -}
-
 data ScalarValue
   = Number (Complex Double)
   | Character Char
   | Box Array
 
-data Array = Array {
-  arrayShape :: [Natural],
-  arrayContents :: [ScalarValue]
-}
+data Array = Array
+  { arrayShape :: [Natural]
+  , arrayContents :: [ScalarValue] }
 
--- Helper functions
+-- * Array helper functions
+
+box :: Array -> ScalarValue
+box b@(Array [] [(Box _)]) = Box b
+box (Array [] [x]) = x
+box arr = Box $ arr
 
 scalar :: ScalarValue -> Array
 scalar x = Array [] [x]
@@ -42,7 +45,13 @@ arrayOf sh cs
 arrayReshaped :: [Natural] -> [ScalarValue] -> Array
 arrayReshaped sh cs = Array sh $ genericTake (product sh) $ cycle cs
 
--- Number comparison functions
+majorCells :: Array -> [Array]
+majorCells a@(Array [] _) = [a]
+majorCells (Array (sh:shs) cs) = catMaybes $ arrayOf shs <$> chunk sh cs where
+  chunk _ [] = []
+  chunk l xs = genericTake l xs : chunk l (genericDrop l xs)
+
+-- * Number comparison functions
 
 comparisonTolerance = 1e-14
 
@@ -51,7 +60,7 @@ complexEqual a b = magnitude (a - b) <= comparisonTolerance * (magnitude a `max`
 
 isReal (_ :+ b) = 0 `realEqual` b -- A number is real if its imaginary part compares equal to zero.
 
--- Total ordering for scalars and arrays
+-- * Total ordering for scalars and arrays
 
 instance Eq ScalarValue where
   (Character a) == (Character b) = a == b
@@ -61,11 +70,11 @@ instance Eq ScalarValue where
     | otherwise = a `complexEqual` b
   _ == _ = False
 
-{-
-Order:
- * numbers, in lexicographical order (real then imaginary)
- * characters, in codepoint order
- * boxes, ordered by their contents
+{-|
+  Order:
+   * numbers, in lexicographical order (real then imaginary)
+   * characters, in codepoint order
+   * boxes, ordered by their contents
 -}
 instance Ord ScalarValue where
   (Number (ar :+ ai)) `compare` (Number (br :+ bi))
@@ -90,14 +99,11 @@ instance Ord Array where
 isInt :: Double -> Bool
 isInt = realEqual <*> (fromInteger . floor)
 
-showReal x = let
-  isNegative = x < 0
-  pos = if isInt x then show $ floor $ abs x else show $ abs x
-  in if isNegative then G.negative : pos else pos
+-- * @Show@ for scalars and arrays
 
 showComplex (a :+ b)
-  | b `realEqual` 0 = showReal a
-  | otherwise = showReal a ++ (G.imaginary : showReal b)
+  | b `realEqual` 0 = showAplDouble a
+  | otherwise = showAplDouble a ++ [G.imaginary] ++ showAplDouble b
 
 instance Show ScalarValue where
   show (Number x) = showComplex x
@@ -110,22 +116,15 @@ instance Show Array where
     "{ array with " ++ [G.rho] ++ " = " ++ unwords (map show sh) ++
     " and " ++ [G.ravel] ++ " = " ++ show cs ++ " }"
 
-data Error
-  = DomainError String
-  | LengthError String
-  | RankError String
-  | NYIError String
-  deriving (Show)
+-- * Conversions
 
-type Result = Either Error
+boolToScalar True = Number 1
+boolToScalar False = Number 0
 
--- sadly we need this.
-unerror :: HasCallStack => Result a -> a
-unerror (Right x) = x
-unerror (Left e) = error $ show e
-
-err :: Error -> Result a
-err = Left
+asBool :: Error -> ScalarValue -> Result Bool
+asBool _ (Number 0) = pure False
+asBool _ (Number 1) = pure True
+asBool e _ = err e
 
 asNumber :: Error -> ScalarValue -> Result (Complex Double)
 asNumber _ (Number x) = pure x
@@ -160,7 +159,17 @@ asScalar :: Error -> Array -> Result ScalarValue
 asScalar _ (Array _ [x]) = pure x
 asScalar e _ = err e
 
--- Scalar functions
+isEmpty :: Array -> Bool
+isEmpty (Array sh _) = 0 `elem` sh
+
+onMajorCells ::
+  ([Array] -> Result [Array])
+  -> Array -> Result Array
+onMajorCells f x = do
+  result <- f $ majorCells x
+  pure $ arrayReshaped (arrayShape x) $ concat $ arrayContents <$> result
+
+-- * Scalar functions
 
 scalarMonad ::
   (ScalarValue -> Result ScalarValue)
@@ -185,6 +194,8 @@ scalarDyad f a@(Array ash as) b@(Array bsh bs)
     f' a (Box bs) = Box <$> scalarDyad f (scalar a) bs
     f' a b = f a b
 
+-- * Instances for arrays
+
 monadN2N f = scalarMonad f' where
   f' x = do
     x' <- flip asNumber x $ DomainError ""
@@ -199,6 +210,21 @@ dyadNN2N f = scalarDyad f' where
     Number <$> f a' b'
 
 dyadNN2N' = dyadNN2N . (pure .:)
+
+monadB2B f = scalarMonad f' where
+  f' x = do
+    x' <- flip asBool x $ DomainError ""
+    boolToScalar <$> f x'
+
+monadB2B' = monadB2B . (pure .)
+
+dyadBB2B f = scalarDyad f' where
+  f' a b = do
+    a' <- flip asBool a $ DomainError ""
+    b' <- flip asBool b $ DomainError ""
+    boolToScalar <$> f a' b'
+
+dyadBB2B' = dyadBB2B . (pure .:)
 
 instance Num Array where
   (+) = unerror .: dyadNN2N' (+)
