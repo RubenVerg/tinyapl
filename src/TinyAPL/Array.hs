@@ -7,7 +7,7 @@ import Data.Complex ( magnitude, realPart, Complex(..) )
 import Numeric.Natural
 import Data.List
 import Control.Monad
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, mapMaybe)
 
 {-|
   Scalars:
@@ -27,9 +27,9 @@ data Array = Array
 -- * Array helper functions
 
 box :: Array -> ScalarValue
-box b@(Array [] [(Box _)]) = Box b
+box b@(Array [] [Box _]) = Box b
 box (Array [] [x]) = x
-box arr = Box $ arr
+box arr = Box arr
 
 scalar :: ScalarValue -> Array
 scalar x = Array [] [x]
@@ -47,7 +47,7 @@ arrayReshaped sh cs = Array sh $ genericTake (product sh) $ cycle cs
 
 majorCells :: Array -> [Array]
 majorCells a@(Array [] _) = [a]
-majorCells (Array (sh:shs) cs) = catMaybes $ arrayOf shs <$> chunk sh cs where
+majorCells (Array (sh:shs) cs) = mapMaybe (arrayOf shs) (chunk sh cs) where
   chunk _ [] = []
   chunk l xs = genericTake l xs : chunk l (genericDrop l xs)
 
@@ -162,12 +162,17 @@ asScalar e _ = err e
 isEmpty :: Array -> Bool
 isEmpty (Array sh _) = 0 `elem` sh
 
+asVector :: Error -> Array -> Result [ScalarValue]
+asVector _ (Array [] scalar) = pure scalar
+asVector _ (Array [_] vec)   = pure vec
+asVector e _                 = err e
+
 onMajorCells ::
   ([Array] -> Result [Array])
   -> Array -> Result Array
 onMajorCells f x = do
   result <- f $ majorCells x
-  pure $ arrayReshaped (arrayShape x) $ concat $ arrayContents <$> result
+  pure $ arrayReshaped (arrayShape x) $ concatMap arrayContents result
 
 -- * Scalar functions
 

@@ -36,3 +36,8 @@ showAplDouble x
       f n s (r:rs) = f (n - 1) (r : s) rs
       in f e "" ds
     in if isNegative then G.negative : pos else pos
+
+count :: Num n => (a -> Bool) -> [a] -> n
+count _ [] = 0
+count p (x:xs) | p x       = 1 + count p xs
+               | otherwise = count p xs
