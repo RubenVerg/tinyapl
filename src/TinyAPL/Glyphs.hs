@@ -41,6 +41,8 @@ pair = chr 0x236e
 enclose = chr 0x2282
 first = chr 0x2283
 last = chr 0x2287
+take = chr 0x2191
+drop = chr 0x2193
 
 -- * Adverbs
 

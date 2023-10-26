@@ -98,6 +98,24 @@ first = DefinedFunction (Just $ \case
 last = DefinedFunction (Just $ \case
   Array _ [] -> err $ DomainError "Last on empty array"
   Array _ xs -> pure $ scalar $ List.last xs) Nothing [G.last]
+take = DefinedFunction Nothing (Just $ \t arr -> let
+  take' c = if c < 0 then List.reverse . genericTake (negate c) . List.reverse else genericTake c
+  go []     xs = xs
+  go (t:ts) xs = fromMajorCells $ take' t $ go ts <$> majorCells xs
+  mustBeIntegral = DomainError "Take left argument must be integral"
+  in do
+    ts <- asVector (RankError "Take left argument must be a vector") t >>= mapM (asNumber mustBeIntegral >=> asInt mustBeIntegral)
+    pure $ go ts arr
+  ) [G.take]
+drop = DefinedFunction Nothing (Just $ \d arr -> let
+  drop' c = if c < 0 then List.reverse . genericDrop (negate c) . List.reverse else genericDrop c
+  go []     xs = xs
+  go (d:ds) xs = fromMajorCells $ drop' d $ go ds <$> majorCells xs
+  mustBeIntegral = DomainError "Drop left argument must be integral"
+  in do
+    ds <- asVector (RankError "Drop left argument must be a vector") d >>= mapM (asNumber mustBeIntegral >=> asInt mustBeIntegral)
+    pure $ go ds arr
+  ) [G.drop]
 
 -- * Primitive adverbs
 
