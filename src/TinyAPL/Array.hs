@@ -47,9 +47,13 @@ arrayReshaped sh cs = Array sh $ genericTake (product sh) $ cycle cs
 
 majorCells :: Array -> [Array]
 majorCells a@(Array [] _) = [a]
-majorCells (Array (sh:shs) cs) = mapMaybe (arrayOf shs) (chunk sh cs) where
+majorCells (Array (_:sh) cs) = mapMaybe (arrayOf sh) $ chunk (product sh) cs where
   chunk _ [] = []
   chunk l xs = genericTake l xs : chunk l (genericDrop l xs)
+
+fromMajorCells :: [Array] -> Array
+fromMajorCells [] = Array [0] []
+fromMajorCells (c:cs) = arrayReshaped (1 + genericLength cs : arrayShape c) $ concatMap arrayContents $ c : cs
 
 -- * Number comparison functions
 
