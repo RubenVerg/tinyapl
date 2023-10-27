@@ -43,6 +43,8 @@ first = chr 0x2283
 last = chr 0x2287
 take = chr 0x2191
 drop = chr 0x2193
+left = chr 0x22a3
+right = chr 0x22a2
 
 -- * Adverbs
 

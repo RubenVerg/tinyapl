@@ -116,6 +116,8 @@ drop = DefinedFunction Nothing (Just $ \d arr -> let
     ds <- asVector (RankError "Drop left argument must be a vector") d >>= mapM (asNumber mustBeIntegral >=> asInt mustBeIntegral)
     pure $ go ds arr
   ) [G.drop]
+left = DefinedFunction (Just $ \x -> pure x) (Just $ \x _ -> pure x) [G.left]
+right = DefinedFunction (Just $ \x -> pure x) (Just $ \_ y -> pure y) [G.right]
 
 -- * Primitive adverbs
 
