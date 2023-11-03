@@ -52,3 +52,7 @@ right = chr 0x22a2
 
 atop = chr 0x2364
 over = chr 0x2365
+after = chr 0x2218
+before = chr 0x235b
+leftHook = chr 0x22b8
+rightHook = chr 0x27dc
