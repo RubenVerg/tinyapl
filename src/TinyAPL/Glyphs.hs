@@ -48,6 +48,8 @@ right = chr 0x22a2
 
 -- * Adverbs
 
+selfie = chr 0x2368
+
 -- * Conjunctions
 
 atop = chr 0x2364

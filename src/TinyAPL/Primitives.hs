@@ -121,6 +121,11 @@ right = DefinedFunction (Just $ \x -> pure x) (Just $ \_ y -> pure y) [G.right]
 
 -- * Primitive adverbs
 
+selfie = Adverb
+  { adverbRepr = [G.selfie]
+  , adverbOnArray = Just $ \x -> pure $ Constant x
+  , adverbOnFunction = Just $ \f -> pure $ Selfie f }
+
 -- * Primitive conjunctions
 
 atop = Conjunction
