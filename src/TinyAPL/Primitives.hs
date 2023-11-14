@@ -79,13 +79,13 @@ rho = DefinedFunction (Just $ \(Array sh _) -> pure $ vector $ Number . fromInte
   let mustBeIntegral = DomainError "Shape must be integral"
   shape <- (asVector (RankError "Shape must be a vector") sh >>= mapM (asNumber mustBeIntegral >=> asInt mustBeIntegral)) :: Result [Integer]
   let negative = count (< 0) shape
-  if negative == 0 then pure $ Array (toEnum . fromEnum <$> shape) xs
+  if negative == 0 then pure $ arrayReshaped (toEnum . fromEnum <$> shape) xs
   else if negative == 1 && (-1) `elem` shape then do
     let allElements = genericLength xs
     let known = product $ filter (>= 0) shape
     if known == 0 then err $ DomainError $ "Shape cannot and contain both 0 and " ++ [G.negative] ++ "1"
     else if allElements `mod` known /= 0 then err $ DomainError "Shape is not a multiple of the bound of the array"
-    else pure $ Array (toEnum . fromEnum <$> map (\x -> if x == (-1) then allElements `div` known else x) shape) xs
+    else pure $ arrayReshaped (toEnum . fromEnum <$> map (\x -> if x == (-1) then allElements `div` known else x) shape) xs
   else err $ DomainError "Invalid shape"
   ) [G.rho]
 ravel = DefinedFunction (Just $ pure . vector . arrayContents) Nothing [G.ravel]
