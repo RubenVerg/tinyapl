@@ -118,6 +118,12 @@ drop = DefinedFunction Nothing (Just $ \d arr -> let
   ) [G.drop]
 left = DefinedFunction (Just $ \x -> pure x) (Just $ \x _ -> pure x) [G.left]
 right = DefinedFunction (Just $ \x -> pure x) (Just $ \_ y -> pure y) [G.right]
+iota = DefinedFunction (Just $ \x -> do
+  let error = DomainError "Index Generator requires a vector (or scalar) of natural numbers"
+  vec <- asVector error x >>= mapM (asNumber error >=> asNat error)
+  let indices = foldr (liftA2 (:) . enumFromTo 1) [[]] vec
+  return $ arrayReshaped vec $ box . arrayReshaped (arrayShape x) . fmap (Number . fromInteger . toEnum . fromEnum) <$> indices
+  ) Nothing [G.iota]
 
 -- * Primitive adverbs
 
@@ -144,13 +150,13 @@ after = Conjunction
   { conjRepr = [G.after]
   , conjOnArrayArray = Nothing
   , conjOnArrayFunction = Just $ \a f -> pure $ a `BindLeft` f
-  , conjOnFunctionArray = Just $ \f a -> pure $ f `BindRight` a 
+  , conjOnFunctionArray = Just $ \f a -> pure $ f `BindRight` a
   , conjOnFunctionFunction = Just $ \f g -> pure $ f `After` g }
 before = Conjunction
   { conjRepr = [G.before]
   , conjOnArrayArray = Nothing
   , conjOnArrayFunction = Just $ \a f -> pure $ a `DefaultBindLeft` f
-  , conjOnFunctionArray = Just $ \f a -> pure $ f `DefaultBindRight` a 
+  , conjOnFunctionArray = Just $ \f a -> pure $ f `DefaultBindRight` a
   , conjOnFunctionFunction = Just $ \f g -> pure $ f `Before` g }
 leftHook = Conjunction
   { conjRepr = [G.leftHook]

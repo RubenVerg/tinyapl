@@ -45,6 +45,7 @@ take = chr 0x2191
 drop = chr 0x2193
 left = chr 0x22a3
 right = chr 0x22a2
+iota = chr 0x2373
 
 -- * Adverbs
 
