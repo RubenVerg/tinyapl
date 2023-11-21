@@ -121,9 +121,17 @@ right = DefinedFunction (Just $ \x -> pure x) (Just $ \_ y -> pure y) [G.right]
 iota = DefinedFunction (Just $ \x -> do
   let error = DomainError "Index Generator requires a vector (or scalar) of natural numbers"
   vec <- asVector error x >>= mapM (asNumber error >=> asNat error)
-  let indices = foldr (liftA2 (:) . enumFromTo 1) [[]] vec
+  let indices = generateIndices vec
   return $ arrayReshaped vec $ box . arrayReshaped (arrayShape x) . fmap (Number . fromInteger . toEnum . fromEnum) <$> indices
   ) Nothing [G.iota]
+indices = DefinedFunction (Just $ \(Array sh cs) -> do
+  let error = DomainError "Indices requires an array of naturals"
+  let indices = generateIndices sh
+  let shape = if length sh == 1 then [] else [genericLength sh]
+  let rep idx c = genericReplicate c $ box $ arrayReshaped shape $ Number . fromInteger . toEnum . fromEnum <$> idx
+  counts <- mapM (asNumber error >=> asNat error) cs
+  return $ vector $ concat $ zipWith rep indices counts
+  ) Nothing [G.indices]
 
 -- * Primitive adverbs
 

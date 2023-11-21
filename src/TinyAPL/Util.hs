@@ -41,3 +41,6 @@ count :: Num n => (a -> Bool) -> [a] -> n
 count _ [] = 0
 count p (x:xs) | p x       = 1 + count p xs
                | otherwise = count p xs
+
+generateIndices :: (Enum a, Num a) => [a] -> [[a]]
+generateIndices = foldr (liftA2 (:) . enumFromTo 1) [[]]
