@@ -44,3 +44,6 @@ count p (x:xs) | p x       = 1 + count p xs
 
 generateIndices :: (Enum a, Num a) => [a] -> [[a]]
 generateIndices = foldr (liftA2 (:) . enumFromTo 1) [[]]
+
+mapAdjacent :: (a -> a -> b) -> [a] -> [b]
+mapAdjacent f xs = zipWith f xs $ drop 1 xs

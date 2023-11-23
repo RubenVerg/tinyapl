@@ -3,60 +3,136 @@ import Data.Char (chr)
 
 -- * Syntax
 
-negative = chr 0xaf
-exponent = chr 0x23e8
-imaginary = chr 0x1d0a
-infinity = chr 0x221e
+negative = '¯'
+exponent = '⏨'
+imaginary = 'ᴊ'
+infinity = '∞'
+charDelimiter = '\''
+stringDelimiter = '"'
+stringEscape = '⍘'
+parens = ('(', ')')
+separator = '⋄'
+assign = '←'
+guard = ':'
+exit = '■'
+
+-- * Identifiers
+
+delta = '∆'
+deltaBar = '⍙'
+alpha = '⍺'
+alphaBar = '⍶'
+omega = '⍵'
+omegaBar = '⍹'
+quad = '⎕'
+quadQuote = '⍞'
+
+-- * Arrays
+
+zilde = '⍬'
+
+arrays =
+  [ TinyAPL.Glyphs.zilde ]
 
 -- * Functions
 
 plus = '+'
 minus = '-'
-times = chr 0xd7
-divide = chr 0xf7
+times = '×'
+divide = '÷'
 power = '*'
-logarithm = chr 0x235f
-circle = chr 0x25cb
-root = chr 0x221a
-floor = chr 0x230a
-ceil = chr 0x2308
+logarithm = '⍟'
+circle = '○'
+root = '√'
+floor = '⌊'
+ceil = '⌈'
 less = '<'
-lessEqual = chr 0x2264
+lessEqual = '≤'
 equal = '='
-greaterEqual = chr 0x2265
+greaterEqual = '≥'
 greater = '>'
-notEqual = chr 0x2260
-and = chr 0x2227
-or = chr 0x2228
-nand = chr 0x2372
-nor = chr 0x2371
-cartesian = chr 0x2295
-polar = chr 0x2297
-match = chr 0x2261
-notMatch = chr 0x2262
-rho = chr 0x2374
+notEqual = '≠'
+and = '∧'
+or = '∨'
+nand = '⍲'
+nor = '⍱'
+cartesian = '⊕'
+polar = '⊗'
+match = '≡'
+notMatch = '≢'
+rho = '⍴'
 ravel = ','
-reverse = chr 0x2296
-pair = chr 0x236e
-enclose = chr 0x2282
-first = chr 0x2283
-last = chr 0x2287
-take = chr 0x2191
-drop = chr 0x2193
-left = chr 0x22a3
-right = chr 0x22a2
-iota = chr 0x2373
-indices = chr 0x2378
+reverse = '⊖'
+pair = '⍮'
+enclose = '⊂'
+first = '⊃'
+last = '⊇'
+take = '↑'
+drop = '↓'
+left = '⊣'
+right = '⊢'
+iota = '⍳'
+indices = '⍸'
+
+functions =
+  [ TinyAPL.Glyphs.plus
+  , TinyAPL.Glyphs.minus
+  , TinyAPL.Glyphs.times
+  , TinyAPL.Glyphs.divide
+  , TinyAPL.Glyphs.power
+  , TinyAPL.Glyphs.logarithm
+  , TinyAPL.Glyphs.circle
+  , TinyAPL.Glyphs.root
+  , TinyAPL.Glyphs.floor
+  , TinyAPL.Glyphs.ceil
+  , TinyAPL.Glyphs.less
+  , TinyAPL.Glyphs.lessEqual
+  , TinyAPL.Glyphs.equal
+  , TinyAPL.Glyphs.greaterEqual
+  , TinyAPL.Glyphs.greater
+  , TinyAPL.Glyphs.notEqual
+  , TinyAPL.Glyphs.and
+  , TinyAPL.Glyphs.or
+  , TinyAPL.Glyphs.nand
+  , TinyAPL.Glyphs.nor
+  , TinyAPL.Glyphs.cartesian
+  , TinyAPL.Glyphs.polar
+  , TinyAPL.Glyphs.match
+  , TinyAPL.Glyphs.notMatch
+  , TinyAPL.Glyphs.rho
+  , TinyAPL.Glyphs.ravel
+  , TinyAPL.Glyphs.reverse
+  , TinyAPL.Glyphs.pair
+  , TinyAPL.Glyphs.enclose
+  , TinyAPL.Glyphs.first
+  , TinyAPL.Glyphs.last
+  , TinyAPL.Glyphs.take
+  , TinyAPL.Glyphs.drop
+  , TinyAPL.Glyphs.left
+  , TinyAPL.Glyphs.right
+  , TinyAPL.Glyphs.iota
+  , TinyAPL.Glyphs.indices ]
 
 -- * Adverbs
 
-selfie = chr 0x2368
+selfie = '⍨'
+
+adverbs =
+  [ TinyAPL.Glyphs.selfie ]
 
 -- * Conjunctions
 
-atop = chr 0x2364
-over = chr 0x2365
-after = chr 0x2218
-before = chr 0x235b
-leftHook = chr 0x22b8
-rightHook = chr 0x27dc
+atop = '⍤'
+over = '⍥'
+after = '∘'
+before = '⍛'
+leftHook = '⊸'
+rightHook = '⟜'
+
+conjunctions =
+  [ TinyAPL.Glyphs.atop
+  , TinyAPL.Glyphs.over
+  , TinyAPL.Glyphs.after
+  , TinyAPL.Glyphs.before
+  , TinyAPL.Glyphs.leftHook 
+  , TinyAPL.Glyphs.rightHook ]
