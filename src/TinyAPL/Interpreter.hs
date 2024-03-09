@@ -28,23 +28,6 @@ instance Show Value where
   show (VAdverb adv)       = show adv
   show (VConjunction conj) = show conj
 
-scopeLookup :: String -> Scope -> Maybe Value
-scopeLookup name sc = (VArray <$> scopeLookupArray name sc)
-                  <|> (VFunction <$> scopeLookupFunction name sc)
-                  <|> (VAdverb <$> scopeLookupAdverb name sc)
-                  <|> (VConjunction <$> scopeLookupConjunction name sc)
-
-scopeUpdate :: String -> Value -> Scope -> Scope
-scopeUpdate name (VArray val) sc       = scopeUpdateArray name val sc
-scopeUpdate name (VFunction val) sc    = scopeUpdateFunction name val sc
-scopeUpdate name (VAdverb val) sc      = scopeUpdateAdverb name val sc
-scopeUpdate name (VConjunction val) sc = scopeUpdateConjunction name val sc
-
-inChildScope :: Monad m => [(String, Value)] -> StateT Scope m a -> Scope -> m a
-inChildScope vals x parent = do
-  let child = foldr (\(name, val) sc -> scopeUpdate name val sc) (Scope [] [] [] [] (Just parent)) vals
-  evalStateT x child
-
 unwrapArray :: Error -> Value -> St Array
 unwrapArray _ (VArray val) = return val
 unwrapArray e _            = throwError e
@@ -61,6 +44,23 @@ unwrapConjunction :: Error -> Value -> St Conjunction
 unwrapConjunction _ (VConjunction val) = return val
 unwrapConjunction e _                  = throwError e
 
+scopeLookup :: String -> Scope -> Maybe Value
+scopeLookup name sc = (VArray <$> scopeLookupArray name sc)
+                  <|> (VFunction <$> scopeLookupFunction name sc)
+                  <|> (VAdverb <$> scopeLookupAdverb name sc)
+                  <|> (VConjunction <$> scopeLookupConjunction name sc)
+
+scopeUpdate :: String -> Value -> Scope -> Scope
+scopeUpdate name (VArray val) sc       = scopeUpdateArray name val sc
+scopeUpdate name (VFunction val) sc    = scopeUpdateFunction name val sc
+scopeUpdate name (VAdverb val) sc      = scopeUpdateAdverb name val sc
+scopeUpdate name (VConjunction val) sc = scopeUpdateConjunction name val sc
+
+inChildScope :: Monad m => [(String, Value)] -> StateT Scope m a -> Scope -> m a
+inChildScope vals x parent = let
+  child = foldr (\(name, val) sc -> scopeUpdate name val sc) (Scope [] [] [] [] (Just parent)) vals
+  in evalStateT x child
+
 interpret :: Tree -> Scope -> ResultIO (Value, Scope)
 interpret tree = runStateT (eval tree)
 
@@ -70,7 +70,7 @@ run file src scope = do
   join $ foldlM (\last next -> interpret next . snd <$> last) (return (undefined, scope)) trees
 
 eval :: Tree -> St Value
-eval (Leaf _ tok) = evalLeaf tok
+eval (Leaf _ tok)                   = evalLeaf tok
 eval (MonadCallBranch l r)          = do
   r' <- eval r
   l' <- eval l

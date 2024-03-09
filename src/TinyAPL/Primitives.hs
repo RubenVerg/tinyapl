@@ -80,7 +80,7 @@ floor = pureFunction (Just $ monadN2N' $ \(a :+ b) -> fromInteger (Prelude.floor
 ceil = pureFunction (Just $ monadN2N' $ \(a :+ b) -> fromInteger (ceiling a) :+ fromInteger (ceiling b)) (Just $ scalarDyad $ pure .: Ord.max) [G.ceil]
 round = pureFunction (Just $ monadN2N' $ \(a :+ b) -> let
   r x = Prelude.floor $ x + 0.5
-  in fromInteger (r a) :+ fromInteger (r b)) (Just $ scalarDyad $ pure .: Ord.min) [G.round]
+  in fromInteger (r a) :+ fromInteger (r b)) Nothing [G.round]
 less = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (<)) [G.less]
 lessEqual = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (<=)) [G.lessEqual]
 equal = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (==)) [G.equal]
