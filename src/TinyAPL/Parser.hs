@@ -76,8 +76,8 @@ makeParseError source err = let
   msgs = tail $ showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" $ errorMessages err
   in makeSyntaxError pos source msgs
 
-tokenize :: SourceName -> String -> Result [Token]
-tokenize file source = first (makeParseError source) $ runParser (bits <* eof) () file source where
+tokenize :: SourceName -> String -> Result [[Token]]
+tokenize file source = first (makeParseError source) $ runParser (sepBy1 bits separator <* eof) () file source where
   withPos :: Parser (SourcePos -> a) -> Parser a
   withPos = (<**>) getPosition
 
@@ -276,7 +276,7 @@ pairs = mapAdjacent $ fromMaybe (0, undefined) .: (curry (`lookup` bindingMap) `
 
 bindPair :: [Tree] -> Result [Tree]
 bindPair [] = err $ SyntaxError "Bind empty array"
-bindPair x@[_] = Right x
+bindPair x@[_] = pure x
 bindPair xs = let
   (sts, trees) = unzip $ pairs xs
   maxBind = maximum sts
@@ -293,8 +293,8 @@ bindAll [] = err $ SyntaxError "Bind empty array"
 bindAll [x] = pure x
 bindAll xs = bindPair xs >>= bindAll
 
-categorize :: SourceName -> String -> Result [Tree]
-categorize name source = tokenize name source >>= categorizeTokens where
+categorize :: SourceName -> String -> Result [[Tree]]
+categorize name source = tokenize name source >>= mapM categorizeTokens where
   categorizeTokens :: [Token] -> Result [Tree]
   categorizeTokens = mapM tokenToTree
 
@@ -342,5 +342,5 @@ categorize name source = tokenize name source >>= categorizeTokens where
     return $ GuardBranch c r
   tokenToTree (TokenExit result pos)               = ExitBranch <$> (categorizeAndBind result >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ head result) source $ "Invalid exit statement of type " ++ show c ++ ", array required"))
 
-parse :: SourceName -> String -> Result Tree
-parse name = categorize name >=> bindAll
+parse :: SourceName -> String -> Result [Tree]
+parse name = categorize name >=> mapM bindAll

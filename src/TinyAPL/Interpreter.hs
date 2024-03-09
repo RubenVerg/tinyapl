@@ -13,6 +13,8 @@ import System.IO (hPutStr, stderr, hFlush, stdout)
 import Data.Maybe (fromJust)
 import Control.Monad.State
 import Control.Monad.Except
+import Data.Foldable (foldlM)
+import Control.Monad (join)
 
 data Value
   = VArray Array
@@ -63,7 +65,9 @@ interpret :: Tree -> Scope -> ResultIO (Value, Scope)
 interpret tree = runStateT (eval tree)
 
 run :: String -> String -> Scope -> ResultIO (Value, Scope)
-run file src scope = except (parse file src) >>= (`interpret` scope)
+run file src scope = do
+  trees <- except (parse file src)
+  join $ foldlM (\last next -> interpret next . snd <$> last) (return (undefined, scope)) trees
 
 eval :: Tree -> St Value
 eval (Leaf _ tok) = evalLeaf tok
