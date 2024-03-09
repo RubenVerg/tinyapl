@@ -47,3 +47,12 @@ generateIndices = foldr (liftA2 (:) . enumFromTo 1) [[]]
 
 mapAdjacent :: (a -> a -> b) -> [a] -> [b]
 mapAdjacent f xs = zipWith f xs $ drop 1 xs
+
+update :: Eq a => a -> b -> [(a, b)] -> [(a, b)]
+update k v [] = [(k, v)]
+update k v (x@(k', v') : xs) | k == k' = (k, v) : xs
+                             | otherwise = x : update k v xs
+
+maybeToEither :: b -> Maybe a -> Either b a
+maybeToEither _ (Just x) = Right x
+maybeToEither x Nothing = Left x

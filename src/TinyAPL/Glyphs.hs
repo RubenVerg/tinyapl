@@ -3,6 +3,7 @@ import Data.Char (chr)
 
 -- * Syntax
 
+decimal = '.'
 negative = '¯'
 exponent = '⏨'
 imaginary = 'ᴊ'
@@ -11,6 +12,7 @@ charDelimiter = '\''
 stringDelimiter = '"'
 stringEscape = '⍘'
 parens = ('(', ')')
+braces = ('{', '}')
 separator = '⋄'
 assign = '←'
 guard = ':'
@@ -26,6 +28,7 @@ omega = '⍵'
 omegaBar = '⍹'
 quad = '⎕'
 quadQuote = '⍞'
+del = '∇'
 
 -- * Arrays
 
@@ -46,6 +49,7 @@ circle = '○'
 root = '√'
 floor = '⌊'
 ceil = '⌈'
+round = '⸠'
 less = '<'
 lessEqual = '≤'
 equal = '='
@@ -85,6 +89,7 @@ functions =
   , TinyAPL.Glyphs.root
   , TinyAPL.Glyphs.floor
   , TinyAPL.Glyphs.ceil
+  , TinyAPL.Glyphs.round
   , TinyAPL.Glyphs.less
   , TinyAPL.Glyphs.lessEqual
   , TinyAPL.Glyphs.equal
