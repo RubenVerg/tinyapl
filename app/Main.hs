@@ -20,8 +20,8 @@ main = do
   let b = vector $ map Number [5, 2.1, 3 :+ (-0.5)]
 
   let i = arrayReshaped [3, 3] $ Number <$> [1, 0, 0
-                                             , 0, 1, 0
-                                             , 0, 0, 1 ]
+                                            , 0, 1, 0
+                                            , 0, 0, 1 ]
 
   let inc = BindRight P.plus (scalar $ Number 1)
   
@@ -32,9 +32,16 @@ main = do
 
   let scope = Scope [("a", a), ("b", b), ("i", i)] [("I", inc)] [] [] Nothing
 
-  code <- unwords <$> getArgs
-  if null code then repl scope
-  else void $ runCode "<cli>" code scope
+  args <- getArgs
+  case args of
+    []     -> repl scope
+    [path] -> do
+      code <- readFile path
+      void $ runCode path code scope
+    _      -> do
+      hPutStrLn stderr "Usage:"
+      hPutStrLn stderr "tinyapl         Start a REPL"
+      hPutStrLn stderr "tinyapl path    Run a file"
 
 runCode :: String -> String -> Scope -> IO Scope
 runCode file code scope = do
