@@ -37,18 +37,18 @@ main = do
     []     -> repl scope
     [path] -> do
       code <- readFile path
-      void $ runCode path code scope
+      void $ runCode False path code scope
     _      -> do
       hPutStrLn stderr "Usage:"
       hPutStrLn stderr "tinyapl         Start a REPL"
       hPutStrLn stderr "tinyapl path    Run a file"
 
-runCode :: String -> String -> Scope -> IO Scope
-runCode file code scope = do
+runCode :: Bool -> String -> String -> Scope -> IO Scope
+runCode output file code scope = do
   result <- runResult $ run file code scope
   case result of
     Left err -> hPrint stderr err $> scope
-    Right (res, scope) -> print res $> scope
+    Right (res, scope) -> if output then print res $> scope else return scope
 
 repl :: Scope -> IO ()
 repl scope = let
@@ -58,7 +58,7 @@ repl scope = let
     hFlush stdout
     line <- getLine
     if line == "" then return scope
-    else runCode "<repl>" line scope >>= go
+    else runCode True "<repl>" line scope >>= go
   in do
     putStrLn "TinyAPL REPL, empty line to exit"
     putStrLn "Supported primitives:"
