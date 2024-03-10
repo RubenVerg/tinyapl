@@ -19,8 +19,8 @@ main = do
   hSetEncoding stdout utf8
   hSetEncoding stderr utf8
 
-  let a = vector $ map Number [1, 2, -1]
-  let b = vector $ map Number [5, 2.1, 3 :+ (-0.5)]
+  let a = vector $ Number <$> [1, 2, -1]
+  let b = vector $ Number <$> [5, 2.1, 3 :+ (-0.5)]
 
   let i = arrayReshaped [3, 3] $ Number <$> [ 1, 0, 0
                                             , 0, 1, 0

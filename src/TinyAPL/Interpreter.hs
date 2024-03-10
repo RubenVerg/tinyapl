@@ -116,7 +116,8 @@ evalLeaf (TokenArrayName name _)
   | name == [G.quadQuote]              = do
     str <- liftIO getLine
     return $ VArray $ vector $ Character <$> str
-  | otherwise = get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray . scopeLookupArray name)
+  | otherwise                          =
+    get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray . scopeLookupArray name)
 evalLeaf (TokenFunctionName name _)    =
   get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VFunction . scopeLookupFunction name)
 evalLeaf (TokenAdverbName name _)      =
