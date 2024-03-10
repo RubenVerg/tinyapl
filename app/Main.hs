@@ -17,6 +17,7 @@ import Data.List (singleton)
 main :: IO ()
 main = do
   hSetEncoding stdout utf8
+  hSetEncoding stderr utf8
 
   let a = vector $ map Number [1, 2, -1]
   let b = vector $ map Number [5, 2.1, 3 :+ (-0.5)]
