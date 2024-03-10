@@ -13,6 +13,7 @@ stringDelimiter = '"'
 stringEscape = '⍘'
 parens = ('(', ')')
 braces = ('{', '}')
+underscore = '_'
 separator = '⋄'
 assign = '←'
 guard = ':'

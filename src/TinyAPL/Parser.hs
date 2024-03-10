@@ -77,7 +77,7 @@ makeParseError source err = let
   in makeSyntaxError pos source msgs
 
 tokenize :: SourceName -> String -> Result [[Token]]
-tokenize file source = first (makeParseError source) $ runParser (sepBy1 bits separator <* eof) () file source where
+tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1 bits separator <* eof) file source where
   withPos :: Parser (SourcePos -> a) -> Parser a
   withPos = (<**>) getPosition
 
@@ -163,13 +163,13 @@ tokenize file source = first (makeParseError source) $ runParser (sepBy1 bits se
   adverb :: Parser Token
   adverb = between spaces spaces (try dadv <|> try adverbAssign <|> try (withPos $ TokenAdverbName <$> adverbName) <|> primAdverb) where
     dadv :: Parser Token
-    dadv = withPos $ TokenDadv <$> (string ['_', fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces])
+    dadv = withPos $ TokenDadv <$> (string [G.underscore, fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces])
 
     primAdverb :: Parser Token
     primAdverb = withPos $ TokenPrimAdverb <$> oneOf G.adverbs
 
     adverbName :: Parser String
-    adverbName = liftA2 (:) (char '_') (many1 $ oneOf identifierRest)
+    adverbName = liftA2 (:) (char G.underscore) (many1 $ oneOf identifierRest)
 
     adverbAssign :: Parser Token
     adverbAssign = withPos $ liftA2 TokenAdverbAssign adverbName (between spaces spaces (char G.assign) *> bits)
@@ -177,13 +177,13 @@ tokenize file source = first (makeParseError source) $ runParser (sepBy1 bits se
   conjunction :: Parser Token
   conjunction = between spaces spaces (try dconj <|> try conjunctionAssign <|> try (withPos $ TokenConjunctionName <$> conjunctionName) <|> primConjunction) where
     dconj :: Parser Token
-    dconj = withPos $ TokenDconj <$> (string ['_', fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces, '_'])
+    dconj = withPos $ TokenDconj <$> (string [G.underscore, fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces, G.underscore])
 
     primConjunction :: Parser Token
     primConjunction = withPos $ TokenPrimConjunction <$> oneOf G.conjunctions
 
     conjunctionName :: Parser String
-    conjunctionName = liftA3 (\a b c -> a : b ++ [c]) (char '_') (many1 $ oneOf identifierRest) (char '_')
+    conjunctionName = liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (many1 $ oneOf identifierRest) (char G.underscore)
 
     conjunctionAssign :: Parser Token
     conjunctionAssign = withPos $ liftA2 TokenConjunctionAssign conjunctionName (between spaces spaces (char G.assign) *> bits)

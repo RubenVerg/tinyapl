@@ -19,7 +19,7 @@ main = do
   let a = vector $ map Number [1, 2, -1]
   let b = vector $ map Number [5, 2.1, 3 :+ (-0.5)]
 
-  let i = arrayReshaped [3, 3] $ Number <$> [1, 0, 0
+  let i = arrayReshaped [3, 3] $ Number <$> [ 1, 0, 0
                                             , 0, 1, 0
                                             , 0, 0, 1 ]
 
@@ -67,10 +67,10 @@ repl scope = let
     putStrLn $ "  " ++ unwords (singleton . fst <$> P.adverbs)
     putStrLn $ "  " ++ unwords (singleton . fst <$> P.conjunctions)
     putStrLn "Supported features:"
-    putStrLn "* dfns {code}, d-monadic-ops _{code}, d-dyadic-ops _{code}_"
+    putStrLn $ "* dfns " ++ [fst G.braces] ++ "code" ++ [snd G.braces] ++ ", d-monadic-ops " ++ [G.underscore, fst G.braces] ++ "code" ++ [snd G.braces] ++ ", d-dyadic-ops " ++ [G.underscore, fst G.braces] ++ "code" ++ [snd G.braces, G.underscore]
     putStrLn $ "  " ++ [G.alpha] ++ " left argument, " ++ [G.omega] ++ " right argument,"
     putStrLn $ "  " ++ [G.alpha, G.alpha] ++ " left array operand, " ++ [G.alphaBar, G.alphaBar] ++ " left function operand, " ++ [G.omega, G.omega] ++ " right array operand, " ++ [G.omegaBar, G.omegaBar] ++ " right function operand,"
-    putStrLn $ "  " ++ [G.del] ++ " recurse function, " ++ ['_', G.del] ++ " recurse monadic op, " ++ ['_', G.del, '_'] ++ " recurse dyadic op"
+    putStrLn $ "  " ++ [G.del] ++ " recurse function, " ++ [G.underscore, G.del] ++ " recurse monadic op, " ++ [G.underscore, G.del, G.underscore] ++ " recurse dyadic op"
     putStrLn $ "  " ++ [G.exit] ++ " early exit, " ++ [G.guard] ++ " guard"
     putStrLn $ "  " ++ [G.separator] ++ " multiple statements"
     putStrLn $ "* numbers: " ++ [G.decimal] ++ " decimal separator, " ++ [G.negative] ++ " negative sign, " ++ [G.exponent] ++ " exponent notation, " ++ [G.imaginary] ++ " complex separator"

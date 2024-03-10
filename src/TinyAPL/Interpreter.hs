@@ -199,13 +199,13 @@ evalDefined statements cat = let
               , dfnMonad = Just $ \x -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omega], VArray x)
-                , (['_', G.del], dadv)
+                , ([G.underscore, G.del], dadv)
                 , ([G.del], VFunction dfn) ] sc
               , dfnDyad = Just $ \x y -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.alpha], VArray x)
                 , ([G.omega], VArray y)
-                , (['_', G.del], dadv)
+                , ([G.underscore, G.del], dadv)
                 , ([G.del], VFunction dfn) ] sc } )
             in return dfn
           , adverbOnFunction = Just $ \a -> let
@@ -214,13 +214,13 @@ evalDefined statements cat = let
               , dfnMonad = Just $ \x -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omega], VArray x)
-                , (['_', G.del], dadv)
+                , ([G.underscore, G.del], dadv)
                 , ([G.del], VFunction dfn) ] sc
               , dfnDyad = Just $ \x y -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.alpha], VArray x)
                 , ([G.omega], VArray y)
-                , (['_', G.del], dadv)
+                , ([G.underscore, G.del], dadv)
                 , ([G.del], VFunction dfn) ] sc } )
             in return dfn } )
         in return dadv
@@ -234,14 +234,14 @@ evalDefined statements cat = let
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omega, G.omega], VArray b)
                 , ([G.omega], VArray x)
-                , (['_', G.del, '_'], dconj)
+                , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc
               , dfnDyad = Just $ \x y -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omega, G.omega], VArray b)
                 , ([G.alpha], VArray x)
                 , ([G.omega], VArray y)
-                , (['_', G.del, '_'], dconj)
+                , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc } )
             in return dfn
           , conjOnArrayFunction = Just $ \a b -> let
@@ -251,14 +251,14 @@ evalDefined statements cat = let
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omegaBar, G.omegaBar], VFunction b)
                 , ([G.omega], VArray x)
-                , (['_', G.del, '_'], dconj)
+                , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc
               , dfnDyad = Just $ \x y -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omegaBar, G.omegaBar], VFunction b)
                 , ([G.alpha], VArray x)
                 , ([G.omega], VArray y)
-                , (['_', G.del, '_'], dconj)
+                , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc } )
             in return dfn
           , conjOnFunctionArray = Just $ \a b -> let
@@ -268,14 +268,14 @@ evalDefined statements cat = let
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omega, G.omega], VArray b)
                 , ([G.omega], VArray x)
-                , (['_', G.del, '_'], dconj)
+                , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc
               , dfnDyad = Just $ \x y -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omega, G.omega], VArray b)
                 , ([G.alpha], VArray x)
                 , ([G.omega], VArray y)
-                , (['_', G.del, '_'], dconj)
+                , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc } )
             in return dfn
           , conjOnFunctionFunction = Just $ \a b -> let
@@ -285,14 +285,14 @@ evalDefined statements cat = let
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omegaBar, G.omegaBar], VFunction b)
                 , ([G.omega], VArray x)
-                , (['_', G.del, '_'], dconj)
+                , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc
               , dfnDyad = Just $ \x y -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omegaBar, G.omegaBar], VFunction b)
                 , ([G.alpha], VArray x)
                 , ([G.omega], VArray y)
-                , (['_', G.del, '_'], dconj)
+                , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc } )
             in return dfn } )
         in return dconj
