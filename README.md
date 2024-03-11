@@ -87,20 +87,20 @@ Marked features are supported, unmarked features are planned
 			* `4○y` is $\sqrt{1 + y^2}$
 			* `¯4○y` is $\sqrt{y^2 - 1}$
 			* `5○y` is $\sinh y$
-			* `¯5○y` is $\operatorname{arsinh} y$
+			* `¯5○y` is $\mathop{\text{arsinh}} y$
 			* `6○y` is $\cosh y$
-			* `¯6○y` is $\operatorname{arcosh} y$
+			* `¯6○y` is $\mathop{\text{arcosh}} y$
 			* `7○y` is $\tanh y$
-			* `¯7○y` is $\operatorname{artanh} y$
+			* `¯7○y` is $\mathop{\text{artanh}} y$
 			* `8○y` is $\sqrt{-1 - y^2}$
 			* `¯8○y` is $-\sqrt{-1 - y^2}$
-			* `9○y` is $\operatorname{Re} y$
+			* `9○y` is $\mathop{\text{Re}} y$
 			* `¯9○y` is $y$
 			* `10○y` is $\left|y\right|$
 			* `¯10○y` is $\overline y$ (conjugate of $y$)
-			* `11○y` is $\operatorname{Im} y$
+			* `11○y` is $\mathop{\text{Im}} y$
 			* `¯11○y` is $iy$
-			* `12○y` is $\operatorname{Arg} y$
+			* `12○y` is $\mathop{\text{Arg}} y$
 			* `¯12○y` is $e^{iy}$
 		* [x] `√` square root
 		* [x] `√` root
