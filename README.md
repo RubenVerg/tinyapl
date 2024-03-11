@@ -183,8 +183,10 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⊆` partition
 		* [ ] `⍋` grade up
 		* [ ] `⍒` grade down
-		* [ ] `≤` sort up
-		* [ ] `≥` sort down
+		* [ ] `⍋` sort by up?
+		* [ ] `⍒` sort by down?
+		* [ ] `≤` sort up? useless with sort by (`⍋⍨`)
+		* [ ] `≥` sort down? as above
 		* [x] `⍸` where
 		* [ ] `∊` enlist
 		* [ ] `⌿` replicate
