@@ -1,6 +1,6 @@
 # TinyAPL
 
-<center><img src="https://raw.githubusercontent.com/RubenVerg/tinyapl/main/logo.png" alt="TinyAPL logo"></center>
+<center><img src="https://raw.githubusercontent.com/RubenVerg/tinyapl/main/logo.png" width="100" alt="TinyAPL logo"></center>
 
 TinyAPL (read like *tiny apple*) is a tiny APL dialect and interpreter in Haskell. It is being implemented as a series of articles available [here](https://blog.rubenverg.com/?tag=tinyapl).
 
@@ -54,6 +54,7 @@ Marked features are supported, unmarked features are planned
 	* [ ] comments `⍝`
 		* [ ] inline comments? `⟃`/`⟄`
 	* [x] console I/O with `⎕` and `⍞`
+	* [ ] array notation `⟨`/`⋄`/`⟩` and `[`/`⋄`/`]`
 * primitives
 	* arrays
 		* [x] `⍬`
@@ -124,6 +125,10 @@ Marked features are supported, unmarked features are planned
 		* [x] `⊗` unit polar (`⊗y` is $e^{iy}$)
 		* [ ] `∡` phase?
 		* [ ] `∡` set phase? (`(|y)⊗x`)
+		* [ ] `ℜ` real part?
+		* [ ] `ℜ` set real part?
+		* [ ] `ℑ` imaginary part?
+		* [ ] `ℑ` set imaginary part?
 		* [ ] `⊥` decode
 		* [ ] `⊥` base 2 decode
 		* [ ] `⊤` encode
@@ -167,12 +172,11 @@ Marked features are supported, unmarked features are planned
 		* [ ] `…` range?
 		* [x] `⍮` pair
 		* [x] `⍮` half pair
-		* [ ] `‿` link
 	* array manipulation functions
 		* [x] `↑` take
 		* [x] `↓` drop
-		* [ ] `↑` mix
-		* [ ] `↓` split
+		* [ ] `↑` prefixes (mix is `⊃⍤0`)
+		* [ ] `↓` suffixes (split is `⊂⍤1`)
 		* [x] `⊂` enclose
 		* [ ] `⊆` nest
 		* [ ] `⊂` partitioned enclose
@@ -244,10 +248,11 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍤` atop
 		* [x] `⍥` over
 		* [ ] `«`/`»` fork?
+		* [ ] `⍠`(?) valences? (call left if monad and right if dyad)
 * system names (quad names)
 	* [ ] support for system names in parsing and interpreting
 	* system arrays (nilads, i guess)
-		* [ ] `⎕a` (constant) the uppercase alphabet
+		* [ ] `⎕u` (constant) the uppercase alphabet
 		* [ ] `⎕l` (constant) the lowercase alphabet
 		* [ ] `⎕d` (constant) the digits
 		* [ ] `⎕ts` current Unix timestamp
@@ -256,11 +261,13 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⎕seed` (set only) seed the random number generator
 	* system functions
 		* [ ] `⎕File` read/write files
-		* [ ] `⎕Time` convert between time formats
+		* [ ] `⎕DateTime` (or `⎕DT` maybe?) convert between time formats
 		* [ ] `⎕HTTP` http requests
 		* [ ] `⎕CSV` convert from/to CSV
 		* [ ] `⎕JSON` convert from/to JSON
 		* [ ] `⎕Unicode` convert between unicode representations
+		* [ ] `⎕Exists` does a variable exist?
+		* [ ] `⎕C`/`⎕Case` case fold/uppercase/lowercase
 	* system adverbs
 		* [ ] `⎕_BinFile` read/write binary files, with format chosen from the operand
 	* system conjunctions
