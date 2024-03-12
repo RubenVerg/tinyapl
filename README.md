@@ -190,15 +190,19 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍸` where
 		* [ ] `∊` enlist
 		* [ ] `⌿` replicate
-		* [ ] `⍀` expand? (might not make much sense without 
-		prototypes)
+		* [ ] `⍀` expand? (might not make much sense without prototypes)
+		* [ ] `/` replicate last
+		* [ ] `\` expand last?
 		* [x] `,` ravel
 		* [ ] `⍪` table
 		* [ ] `⍪` catenate
+		* [ ] `,` catenate last
 		* [x] `⍴` reshape
 		* [ ] `ϼ` rerank (generalized version of promote/demote: introduce leading length-1 axes or combine leading axes)
 		* [x] `⊖` reverse
 		* [ ] `⊖` rotate
+		* [ ] `⌽` reverse last
+		* [ ] `⌽` rotate last
 		* [ ] `⍉` transpose
 		* [ ] `⍉` reorder axes
 	* array lookup functions
@@ -214,14 +218,19 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍎` execute
 		* [ ] `⍕` format
 		* [ ] `↗` raise?
-	* last axis functions
-		* [ ] `,` catenate last
-		* [ ] `⌽` reverse last
-		* [ ] `⌽` rotate last
 	* operators
-		* [ ] `/` reduce (first)
-		* [ ] `/` windowed reduce (first)
-		* [ ] `\` scan (first)
+		* [ ] `⤈` reduce top-to-bottom (first)
+		* [ ] `⤈` windowed reduce top-to-bottom (first)
+		* [ ] `⤉` reduce bottom-to-top (first)
+		* [ ] `⤉` windowed reduce bottom-to-top (first)
+		* [ ] `⇸` reduce left-to-right (last)
+		* [ ] `⇸` windowed reduce left-to-right (last)
+		* [ ] `⇷` reduce right-to-left (last)
+		* [ ] `⇷` windowed reduce right-to-left (last)
+		* [ ] `⇟` scan (on prefixes) top-to-bottom (first)
+		* [ ] `⇞` scan (on suffixes) bottom-to-top (first)
+		* [ ] `⇻` scan (on prefixes) left-to-right (last)
+		* [ ] `⇺` scan (on suffixes) right-to-left (last)
 		* [ ] `¨` each
 		* [ ] `ᐵ` each-left?
 		* [ ] `ᑈ` each-right?
