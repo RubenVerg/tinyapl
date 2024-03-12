@@ -460,3 +460,6 @@ scopeUpdateConjunction :: String -> Conjunction -> Scope -> Scope
 scopeUpdateConjunction name val sc = sc{ scopeConjunctions = update name val (scopeConjunctions sc) }
 
 type St = StateT Scope (ExceptT Error IO)
+
+runSt :: St a -> Scope -> ResultIO (a, Scope)
+runSt = runStateT

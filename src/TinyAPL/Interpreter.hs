@@ -62,7 +62,7 @@ inChildScope vals x parent = let
   in evalStateT x child
 
 interpret :: Tree -> Scope -> ResultIO (Value, Scope)
-interpret tree = runStateT (eval tree)
+interpret tree = runSt (eval tree)
 
 run :: String -> String -> Scope -> ResultIO (Value, Scope)
 run file src scope = do
