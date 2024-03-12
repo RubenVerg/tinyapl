@@ -237,6 +237,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⌸` key with vocabulary
 		* [ ] `⍁` diagonals?
 		* [ ] `⌺` stencil
+		* [ ] `⍠`(?) valences? (call left if monad and right if dyad)
+		* [ ] `⍢` strucutral under
 	* combinators
 		* [x] `⍨` constant
 		* [x] `⍨` commute
@@ -250,7 +252,6 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍤` atop
 		* [x] `⍥` over
 		* [ ] `«`/`»` fork?
-		* [ ] `⍠`(?) valences? (call left if monad and right if dyad)
 * system names (quad names)
 	* [ ] support for system names in parsing and interpreting
 	* system arrays (nilads, i guess)
