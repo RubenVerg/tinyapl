@@ -11,7 +11,7 @@ import Data.List
 import qualified Data.List as List
 import Control.Monad ((>=>))
 import Control.Monad.Except
-import Control.Monad.State (lift)
+import Data.Maybe (fromJust)
 
 pureFunction :: Maybe (Array -> Result Array) -> Maybe (Array -> Array -> Result Array) -> String -> Function
 pureFunction m d = DefinedFunction
@@ -99,13 +99,17 @@ rho = pureFunction (Just $ \(Array sh _) -> pure $ vector $ Number . fromInteger
   let mustBeIntegral = DomainError "Shape must be integral"
   shape <- (asVector (RankError "Shape must be a vector") sh >>= mapM (asNumber mustBeIntegral >=> asInt mustBeIntegral)) :: Result [Integer]
   let negative = count (< 0) shape
-  if negative == 0 then pure $ arrayReshaped (toEnum . fromEnum <$> shape) xs
+  if negative == 0 then case arrayReshaped (toEnum . fromEnum <$> shape) xs of
+    Nothing -> err $ DomainError "Cannot reshape empty array to non-empty array"
+    Just rs -> pure rs
   else if negative == 1 && (-1) `elem` shape then do
     let allElements = genericLength xs
     let known = product $ filter (>= 0) shape
     if known == 0 then err $ DomainError $ "Shape cannot and contain both 0 and " ++ [G.negative] ++ "1"
     else if allElements `mod` known /= 0 then err $ DomainError "Shape is not a multiple of the bound of the array"
-    else pure $ arrayReshaped (toEnum . fromEnum <$> map (\x -> if x == (-1) then allElements `div` known else x) shape) xs
+    else case arrayReshaped (toEnum . fromEnum <$> map (\x -> if x == (-1) then allElements `div` known else x) shape) xs of
+      Nothing -> err $ DomainError "Cannot reshape empty array to non-empty array"
+      Just rs -> pure rs
   else err $ DomainError "Invalid shape"
   ) [G.rho]
 ravel = pureFunction (Just $ pure . vector . arrayContents) Nothing [G.ravel]
@@ -142,13 +146,13 @@ iota = pureFunction (Just $ \x -> do
   let error = DomainError "Index Generator requires a vector (or scalar) of natural numbers"
   vec <- asVector error x >>= mapM (asNumber error >=> asNat error)
   let indices = generateIndices vec
-  return $ arrayReshaped vec $ box . arrayReshaped (arrayShape x) . fmap (Number . fromInteger . toEnum . fromEnum) <$> indices
+  return $ fromJust $ arrayReshaped vec $ box . fromJust . arrayReshaped (arrayShape x) . fmap (Number . fromInteger . toEnum . fromEnum) <$> indices
   ) Nothing [G.iota]
 indices = pureFunction (Just $ \(Array sh cs) -> do
   let error = DomainError "Indices requires an array of naturals"
   let indices = generateIndices sh
   let shape = if length sh == 1 then [] else [genericLength sh]
-  let rep idx c = genericReplicate c $ box $ arrayReshaped shape $ Number . fromInteger . toEnum . fromEnum <$> idx
+  let rep idx c = genericReplicate c $ box $ fromJust $ arrayReshaped shape $ Number . fromInteger . toEnum . fromEnum <$> idx
   counts <- mapM (asNumber error >=> asNat error) cs
   return $ vector $ concat $ zipWith rep indices counts
   ) Nothing [G.indices]

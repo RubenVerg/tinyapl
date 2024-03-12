@@ -8,10 +8,11 @@ import Data.Complex ( magnitude, realPart, Complex(..) )
 import Numeric.Natural
 import Data.List
 import Control.Monad
-import Data.Maybe (catMaybes, mapMaybe)
+import Data.Maybe (mapMaybe, fromJust)
 import Control.Monad.State
 import Control.Monad.Except
 import Control.Applicative (Alternative((<|>)))
+import Data.List.NonEmpty (NonEmpty, toList)
 
 -- * Arrays
 
@@ -48,8 +49,16 @@ arrayOf sh cs
   | product sh == genericLength cs = Just $ Array sh cs
   | otherwise = Nothing
 
-arrayReshaped :: [Natural] -> [ScalarValue] -> Array
-arrayReshaped sh cs = Array sh $ genericTake (product sh) $ cycle cs
+arrayReshaped :: [Natural] -> [ScalarValue] -> Maybe Array
+arrayReshaped sh cs =
+  if null cs then
+    if 0 `elem` sh
+    then Just $ Array sh []
+    else Nothing
+  else Just $ Array sh $ genericTake (product sh) $ cycle cs
+
+arrayReshapedNE :: [Natural] -> NonEmpty ScalarValue -> Array
+arrayReshapedNE sh cs = Array sh $ genericTake (product sh) $ cycle $ toList cs
 
 majorCells :: Array -> [Array]
 majorCells a@(Array [] _) = [a]
@@ -59,15 +68,19 @@ majorCells (Array (_:sh) cs) = mapMaybe (arrayOf sh) $ chunk (product sh) cs whe
 
 fromMajorCells :: [Array] -> Array
 fromMajorCells [] = Array [0] []
-fromMajorCells (c:cs) = arrayReshaped (1 + genericLength cs : arrayShape c) $ concatMap arrayContents $ c : cs
+fromMajorCells (c:cs) = fromJust $ arrayReshaped (1 + genericLength cs : arrayShape c) $ concatMap arrayContents $ c : cs
 
 -- * Number comparison functions
 
+comparisonTolerance :: Double
 comparisonTolerance = 1e-14
 
+realEqual :: Double -> Double -> Bool
 realEqual a b = abs (a - b) <= comparisonTolerance * (abs a `max` abs b)
+complexEqual :: Complex Double -> Complex Double -> Bool
 complexEqual a b = magnitude (a - b) <= comparisonTolerance * (magnitude a `max` magnitude b)
 
+isReal :: Complex Double -> Bool
 isReal (_ :+ b) = 0 `realEqual` b -- A number is real if its imaginary part compares equal to zero.
 
 -- * Total ordering for scalars and arrays
@@ -111,6 +124,7 @@ isInt = realEqual <*> (fromInteger . floor)
 
 -- * @Show@ for scalars and arrays
 
+showComplex :: Complex Double -> String
 showComplex (a :+ b)
   | b `realEqual` 0 = showAplDouble a
   | otherwise = showAplDouble a ++ [G.imaginary] ++ showAplDouble b
@@ -182,7 +196,9 @@ onMajorCells ::
   -> Array -> Result Array
 onMajorCells f x = do
   result <- f $ majorCells x
-  pure $ arrayReshaped (arrayShape x) $ concatMap arrayContents result
+  case arrayReshaped (arrayShape x) $ concatMap arrayContents result of
+    Nothing -> err $ DomainError ""
+    Just rs -> return rs
 
 -- * Scalar functions
 
