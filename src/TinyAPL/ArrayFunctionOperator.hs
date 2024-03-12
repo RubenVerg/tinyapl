@@ -38,6 +38,14 @@ box b@(Array [] [Box _]) = Box b
 box (Array [] [x]) = x
 box arr = Box arr
 
+fromScalar :: ScalarValue -> Array
+fromScalar (Box arr) = arr
+fromScalar sc        = scalar sc
+
+toScalar :: Array -> ScalarValue
+toScalar (Array [] [x]) = x
+toScalar arr            = box arr
+
 scalar :: ScalarValue -> Array
 scalar x = Array [] [x]
 

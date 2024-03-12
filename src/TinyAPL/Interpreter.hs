@@ -10,11 +10,10 @@ import TinyAPL.Util
 
 import Control.Applicative ((<|>))
 import System.IO (hPutStr, stderr, hFlush, stdout)
-import Data.Maybe (fromJust)
 import Control.Monad.State
 import Control.Monad.Except
 import Data.Foldable (foldlM)
-import Control.Monad (join)
+import Control.Monad
 
 data Value
   = VArray Array
@@ -89,6 +88,12 @@ eval (ConjunctionCallBranch l r)    = do
   evalConjunctionCall l' r'
 eval (AssignBranch _ n val)         = eval val >>= evalAssign n
 eval (DefinedBranch cat statements) = evalDefined statements cat
+eval (VectorBranch es)              = do
+  entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) es
+  return $ VArray $ vector $ toScalar <$> entries
+eval (HighRankBranch es)            = do
+  entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) es
+  return $ VArray $ fromMajorCells entries
 eval _                              = throwError $ DomainError "Invalid branch in evaluation"
 
 evalLeaf :: Token -> St Value
@@ -184,7 +189,6 @@ evalDefined statements cat = let
   in do
     sc <- get
     case cat of
-      CatArray -> throwError $ DomainError "Defined of type array?"
       CatFunction -> let
         dfn = VFunction (DefinedFunction
           { dfnRepr = "{...}"
@@ -297,3 +301,4 @@ evalDefined statements cat = let
                 , ([G.del], VFunction dfn) ] sc } )
             in return dfn } )
         in return dconj
+      cat -> throwError $ DomainError $ "Defined of type " ++ show cat ++ "?"

@@ -12,7 +12,7 @@ import Data.Maybe (fromJust, fromMaybe, mapMaybe)
 import Data.List (singleton, elemIndex)
 import Control.Applicative (liftA3, (<**>))
 import Data.Function (on)
-import Data.Bifunctor (Bifunctor(bimap, first))
+import Data.Bifunctor (Bifunctor(first))
 import Control.Monad ((>=>))
 import Text.Parsec.Error (errorMessages, showErrorMessages)
 
@@ -38,6 +38,8 @@ data Token
   | TokenParens [Token] SourcePos
   | TokenGuard [Token] [Token] SourcePos
   | TokenExit [Token] SourcePos
+  | TokenVector [[Token]] SourcePos
+  | TokenHighRank [[Token]] SourcePos
   deriving (Show)
 
 tokenPos :: Token -> SourcePos
@@ -62,6 +64,8 @@ tokenPos (TokenConjunctionAssign _ _ pos) = pos
 tokenPos (TokenParens _ pos) = pos
 tokenPos (TokenGuard _ _ pos) = pos
 tokenPos (TokenExit _ pos) = pos
+tokenPos (TokenVector _ pos) = pos
+tokenPos (TokenHighRank _ pos) = pos
 
 makeSyntaxError :: SourcePos -> String -> String -> Error
 makeSyntaxError pos source msg = let
@@ -89,7 +93,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
   identifierRest = arrayStart ++ functionStart ++ ['0'..'9']
 
   array :: Parser Token
-  array = between spaces spaces (try number <|> try charVec <|> try str <|> try arrayAssign <|> try (withPos $ TokenArrayName <$> arrayName) <|> primArray) where
+  array = between spaces spaces (try number <|> try charVec <|> try str <|> try arrayAssign <|> try (withPos $ TokenArrayName <$> arrayName) <|> try vectorNotation <|> try highRankNotation <|> primArray) where
     number :: Parser Token
     number = withPos $ TokenNumber <$> complex where
       sign :: Parser Double
@@ -136,6 +140,12 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
 
       nonEscape :: Parser Char
       nonEscape = noneOf [G.stringDelimiter, G.stringEscape]
+
+    vectorNotation :: Parser Token
+    vectorNotation = withPos $ between (char $ fst G.vector) (char $ snd G.vector) (TokenVector <$> sepBy bits separator)
+
+    highRankNotation :: Parser Token
+    highRankNotation = withPos $ between (char $ fst G.highRank) (char $ snd G.highRank) (TokenHighRank <$> sepBy bits separator)
 
     primArray :: Parser Token
     primArray = withPos $ TokenPrimArray <$> oneOf G.arrays
@@ -234,6 +244,8 @@ data Tree
   | DefinedBranch { definedBranchCategory :: Category, definedBranchStatements :: [Tree] }
   | GuardBranch { guardBranchCheck :: Tree, guardBranchResult :: Tree }
   | ExitBranch { exitBranchResult :: Tree }
+  | VectorBranch { vectorEntries :: [Tree] }
+  | HighRankBranch { highRankEntries :: [Tree] }
 
 instance Show Tree where
   show tree = unlines $ go 0 tree where
@@ -249,6 +261,8 @@ instance Show Tree where
       (DefinedBranch c ts)        -> (indent ++ show c ++ " {") : concatMap (go (i + 1)) ts
       (GuardBranch ch res)        -> [indent ++ "guard"] ++ go (i + 1) ch ++ [indent ++ ":"] ++ go (i + 1) res
       (ExitBranch res)            -> (indent ++ "■") : go (i + 1) res
+      (VectorBranch es)           -> (indent ++ "⟨⟩") : concatMap (go (i + 1)) es
+      (HighRankBranch es)         -> (indent ++ "[]") : concatMap (go (i + 1)) es
 
 treeCategory :: Tree -> Category
 treeCategory (Leaf c _)                  = c
@@ -260,6 +274,8 @@ treeCategory (AssignBranch c _ _)        = c
 treeCategory (DefinedBranch c _)         = c
 treeCategory (GuardBranch _ _)           = CatArray
 treeCategory (ExitBranch _)              = CatArray
+treeCategory (VectorBranch _)            = CatArray
+treeCategory (HighRankBranch _)          = CatArray
 
 bindingMap :: [((Category, Category), (Int, Tree -> Tree -> Tree))]
 bindingMap =
@@ -316,6 +332,10 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   assignment cat name ts pos = AssignBranch cat name <$> (categorizeAndBind ts >>=
     requireOfCategory cat (\c -> makeSyntaxError pos source $ "Invalid assignment of " ++ show c ++ " to " ++ show cat ++ " name"))
 
+  array :: ([Tree] -> Tree) -> [[Token]] -> SourcePos -> Result Tree
+  array t es _ = t <$> mapM (\x -> categorizeAndBind x >>=
+    requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ head x) source $ "Invalid array entry of type " ++ show c ++ ", array required")) es
+
   tokenToTree :: Token -> Result Tree
   tokenToTree num@(TokenNumber _ _)                = return $ Leaf CatArray num
   tokenToTree ch@(TokenChar _ _)                   = return $ Leaf CatArray ch
@@ -335,12 +355,14 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   tokenToTree (TokenFunctionAssign name ts pos)    = assignment CatFunction name ts pos
   tokenToTree (TokenAdverbAssign name ts pos)      = assignment CatAdverb name ts pos
   tokenToTree (TokenConjunctionAssign name ts pos) = assignment CatConjunction name ts pos
-  tokenToTree (TokenParens ts pos)                 = categorizeAndBind ts
-  tokenToTree (TokenGuard check result pos)        = do
+  tokenToTree (TokenParens ts _)                   = categorizeAndBind ts
+  tokenToTree (TokenGuard check result _)          = do
     c <- categorizeAndBind check >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ head check) source $ "Invalid guard of type " ++ show c ++ ", array required")
     r <- categorizeAndBind result
     return $ GuardBranch c r
-  tokenToTree (TokenExit result pos)               = ExitBranch <$> (categorizeAndBind result >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ head result) source $ "Invalid exit statement of type " ++ show c ++ ", array required"))
+  tokenToTree (TokenExit result _)                 = ExitBranch <$> (categorizeAndBind result >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ head result) source $ "Invalid exit statement of type " ++ show c ++ ", array required"))
+  tokenToTree (TokenVector es pos)                 = array VectorBranch es pos
+  tokenToTree (TokenHighRank es pos)               = array HighRankBranch es pos
 
 parse :: SourceName -> String -> Result [Tree]
 parse name = categorize name >=> mapM bindAll
