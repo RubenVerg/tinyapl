@@ -13,6 +13,7 @@ import Control.Monad (void)
 import System.IO
 import Data.Functor (($>))
 import Data.List (singleton)
+import Data.Maybe (fromJust)
 
 main :: IO ()
 main = do
@@ -22,9 +23,9 @@ main = do
   let a = vector $ Number <$> [1, 2, -1]
   let b = vector $ Number <$> [5, 2.1, 3 :+ (-0.5)]
 
-  let i = arrayReshaped [3, 3] $ Number <$> [ 1, 0, 0
-                                            , 0, 1, 0
-                                            , 0, 0, 1 ]
+  let i = fromJust $ arrayReshaped [3, 3] $ Number <$> [ 1, 0, 0
+                                                       , 0, 1, 0
+                                                       , 0, 0, 1 ]
 
   let inc = BindRight P.plus (scalar $ Number 1)
   
