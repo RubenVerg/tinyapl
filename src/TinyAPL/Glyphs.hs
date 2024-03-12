@@ -1,5 +1,4 @@
 module TinyAPL.Glyphs where
-import Data.Char (chr)
 
 -- * Syntax
 

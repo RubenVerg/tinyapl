@@ -44,9 +44,21 @@ executable tinyapl
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-    build-depends:
-        base ^>=4.18.0.0,
-        tinyapl
+    build-depends:    base ^>=4.18.0.0
+                    , tinyapl
 
     hs-source-dirs:   app
     default-language: Haskell2010
+
+test-suite tinyapl-tests
+    default-language: GHC2021
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    other-modules:    TinyAPL.ArraySpec
+    build-depends:    base ^>=4.18.0.0
+                    , hspec ^>=2.11.7
+                    , hspec-discover ^>=2.11.7
+                    , tinyapl
+    build-tool-depends:
+        hspec-discover:hspec-discover >= 2.11.7

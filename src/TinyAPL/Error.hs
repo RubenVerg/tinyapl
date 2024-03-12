@@ -8,6 +8,7 @@ data Error
   | RankError String
   | NYIError String
   | SyntaxError String
+  deriving (Eq, Ord)
 
 instance Show Error where
   show err = let

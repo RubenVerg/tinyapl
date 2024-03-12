@@ -58,7 +58,7 @@ arrayReshaped sh cs =
   else Just $ Array sh $ genericTake (product sh) $ cycle cs
 
 arrayReshapedNE :: [Natural] -> NonEmpty ScalarValue -> Array
-arrayReshapedNE sh cs = Array sh $ genericTake (product sh) $ cycle $ toList cs
+arrayReshapedNE sh cs = fromJust $ arrayReshaped sh $ toList cs
 
 majorCells :: Array -> [Array]
 majorCells a@(Array [] _) = [a]
@@ -142,6 +142,7 @@ instance Show Array where
 
 -- * Conversions
 
+boolToScalar :: Bool -> ScalarValue
 boolToScalar True = Number 1
 boolToScalar False = Number 0
 
