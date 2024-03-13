@@ -146,14 +146,14 @@ Marked features are supported, unmarked features are planned
 		* [x] `∨` or
 		* [x] `⍲` nand
 		* [x] `⍱` nor
-		* [ ] `~` not
+		* [x] `~` not
 	* set functions
-		* [ ] `∪` unique
-		* [ ] `∪` union
-		* [ ] `∩` intersection
-		* [ ] `~` difference
-		* [ ] `§` symmetric difference
-		* [ ] `≠` nub sieve
+		* [x] `∪` unique
+		* [x] `∪` union
+		* [x] `∩` intersection
+		* [x] `~` difference
+		* [x] `§` symmetric difference
+		* [x] `≠` nub sieve
 		* [ ] multisets?
 	* property functions
 		* [ ] `⍳` index of
