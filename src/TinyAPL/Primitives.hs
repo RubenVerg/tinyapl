@@ -169,6 +169,12 @@ indices = pureFunction (Just $ \(Array sh cs) -> do
   counts <- mapM (asNumber error >=> asNat error) cs
   return $ vector $ concat $ zipWith rep indices counts
   ) Nothing [G.indices]
+replicate = pureFunction Nothing (Just $ \r arr -> do
+  let error = DomainError "Replicate left argument must be a natural vector"
+  rs <- asVector error r >>= mapM (asNumber error >=> asNat error)
+  let cells = majorCells arr
+  if length rs /= length cells then err $ LengthError "Replicate: different lengths in left and right argument"
+  else return $ fromMajorCells $ concat $ zipWith genericReplicate rs cells) [G.replicate]
 
 functions = (\x -> (head $ dfnRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -208,7 +214,8 @@ functions = (\x -> (head $ dfnRepr x, x)) <$>
   , TinyAPL.Primitives.left
   , TinyAPL.Primitives.right
   , TinyAPL.Primitives.iota
-  , TinyAPL.Primitives.indices ]
+  , TinyAPL.Primitives.indices
+  , TinyAPL.Primitives.replicate ]
 
 -- * Primitive adverbs
 
