@@ -80,6 +80,7 @@ right = '⊢'
 iota = '⍳'
 indices = '⍸'
 replicate = '⌿'
+abs = '|'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -120,7 +121,8 @@ functions =
   , TinyAPL.Glyphs.right
   , TinyAPL.Glyphs.iota
   , TinyAPL.Glyphs.indices
-  , TinyAPL.Glyphs.replicate ]
+  , TinyAPL.Glyphs.replicate
+  , TinyAPL.Glyphs.abs ]
 
 -- * Adverbs
 

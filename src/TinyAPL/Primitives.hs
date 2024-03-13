@@ -69,7 +69,7 @@ circle = pureFunction (Just $ monadN2N' (pi *)) (Just $ dyadNN2N $ \cases
   (-8)  y -> pure $ negate $ sqrt $ negate $ 1 + y * y
   9     y -> pure $ realPart y :+ 0
   (-9)  y -> pure y
-  10    y -> pure $ abs y
+  10    y -> pure $ Prelude.abs y
   (-10) y -> pure $ conjugate y
   11    y -> pure $ imagPart y :+ 0
   (-11) y -> pure $ y * (0 :+ 1)
@@ -175,6 +175,9 @@ replicate = pureFunction Nothing (Just $ \r arr -> do
   let cells = majorCells arr
   if length rs /= length cells then err $ LengthError "Replicate: different lengths in left and right argument"
   else return $ fromMajorCells $ concat $ zipWith genericReplicate rs cells) [G.replicate]
+abs = pureFunction (Just $ monadN2N' Prelude.abs) (Just $ dyadNN2N $ \x y ->
+  if x == 0 then err $ DomainError "Remainder by zero"
+  else return $ y - (fromInteger (Prelude.floor $ realPart $ y / x) :+ fromInteger (Prelude.floor $ imagPart $ y / x)) * x) [G.abs]
 
 functions = (\x -> (head $ dfnRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -215,7 +218,8 @@ functions = (\x -> (head $ dfnRepr x, x)) <$>
   , TinyAPL.Primitives.right
   , TinyAPL.Primitives.iota
   , TinyAPL.Primitives.indices
-  , TinyAPL.Primitives.replicate ]
+  , TinyAPL.Primitives.replicate
+  , TinyAPL.Primitives.abs ]
 
 -- * Primitive adverbs
 

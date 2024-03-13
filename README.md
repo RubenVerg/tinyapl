@@ -115,8 +115,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⌹` matrix divide
 		* [ ] `!` factorial/gamma
 		* [ ] `!` binomial
-		* [ ] `|` magnitude
-		* [ ] `|` remainder
+		* [x] `|` magnitude
+		* [x] `|` remainder
 		* [ ] `∨` greatest common divisor
 		* [ ] `∧` least common multiple
 		* [x] `⊕` cartesian (`x⊕y` is $x + iy$)
