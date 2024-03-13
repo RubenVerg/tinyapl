@@ -3,7 +3,6 @@ module Main where
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
-import TinyAPL.Parser
 import qualified TinyAPL.Primitives as P
 import TinyAPL.Interpreter
 

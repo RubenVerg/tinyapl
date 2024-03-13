@@ -12,6 +12,8 @@ stringDelimiter = '"'
 stringEscape = '⍘'
 parens = ('(', ')')
 braces = ('{', '}')
+vector = ('⟨', '⟩')
+highRank = ('[', ']')
 underscore = '_'
 separator = '⋄'
 assign = '←'
@@ -121,9 +123,17 @@ functions =
 -- * Adverbs
 
 selfie = '⍨'
+reduceDown = '⤈'
+reduceUp = '⤉'
+scanDown = '⇟'
+scanUp = '⇞'
 
 adverbs =
-  [ TinyAPL.Glyphs.selfie ]
+  [ TinyAPL.Glyphs.selfie
+  , TinyAPL.Glyphs.reduceDown
+  , TinyAPL.Glyphs.reduceUp
+  , TinyAPL.Glyphs.scanUp
+  , TinyAPL.Glyphs.scanDown ]
 
 -- * Conjunctions
 

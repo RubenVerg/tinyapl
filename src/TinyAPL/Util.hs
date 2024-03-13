@@ -1,6 +1,6 @@
 module TinyAPL.Util where
 import qualified TinyAPL.Glyphs as G
-import GHC.Float (floatToDigits, isInfinite)
+import GHC.Float (floatToDigits)
 import GHC.Float.RealFracMethods (truncateDoubleInteger)
 import Data.Char (intToDigit)
 
@@ -25,6 +25,7 @@ showAplDouble x
         e' = e - 1
         show_e' = (if e' < 0 then [G.exponent, G.negative] else [G.exponent]) ++ show (abs e')
       in case ds of
+        []      -> "0"
         "0"     -> "0"
         [d]     -> d : show_e'
         (d:ds') -> d : '.' : ds' ++ show_e'
@@ -50,9 +51,16 @@ mapAdjacent f xs = zipWith f xs $ drop 1 xs
 
 update :: Eq a => a -> b -> [(a, b)] -> [(a, b)]
 update k v [] = [(k, v)]
-update k v (x@(k', v') : xs) | k == k' = (k, v) : xs
-                             | otherwise = x : update k v xs
+update k v (x@(k', _) : xs) | k == k' = (k, v) : xs
+                            | otherwise = x : update k v xs
 
 maybeToEither :: b -> Maybe a -> Either b a
 maybeToEither _ (Just x) = Right x
 maybeToEither x Nothing = Left x
+
+prefixes :: [a] -> [[a]]
+prefixes [] = []
+prefixes (x:xs) = [x] : ((x :) <$> prefixes xs)
+
+suffixes :: [a] -> [[a]]
+suffixes = map reverse . prefixes . reverse

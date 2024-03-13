@@ -219,16 +219,16 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍕` format
 		* [ ] `↗` raise?
 	* operators
-		* [ ] `⤈` reduce top-to-bottom (first)
+		* [x] `⤈` reduce top-to-bottom (first)
 		* [ ] `⤈` windowed reduce top-to-bottom (first)
-		* [ ] `⤉` reduce bottom-to-top (first)
+		* [x] `⤉` reduce bottom-to-top (first)
 		* [ ] `⤉` windowed reduce bottom-to-top (first)
 		* [ ] `⇸` reduce left-to-right (last)
 		* [ ] `⇸` windowed reduce left-to-right (last)
 		* [ ] `⇷` reduce right-to-left (last)
 		* [ ] `⇷` windowed reduce right-to-left (last)
-		* [ ] `⇟` scan (on prefixes) top-to-bottom (first)
-		* [ ] `⇞` scan (on suffixes) bottom-to-top (first)
+		* [x] `⇟` scan (on prefixes) top-to-bottom (first)
+		* [x] `⇞` scan (on suffixes) bottom-to-top (first)
 		* [ ] `⇻` scan (on prefixes) left-to-right (last)
 		* [ ] `⇺` scan (on suffixes) right-to-left (last)
 		* [ ] `¨` each

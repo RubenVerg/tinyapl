@@ -49,32 +49,33 @@ logarithm = pureFunction (Just $ monadN2N $ \case
   _ 0 -> err $ DomainError "Logarithm of zero"
   x y -> pure $ logBase x y
   ) [G.logarithm]
-circle = pureFunction (Just $ monadN2N' (pi *)) (Just $ dyadNN2N' $ \cases
-  0     y -> sqrt $ 1 - y * y
-  1     y -> sin y
-  (-1)  y -> asin y
-  2     y -> cos y
-  (-2)  y -> acos y
-  3     y -> tan y
-  (-3)  y -> atan y
-  4     y -> sqrt $ 1 + y * y
-  (-4)  y -> sqrt $ y * y - 1
-  5     y -> sinh y
-  (-5)  y -> asinh y
-  6     y -> cosh y
-  (-6)  y -> acosh y
-  7     y -> tanh y
-  (-7)  y -> atanh y
-  8     y -> sqrt $ negate $ 1 + y * y
-  (-8)  y -> negate $ sqrt $ negate $ 1 + y * y
-  9     y -> realPart y :+ 0
-  (-9)  y -> y
-  10    y -> abs y
-  (-10) y -> conjugate y
-  11    y -> imagPart y :+ 0
-  (-11) y -> y * (0 :+ 1)
-  12    y -> phase y :+ 0
-  (-12) y -> exp $ y * (0 :+ 1)) [G.circle]
+circle = pureFunction (Just $ monadN2N' (pi *)) (Just $ dyadNN2N $ \cases
+  0     y -> pure $ sqrt $ 1 - y * y
+  1     y -> pure $ sin y
+  (-1)  y -> pure $ asin y
+  2     y -> pure $ cos y
+  (-2)  y -> pure $ acos y
+  3     y -> pure $ tan y
+  (-3)  y -> pure $ atan y
+  4     y -> pure $ sqrt $ 1 + y * y
+  (-4)  y -> pure $ sqrt $ y * y - 1
+  5     y -> pure $ sinh y
+  (-5)  y -> pure $ asinh y
+  6     y -> pure $ cosh y
+  (-6)  y -> pure $ acosh y
+  7     y -> pure $ tanh y
+  (-7)  y -> pure $ atanh y
+  8     y -> pure $ sqrt $ negate $ 1 + y * y
+  (-8)  y -> pure $ negate $ sqrt $ negate $ 1 + y * y
+  9     y -> pure $ realPart y :+ 0
+  (-9)  y -> pure y
+  10    y -> pure $ abs y
+  (-10) y -> pure $ conjugate y
+  11    y -> pure $ imagPart y :+ 0
+  (-11) y -> pure $ y * (0 :+ 1)
+  12    y -> pure $ phase y :+ 0
+  (-12) y -> pure $ exp $ y * (0 :+ 1)
+  _     _ -> err $ DomainError "Invalid left argument to circular") [G.circle]
 root = pureFunction (Just $ monadN2N' sqrt) (Just $ dyadNN2N' $ \x y -> x ** recip y) [G.root]
 floor = pureFunction (Just $ monadN2N' $ \(a :+ b) -> fromInteger (Prelude.floor a) :+ fromInteger (Prelude.floor b)) (Just $ scalarDyad $ pure .: Ord.min) [G.floor]
 ceil = pureFunction (Just $ monadN2N' $ \(a :+ b) -> fromInteger (ceiling a) :+ fromInteger (ceiling b)) (Just $ scalarDyad $ pure .: Ord.max) [G.ceil]
@@ -203,9 +204,29 @@ selfie = Adverb
   { adverbRepr = [G.selfie]
   , adverbOnArray = Just $ \x -> pure $ Constant x
   , adverbOnFunction = Just $ \f -> pure $ Selfie f }
+reduceDown = Adverb
+  { adverbRepr = [G.reduceDown]
+  , adverbOnArray = Nothing
+  , adverbOnFunction = Just $ \f -> pure $ ReduceDown f }
+reduceUp = Adverb
+  { adverbRepr = [G.reduceUp]
+  , adverbOnArray = Nothing
+  , adverbOnFunction = Just $ \f -> pure $ ReduceUp f }
+scanDown = Adverb
+  { adverbRepr = [G.scanDown]
+  , adverbOnArray = Nothing
+  , adverbOnFunction = Just $ \f -> pure $ ScanDown f }
+scanUp = Adverb
+  { adverbRepr = [G.scanUp]
+  , adverbOnArray = Nothing
+  , adverbOnFunction = Just $ \f -> pure $ ScanUp f }
 
 adverbs = (\x -> (head $ adverbRepr x, x)) <$>
-  [ TinyAPL.Primitives.selfie ]
+  [ TinyAPL.Primitives.selfie
+  , TinyAPL.Primitives.reduceDown
+  , TinyAPL.Primitives.reduceUp
+  , TinyAPL.Primitives.scanDown
+  , TinyAPL.Primitives.scanUp ]
 
 -- * Primitive conjunctions
 

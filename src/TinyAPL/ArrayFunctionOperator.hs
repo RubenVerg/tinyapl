@@ -224,8 +224,8 @@ scalarDyad ::
 scalarDyad f a@(Array ash as) b@(Array bsh bs)
   | isScalar a && isScalar b = let ([a'], [b']) = (as, bs) in scalar <$> f' a' b'
   | isScalar a = let [a'] = as in Array bsh <$> mapM (a' `f'`) bs
-  | isScalar b = let [b'] = bs in Array (arrayShape a) <$> mapM (`f'` b') (arrayContents a)
-  | arrayShape a == arrayShape b =
+  | isScalar b = let [b'] = bs in Array ash <$> mapM (`f'` b') as
+  | ash == bsh =
     Array (arrayShape a) <$> zipWithM f' (arrayContents a) (arrayContents b)
   | otherwise = err $ DomainError "Mismatched left and right argument shapes"
   where
@@ -322,6 +322,10 @@ data Function
   | DefaultBindLeft { defaultBindLeftArray :: Array, defaultBindLeftFunction :: Function }
   | DefaultBindRight { defaultBindRightFunction :: Function, defaultBindRightArray :: Array }
   | Constant { constantArray :: Array }
+  | ReduceDown { reduceDownFunction :: Function }
+  | ReduceUp { reduceUpFunction :: Function }
+  | ScanDown { scanDownFunction :: Function }
+  | ScanUp { scanUpFunction :: Function }
 
 instance Show Function where
   show (DefinedFunction { dfnRepr = repr }) = repr
@@ -336,7 +340,11 @@ instance Show Function where
   show (l `BindRight` r) = "(" ++ show l ++ [')', G.after, '('] ++ show r ++ ")"
   show (l `DefaultBindLeft` r) = "(" ++ show l ++ [')', G.before, '('] ++ show r ++ ")"
   show (l `DefaultBindRight` r) = "(" ++ show l ++ [')', G.before, '('] ++ show r ++ ")"
-  show (Constant x) = show x ++ [G.selfie]
+  show (Constant x) = "(" ++ show x ++ [')', G.selfie]
+  show (ReduceDown f) = "(" ++ show f ++ [')', G.reduceDown]
+  show (ReduceUp f) = "(" ++ show f ++ [')', G.reduceUp]
+  show (ScanDown f) = "(" ++ show f ++ [')', G.scanDown]
+  show (ScanUp f) = "(" ++ show f ++ [')', G.scanUp]
 
 callMonad :: Function -> Array -> St Array
 callMonad (DefinedFunction (Just f) _ _) x = f x
@@ -357,6 +365,28 @@ callMonad (f `BindRight` a) x = callDyad f x a
 callMonad (a `DefaultBindLeft` f) x = callDyad f a x
 callMonad (f `DefaultBindRight` a) x = callDyad f x a
 callMonad (Constant x) _ = pure x
+callMonad (ReduceDown f) xs = do
+  let go :: [Array] -> St Array
+      go []           = throwError $ DomainError "Reduce empty axis"
+      go [x]          = return x
+      go (a : b : xs) = do
+        x <- callDyad f a b
+        go $ x : xs
+  go $ majorCells xs
+callMonad (ReduceUp f) xs = do
+  let go :: [Array] -> St Array
+      go []       = throwError $ DomainError "Reduce empty axis"
+      go [x]      = return x
+      go (x : xs) = do
+        y <- go xs
+        callDyad f x y
+  go $ majorCells xs
+callMonad (ScanDown f) xs = do
+  if isScalar xs then return xs
+  else fromMajorCells <$> mapM (callMonad (ReduceDown f) . fromMajorCells) (suffixes $ majorCells xs)
+callMonad (ScanUp f) xs = do
+  if isScalar xs then return xs
+  else fromMajorCells <$> mapM (callMonad (ReduceUp f) . fromMajorCells) (suffixes $ majorCells xs)
 
 callDyad :: Function -> Array -> Array -> St Array
 callDyad (DefinedFunction _ (Just g) _) a b = g a b
@@ -384,6 +414,10 @@ callDyad (_ `BindRight` _) _ _ = throwError $ DomainError "Bound function called
 callDyad (_ `DefaultBindLeft` f) x y = callDyad f x y
 callDyad (f `DefaultBindRight` _) x y = callDyad f x y
 callDyad (Constant x) _ _ = pure x
+callDyad (ReduceDown _) _ _ = throwError $ NYIError "Windowed reduce not implemented yet"
+callDyad (ReduceUp _) _ _ = throwError $ NYIError "Windowed reduce not implemented yet"
+callDyad (ScanDown _) _ _ = throwError $ DomainError "Dyadic scan"
+callDyad (ScanUp _) _ _ = throwError $ DomainError "Dyadic scan"
 
 -- * Operators
 
