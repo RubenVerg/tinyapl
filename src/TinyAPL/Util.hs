@@ -63,4 +63,4 @@ prefixes [] = []
 prefixes (x:xs) = [x] : ((x :) <$> prefixes xs)
 
 suffixes :: [a] -> [[a]]
-suffixes = map reverse . prefixes . reverse
+suffixes = reverse . map reverse . prefixes . reverse

@@ -84,6 +84,10 @@ abs = '|'
 phase = '∡'
 real = 'ℜ'
 imag = 'ℑ'
+union = '∪'
+intersection = '∩'
+difference = '~'
+symdiff = '§'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -128,7 +132,11 @@ functions =
   , TinyAPL.Glyphs.abs
   , TinyAPL.Glyphs.phase
   , TinyAPL.Glyphs.real
-  , TinyAPL.Glyphs.imag ]
+  , TinyAPL.Glyphs.imag
+  , TinyAPL.Glyphs.union
+  , TinyAPL.Glyphs.intersection
+  , TinyAPL.Glyphs.difference
+  , TinyAPL.Glyphs.symdiff ]
 
 -- * Adverbs
 

@@ -87,7 +87,10 @@ lessEqual = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (<
 equal = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (==)) [G.equal]
 greaterEqual = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (>=)) [G.greaterEqual]
 greater = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (>)) [G.greater]
-notEqual = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (/=)) [G.notEqual]
+notEqual = pureFunction (Just $ \x -> do
+  let cells = majorCells x
+  return $ vector $ (\(c, idx) -> boolToScalar $ fromJust (c `elemIndex` cells) == idx) <$> zip cells [0..]
+  ) (Just $ scalarDyad $ pure .: boolToScalar .: (/=)) [G.notEqual]
 and = pureFunction Nothing (Just $ dyadBB2B' (&&)) [G.and]
 or = pureFunction Nothing (Just $ dyadBB2B' (||)) [G.or]
 nand = pureFunction Nothing (Just $ dyadBB2B' $ not .: (&&)) [G.nand]
@@ -181,6 +184,12 @@ abs = pureFunction (Just $ monadN2N' Prelude.abs) (Just $ dyadNN2N $ \x y ->
 phase = pureFunction (Just $ monadN2N' $ \x -> Data.Complex.phase x :+ 0) (Just $ dyadNN2N' $ \x y -> Prelude.abs x * exp (0 :+ Data.Complex.phase y)) [G.phase]
 real = pureFunction (Just $ monadN2N' $ \x -> realPart x :+ 0) (Just $ dyadNN2N' $ \x y -> realPart y :+ imagPart x) [G.real]
 imag = pureFunction (Just $ monadN2N' $ \x -> imagPart x :+ 0) (Just $ dyadNN2N' $ \x y -> realPart x :+ imagPart y) [G.imag]
+union = pureFunction (Just $ return . fromMajorCells . List.nub . majorCells) (Just $ \x y ->
+  return $ fromMajorCells $ majorCells x ++ filter (not . (`elem` majorCells x)) (majorCells y)) [G.union]
+intersection = pureFunction Nothing (Just $ \x y -> return $ fromMajorCells $ filter (`elem` majorCells y) $ majorCells x) [G.intersection]
+difference = pureFunction (Just $ monadN2N' (1 -)) (Just $ \x y -> return $ fromMajorCells $ filter (not . (`elem` majorCells y)) $ majorCells x) [G.difference]
+symdiff = pureFunction Nothing (Just $ \x y ->
+  return $ fromMajorCells $ filter (not . (`elem` majorCells y)) (majorCells x) ++ filter (not . (`elem` majorCells x)) (majorCells y)) [G.symdiff]
 
 functions = (\x -> (head $ dfnRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -225,7 +234,11 @@ functions = (\x -> (head $ dfnRepr x, x)) <$>
   , TinyAPL.Primitives.abs
   , TinyAPL.Primitives.phase
   , TinyAPL.Primitives.real
-  , TinyAPL.Primitives.imag ]
+  , TinyAPL.Primitives.imag
+  , TinyAPL.Primitives.union
+  , TinyAPL.Primitives.intersection
+  , TinyAPL.Primitives.difference
+  , TinyAPL.Primitives.symdiff ]
 
 -- * Primitive adverbs
 
