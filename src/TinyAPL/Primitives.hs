@@ -114,7 +114,19 @@ rho = pureFunction (Just $ \(Array sh _) -> pure $ vector $ Number . fromInteger
   else err $ DomainError "Invalid shape"
   ) [G.rho]
 ravel = pureFunction (Just $ pure . vector . arrayContents) Nothing [G.ravel]
-reverse = pureFunction (Just $ onMajorCells $ pure . List.reverse) Nothing [G.reverse]
+reverse = pureFunction (Just $ onMajorCells $ pure . List.reverse) (Just $ \r arr -> let
+  rotate c
+    | c < 0 = List.reverse . rotate (negate c) . List.reverse
+    | c == 0 = id
+    | otherwise = \case
+      []       -> []
+      (x : xs) -> rotate (c - 1) (xs ++ [x])
+  go []     xs = xs
+  go (d:ds) xs = fromMajorCells $ rotate d $ go ds <$> majorCells xs
+  mustBeIntegral = DomainError "Rotate left argument must be integral"
+  in do
+    rs <- asVector (RankError "Rotate left argument must be a vector") r >>= mapM (asNumber mustBeIntegral >=> asInt mustBeIntegral)
+    pure $ go rs arr) [G.reverse]
 pair = pureFunction (Just $ pure . vector . singleton . box) (Just $ \x y -> pure $ vector [box x, box y]) [G.pair]
 enclose = pureFunction (Just $ pure . scalar . box) Nothing [G.enclose]
 first = pureFunction (Just $ \case
