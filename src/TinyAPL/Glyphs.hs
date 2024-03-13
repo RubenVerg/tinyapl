@@ -81,6 +81,9 @@ iota = '⍳'
 indices = '⍸'
 replicate = '⌿'
 abs = '|'
+phase = '∡'
+real = 'ℜ'
+imag = 'ℑ'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -122,7 +125,10 @@ functions =
   , TinyAPL.Glyphs.iota
   , TinyAPL.Glyphs.indices
   , TinyAPL.Glyphs.replicate
-  , TinyAPL.Glyphs.abs ]
+  , TinyAPL.Glyphs.abs
+  , TinyAPL.Glyphs.phase
+  , TinyAPL.Glyphs.real
+  , TinyAPL.Glyphs.imag ]
 
 -- * Adverbs
 

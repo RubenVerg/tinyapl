@@ -123,12 +123,12 @@ Marked features are supported, unmarked features are planned
 		* [x] `⊕` pure imaginary (`⊕y` is $iy$)
 		* [x] `⊗` polar (`x⊗y` is $xe^{iy}$)
 		* [x] `⊗` unit polar (`⊗y` is $e^{iy}$)
-		* [ ] `∡` phase?
-		* [ ] `∡` set phase? (`(|y)⊗x`)
-		* [ ] `ℜ` real part?
-		* [ ] `ℜ` set real part?
-		* [ ] `ℑ` imaginary part?
-		* [ ] `ℑ` set imaginary part?
+		* [x] `∡` phase?
+		* [x] `∡` set phase? (`(|y)⊗x`)
+		* [x] `ℜ` real part?
+		* [x] `ℜ` set real part?
+		* [x] `ℑ` imaginary part?
+		* [x] `ℑ` set imaginary part?
 		* [ ] `⊥` decode
 		* [ ] `⊥` base 2 decode
 		* [ ] `⊤` encode

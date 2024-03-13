@@ -73,7 +73,7 @@ circle = pureFunction (Just $ monadN2N' (pi *)) (Just $ dyadNN2N $ \cases
   (-10) y -> pure $ conjugate y
   11    y -> pure $ imagPart y :+ 0
   (-11) y -> pure $ y * (0 :+ 1)
-  12    y -> pure $ phase y :+ 0
+  12    y -> pure $ Data.Complex.phase y :+ 0
   (-12) y -> pure $ exp $ y * (0 :+ 1)
   _     _ -> err $ DomainError "Invalid left argument to circular") [G.circle]
 root = pureFunction (Just $ monadN2N' sqrt) (Just $ dyadNN2N' $ \x y -> x ** recip y) [G.root]
@@ -178,6 +178,9 @@ replicate = pureFunction Nothing (Just $ \r arr -> do
 abs = pureFunction (Just $ monadN2N' Prelude.abs) (Just $ dyadNN2N $ \x y ->
   if x == 0 then err $ DomainError "Remainder by zero"
   else return $ y - (fromInteger (Prelude.floor $ realPart $ y / x) :+ fromInteger (Prelude.floor $ imagPart $ y / x)) * x) [G.abs]
+phase = pureFunction (Just $ monadN2N' $ \x -> Data.Complex.phase x :+ 0) (Just $ dyadNN2N' $ \x y -> Prelude.abs x * exp (0 :+ Data.Complex.phase y)) [G.phase]
+real = pureFunction (Just $ monadN2N' $ \x -> realPart x :+ 0) (Just $ dyadNN2N' $ \x y -> realPart y :+ imagPart x) [G.real]
+imag = pureFunction (Just $ monadN2N' $ \x -> imagPart x :+ 0) (Just $ dyadNN2N' $ \x y -> realPart x :+ imagPart y) [G.imag]
 
 functions = (\x -> (head $ dfnRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -219,7 +222,10 @@ functions = (\x -> (head $ dfnRepr x, x)) <$>
   , TinyAPL.Primitives.iota
   , TinyAPL.Primitives.indices
   , TinyAPL.Primitives.replicate
-  , TinyAPL.Primitives.abs ]
+  , TinyAPL.Primitives.abs
+  , TinyAPL.Primitives.phase
+  , TinyAPL.Primitives.real
+  , TinyAPL.Primitives.imag ]
 
 -- * Primitive adverbs
 
