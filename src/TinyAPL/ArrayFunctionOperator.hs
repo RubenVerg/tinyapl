@@ -473,21 +473,24 @@ data Scope = Scope
   , scopeParent :: Maybe Scope }
   deriving (Show)
 
+specialNames :: [String]
+specialNames = [[G.alpha], [G.omega], [G.alpha, G.alpha], [G.omega, G.omega], [G.alphaBar, G.alphaBar], [G.omegaBar, G.omegaBar]]
+
 scopeLookupArray :: String -> Scope -> Maybe Array
 scopeLookupArray name sc =
-  lookup name (scopeArrays sc) <|> (scopeParent sc >>= scopeLookupArray name)
+  lookup name (scopeArrays sc) <|> (if name `elem` specialNames then Nothing else scopeParent sc >>= scopeLookupArray name)
 
 scopeLookupFunction :: String -> Scope -> Maybe Function
 scopeLookupFunction name sc =
-  lookup name (scopeFunctions sc) <|> (scopeParent sc >>= scopeLookupFunction name)
+  lookup name (scopeFunctions sc) <|> (if name `elem` specialNames then Nothing else scopeParent sc >>= scopeLookupFunction name)
 
 scopeLookupAdverb :: String -> Scope -> Maybe Adverb
 scopeLookupAdverb name sc =
-  lookup name (scopeAdverbs sc) <|> (scopeParent sc >>= scopeLookupAdverb name)
+  lookup name (scopeAdverbs sc) <|> (if name `elem` specialNames then Nothing else scopeParent sc >>= scopeLookupAdverb name)
 
 scopeLookupConjunction :: String -> Scope -> Maybe Conjunction
 scopeLookupConjunction name sc =
-  lookup name (scopeConjunctions sc) <|> (scopeParent sc >>= scopeLookupConjunction name)
+  lookup name (scopeConjunctions sc) <|> (if name `elem` specialNames then Nothing else scopeParent sc >>= scopeLookupConjunction name)
 
 scopeUpdateArray :: String -> Array -> Scope -> Scope
 scopeUpdateArray name val sc = sc{ scopeArrays = update name val (scopeArrays sc) }

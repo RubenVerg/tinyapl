@@ -9,7 +9,7 @@ import Text.Parsec.String
 import Data.Complex
 import Data.Functor (($>))
 import Data.Maybe (fromJust, fromMaybe, mapMaybe)
-import Data.List (singleton, elemIndex)
+import Data.List (elemIndex)
 import Control.Applicative (liftA3, (<**>))
 import Data.Function (on)
 import Data.Bifunctor (Bifunctor(first))
@@ -86,9 +86,9 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
   withPos = (<**>) getPosition
 
   arrayStart :: String
-  arrayStart = G.delta : G.alpha : G.omega : ['a'..'z']
+  arrayStart = G.delta : ['a'..'z']
   functionStart :: String
-  functionStart = G.deltaBar : G.alphaBar : G.omegaBar : G.del : ['A'..'Z']
+  functionStart = G.deltaBar : ['A'..'Z']
   identifierRest :: String
   identifierRest = arrayStart ++ functionStart ++ ['0'..'9']
 
@@ -151,7 +151,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     primArray = withPos $ TokenPrimArray <$> oneOf G.arrays
 
     arrayName :: Parser String
-    arrayName = singleton <$> oneOf [G.quad, G.quadQuote] <|> liftA2 (:) (oneOf arrayStart) (many $ oneOf identifierRest)
+    arrayName = try (string [G.alpha, G.alpha]) <|> try (string [G.omega, G.omega]) <|> try (string [G.alpha]) <|> try (string [G.omega]) <|> try (string [G.quad]) <|> try (string [G.quadQuote]) <|> liftA2 (:) (oneOf arrayStart) (many $ oneOf identifierRest)
 
     arrayAssign :: Parser Token
     arrayAssign = withPos $ liftA2 TokenArrayAssign arrayName (between spaces spaces (char G.assign) *> bits)
@@ -165,7 +165,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     primFunction = withPos $ TokenPrimFunction <$> oneOf G.functions
 
     functionName :: Parser String
-    functionName = liftA2 (:) (oneOf functionStart) (many $ oneOf identifierRest)
+    functionName = try (string [G.alphaBar, G.alphaBar]) <|> try (string [G.omegaBar, G.omegaBar]) <|> liftA2 (:) (oneOf functionStart) (many $ oneOf identifierRest)
 
     functionAssign :: Parser Token
     functionAssign = withPos $ liftA2 TokenFunctionAssign functionName (between spaces spaces (char G.assign) *> bits)
