@@ -200,7 +200,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍴` reshape
 		* [ ] `ϼ` rerank (generalized version of promote/demote: introduce leading length-1 axes or combine leading axes)
 		* [x] `⊖` reverse
-		* [ ] `⊖` rotate
+		* [x] `⊖` rotate
 		* [ ] `⌽` reverse last
 		* [ ] `⌽` rotate last
 		* [ ] `⍉` transpose
