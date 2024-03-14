@@ -383,7 +383,7 @@ callMonad (ReduceUp f) xs = do
   go $ majorCells xs
 callMonad (ScanDown f) xs = do
   if isScalar xs then return xs
-  else fromMajorCells <$> mapM (callMonad (ReduceDown f) . fromMajorCells) (suffixes $ majorCells xs)
+  else fromMajorCells <$> mapM (callMonad (ReduceDown f) . fromMajorCells) (prefixes $ majorCells xs)
 callMonad (ScanUp f) xs = do
   if isScalar xs then return xs
   else fromMajorCells <$> mapM (callMonad (ReduceUp f) . fromMajorCells) (suffixes $ majorCells xs)
