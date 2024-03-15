@@ -190,6 +190,13 @@ intersection = pureFunction Nothing (Just $ \x y -> return $ fromMajorCells $ fi
 difference = pureFunction (Just $ monadN2N' (1 -)) (Just $ \x y -> return $ fromMajorCells $ filter (not . (`elem` majorCells y)) $ majorCells x) [G.difference]
 symdiff = pureFunction Nothing (Just $ \x y ->
   return $ fromMajorCells $ filter (not . (`elem` majorCells y)) (majorCells x) ++ filter (not . (`elem` majorCells x)) (majorCells y)) [G.symdiff]
+element = pureFunction (Just $ \x -> do
+  let go :: Array -> [ScalarValue]
+      go (Array [] [Box a]) = go a
+      go (Array [] sc)      = sc
+      go (Array _ cs)       = concatMap (go . fromScalar) cs
+  return $ vector $ go x
+  ) Nothing [G.element]
 
 functions = (\x -> (head $ dfnRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -238,7 +245,8 @@ functions = (\x -> (head $ dfnRepr x, x)) <$>
   , TinyAPL.Primitives.union
   , TinyAPL.Primitives.intersection
   , TinyAPL.Primitives.difference
-  , TinyAPL.Primitives.symdiff ]
+  , TinyAPL.Primitives.symdiff
+  , TinyAPL.Primitives.element ]
 
 -- * Primitive adverbs
 

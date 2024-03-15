@@ -89,6 +89,7 @@ union = '∪'
 intersection = '∩'
 difference = '~'
 symdiff = '§'
+element = '∊'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -137,7 +138,8 @@ functions =
   , TinyAPL.Glyphs.union
   , TinyAPL.Glyphs.intersection
   , TinyAPL.Glyphs.difference
-  , TinyAPL.Glyphs.symdiff ]
+  , TinyAPL.Glyphs.symdiff
+  , TinyAPL.Glyphs.element ]
 
 -- * Adverbs
 
