@@ -146,13 +146,15 @@ reduceDown = '⤈'
 reduceUp = '⤉'
 scanDown = '⇟'
 scanUp = '⇞'
+each = '¨'
 
 adverbs =
   [ TinyAPL.Glyphs.selfie
   , TinyAPL.Glyphs.reduceDown
   , TinyAPL.Glyphs.reduceUp
   , TinyAPL.Glyphs.scanUp
-  , TinyAPL.Glyphs.scanDown ]
+  , TinyAPL.Glyphs.scanDown
+  , TinyAPL.Glyphs.each ]
 
 -- * Conjunctions
 

@@ -326,6 +326,7 @@ data Function
   | ReduceUp { reduceUpFunction :: Function }
   | ScanDown { scanDownFunction :: Function }
   | ScanUp { scanUpFunction :: Function }
+  | Each { eachFunction :: Function }
 
 instance Show Function where
   show (DefinedFunction { dfnRepr = repr }) = repr
@@ -345,6 +346,7 @@ instance Show Function where
   show (ReduceUp f) = "(" ++ show f ++ [')', G.reduceUp]
   show (ScanDown f) = "(" ++ show f ++ [')', G.scanDown]
   show (ScanUp f) = "(" ++ show f ++ [')', G.scanUp]
+  show (Each f) = "(" ++ show f ++ [')', G.each]
 
 callMonad :: Function -> Array -> St Array
 callMonad (DefinedFunction (Just f) _ _) x = f x
@@ -387,6 +389,7 @@ callMonad (ScanDown f) xs = do
 callMonad (ScanUp f) xs = do
   if isScalar xs then return xs
   else fromMajorCells <$> mapM (callMonad (ReduceUp f) . fromMajorCells) (suffixes $ majorCells xs)
+callMonad (Each f) (Array sh cs) = Array sh <$> mapM (fmap toScalar . callMonad f . fromScalar) cs
 
 callDyad :: Function -> Array -> Array -> St Array
 callDyad (DefinedFunction _ (Just g) _) a b = g a b
@@ -418,6 +421,12 @@ callDyad (ReduceDown _) _ _ = throwError $ NYIError "Windowed reduce not impleme
 callDyad (ReduceUp _) _ _ = throwError $ NYIError "Windowed reduce not implemented yet"
 callDyad (ScanDown _) _ _ = throwError $ DomainError "Dyadic scan"
 callDyad (ScanUp _) _ _ = throwError $ DomainError "Dyadic scan"
+callDyad (Each f) (Array ash acs) (Array bsh bcs)
+  | null ash && null bsh = scalar . toScalar <$> callDyad f (fromScalar $ head acs) (fromScalar $ head bcs)
+  | null ash = Array bsh <$> mapM (fmap toScalar . callDyad f (fromScalar $ head acs) . fromScalar) bcs
+  | null bsh = Array ash <$> mapM (fmap toScalar . (\a -> callDyad f a (fromScalar $ head bcs)) . fromScalar) acs
+  | ash == bsh = Array ash <$> zipWithM (fmap toScalar .: callDyad f) (fromScalar <$> acs) (fromScalar <$> bcs)
+  | otherwise = throwError $ LengthError "Incompatible shapes in arguments to Each"
 
 -- * Operators
 

@@ -262,13 +262,18 @@ scanUp = Adverb
   { adverbRepr = [G.scanUp]
   , adverbOnArray = Nothing
   , adverbOnFunction = Just $ \f -> pure $ ScanUp f }
+each = Adverb
+  { adverbRepr = [G.each]
+  , adverbOnArray = Just $ \arr -> pure $ Each $ Constant arr
+  , adverbOnFunction = Just $ \f -> pure $ Each f }
 
 adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   [ TinyAPL.Primitives.selfie
   , TinyAPL.Primitives.reduceDown
   , TinyAPL.Primitives.reduceUp
   , TinyAPL.Primitives.scanDown
-  , TinyAPL.Primitives.scanUp ]
+  , TinyAPL.Primitives.scanUp
+  , TinyAPL.Primitives.each ]
 
 -- * Primitive conjunctions
 

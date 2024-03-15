@@ -232,7 +232,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⇞` scan (on suffixes) bottom-to-top (first)
 		* [ ] `⇻` scan (on prefixes) left-to-right (last)
 		* [ ] `⇺` scan (on suffixes) right-to-left (last)
-		* [ ] `¨` each
+		* [x] `¨` each
 		* [ ] `ᐵ` each-left?
 		* [ ] `ᑈ` each-right?
 		* [ ] `⍣` repeat (with inverses?)
