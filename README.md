@@ -190,7 +190,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `≥` sort down? as above
 		* [x] `⍸` where
 		* [ ] `∊` enlist
-		* [ ] `⌿` replicate
+		* [x] `⌿` replicate
 		* [ ] `⍀` expand? (might not make much sense without prototypes)
 		* [ ] `/` replicate last
 		* [ ] `\` expand last?
