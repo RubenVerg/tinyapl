@@ -144,9 +144,9 @@ instance Show ScalarValue where
 
 -- We'll implement proper array formatting later.
 instance Show Array where
-  show (Array sh cs) =
-    "{ array with " ++ [G.rho] ++ " = " ++ unwords (map show sh) ++
-    " and " ++ [G.ravel] ++ " = " ++ show cs ++ " }"
+  show (Array [] [s]) = show s
+  show (Array [_] xs) = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (show <$> xs) ++ [snd G.vector]
+  show arr            = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (show <$> majorCells arr) ++ [snd G.highRank]
 
 -- * Conversions
 
