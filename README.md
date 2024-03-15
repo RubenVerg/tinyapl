@@ -233,8 +233,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⇻` scan (on prefixes) left-to-right (last)
 		* [ ] `⇺` scan (on suffixes) right-to-left (last)
 		* [x] `¨` each
-		* [ ] `ᐵ` each-left?
-		* [ ] `ᑈ` each-right?
+		* [x] `ᐵ` each-left
+		* [x] `ᑈ` each-right
 		* [ ] `⍣` repeat (with inverses?)
 		* [ ] `⍣` until
 		* [ ] `∙` inner product

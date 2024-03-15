@@ -266,6 +266,14 @@ each = Adverb
   { adverbRepr = [G.each]
   , adverbOnArray = Just $ \arr -> pure $ Each $ Constant arr
   , adverbOnFunction = Just $ \f -> pure $ Each f }
+eachLeft = Adverb
+  { adverbRepr = [G.eachLeft]
+  , adverbOnArray = Nothing
+  , adverbOnFunction = Just $ \f -> pure $ EachLeft f }
+eachRight = Adverb
+  { adverbRepr = [G.eachRight]
+  , adverbOnArray = Nothing
+  , adverbOnFunction = Just $ \f -> pure $ EachRight f }
 
 adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   [ TinyAPL.Primitives.selfie
@@ -273,7 +281,9 @@ adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   , TinyAPL.Primitives.reduceUp
   , TinyAPL.Primitives.scanDown
   , TinyAPL.Primitives.scanUp
-  , TinyAPL.Primitives.each ]
+  , TinyAPL.Primitives.each
+  , TinyAPL.Primitives.eachLeft
+  , TinyAPL.Primitives.eachRight ]
 
 -- * Primitive conjunctions
 

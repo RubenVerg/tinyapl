@@ -327,6 +327,8 @@ data Function
   | ScanDown { scanDownFunction :: Function }
   | ScanUp { scanUpFunction :: Function }
   | Each { eachFunction :: Function }
+  | EachLeft { eachLeftFunction :: Function }
+  | EachRight { eachRightFunction :: Function }
 
 instance Show Function where
   show (DefinedFunction { dfnRepr = repr }) = repr
@@ -347,10 +349,15 @@ instance Show Function where
   show (ScanDown f) = "(" ++ show f ++ [')', G.scanDown]
   show (ScanUp f) = "(" ++ show f ++ [')', G.scanUp]
   show (Each f) = "(" ++ show f ++ [')', G.each]
+  show (EachLeft f) = "(" ++ show f ++ [')', G.eachLeft]
+  show (EachRight f) = "(" ++ show f ++ [')', G.eachRight]
+
+noMonad :: String -> Error
+noMonad str = DomainError $ "Function " ++ str ++ " cannot be called monadically"
 
 callMonad :: Function -> Array -> St Array
 callMonad (DefinedFunction (Just f) _ _) x = f x
-callMonad f@(DefinedFunction Nothing _ _) _ = throwError $ DomainError $ "Function " ++ show f ++ " cannot be called monadically."
+callMonad f@(DefinedFunction Nothing _ _) _ = throwError $ noMonad $ show f
 callMonad (f `Atop` g) x = callMonad g x >>= callMonad f
 callMonad (f `Over` g) x = callMonad g x >>= callMonad f
 callMonad (f `After` g) x = callMonad g x >>= callMonad f
@@ -390,10 +397,15 @@ callMonad (ScanUp f) xs = do
   if isScalar xs then return xs
   else fromMajorCells <$> mapM (callMonad (ReduceUp f) . fromMajorCells) (suffixes $ majorCells xs)
 callMonad (Each f) (Array sh cs) = Array sh <$> mapM (fmap toScalar . callMonad f . fromScalar) cs
+callMonad f@(EachLeft _) _ = throwError $ noMonad $ show f
+callMonad f@(EachRight _) _ = throwError $ noMonad $ show f
+
+noDyad :: String -> Error
+noDyad str = DomainError $ "Function " ++ str ++ " cannot be called dyadically"
 
 callDyad :: Function -> Array -> Array -> St Array
 callDyad (DefinedFunction _ (Just g) _) a b = g a b
-callDyad f@(DefinedFunction _ Nothing _) _ _ = throwError $ DomainError $ "Function " ++ show f ++ " cannot be called dyadically."
+callDyad f@(DefinedFunction _ Nothing _) _ _ = throwError $ noDyad $ show f
 callDyad (f `Atop` g) a b = callDyad g a b >>= callMonad f
 callDyad (f `Over` g) a b = do
   a' <- callMonad g a
@@ -419,14 +431,16 @@ callDyad (f `DefaultBindRight` _) x y = callDyad f x y
 callDyad (Constant x) _ _ = pure x
 callDyad (ReduceDown _) _ _ = throwError $ NYIError "Windowed reduce not implemented yet"
 callDyad (ReduceUp _) _ _ = throwError $ NYIError "Windowed reduce not implemented yet"
-callDyad (ScanDown _) _ _ = throwError $ DomainError "Dyadic scan"
-callDyad (ScanUp _) _ _ = throwError $ DomainError "Dyadic scan"
+callDyad f@(ScanDown _) _ _ = throwError $ noDyad $ show f
+callDyad f@(ScanUp _) _ _ = throwError $ noDyad $ show f
 callDyad (Each f) (Array ash acs) (Array bsh bcs)
   | null ash && null bsh = scalar . toScalar <$> callDyad f (fromScalar $ head acs) (fromScalar $ head bcs)
   | null ash = Array bsh <$> mapM (fmap toScalar . callDyad f (fromScalar $ head acs) . fromScalar) bcs
   | null bsh = Array ash <$> mapM (fmap toScalar . (\a -> callDyad f a (fromScalar $ head bcs)) . fromScalar) acs
   | ash == bsh = Array ash <$> zipWithM (fmap toScalar .: callDyad f) (fromScalar <$> acs) (fromScalar <$> bcs)
   | otherwise = throwError $ LengthError "Incompatible shapes in arguments to Each"
+callDyad (EachLeft f) (Array ash acs) b = Array ash <$> mapM (fmap toScalar . (\a -> callDyad f a b) . fromScalar) acs
+callDyad (EachRight f) a (Array bsh bcs) = Array bsh <$> mapM (fmap toScalar . callDyad f a . fromScalar) bcs
 
 -- * Operators
 
