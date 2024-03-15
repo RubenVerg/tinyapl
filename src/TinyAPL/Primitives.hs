@@ -134,10 +134,10 @@ pair = pureFunction (Just $ pure . vector . singleton . box) (Just $ \x y -> pur
 enclose = pureFunction (Just $ pure . scalar . box) Nothing [G.enclose]
 first = pureFunction (Just $ \case
   Array _ [] -> err $ DomainError "First on empty array"
-  Array _ (x:_) -> pure $ scalar x) Nothing [G.first]
+  Array _ (x:_) -> pure $ fromScalar x) Nothing [G.first]
 last = pureFunction (Just $ \case
   Array _ [] -> err $ DomainError "Last on empty array"
-  Array _ xs -> pure $ scalar $ List.last xs) Nothing [G.last]
+  Array _ xs -> pure $ fromScalar $ List.last xs) Nothing [G.last]
 take = pureFunction Nothing (Just $ \t arr -> let
   take' c = if c < 0 then List.reverse . genericTake (negate c) . List.reverse else genericTake c
   go []     xs = xs
