@@ -55,7 +55,7 @@ Marked features are supported, unmarked features are planned
 	* [ ] comments `⍝`
 		* [ ] inline comments? `⟃`/`⟄`
 	* [x] console I/O with `⎕` and `⍞`
-	* [ ] array notation `⟨`/`⋄`/`⟩` and `[`/`⋄`/`]`
+	* [x] array notation `⟨`/`⋄`/`⟩` and `[`/`⋄`/`]`
 * primitives
 	* arrays
 		* [x] `⍬`
