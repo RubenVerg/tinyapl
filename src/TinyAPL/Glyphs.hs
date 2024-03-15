@@ -19,6 +19,7 @@ separator = '⋄'
 assign = '←'
 guard = ':'
 exit = '■'
+inlineComment = ('⟃', '⟄')
 
 -- * Identifiers
 

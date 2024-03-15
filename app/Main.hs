@@ -82,5 +82,6 @@ repl scope = let
     putStrLn $ "* names: abc array, Abc function, _Abc monadic op, _Abc_ dyadic op, assignment with " ++ [G.assign]
     putStrLn $ "* get " ++ [G.quad] ++ " read evaluated input, get " ++ [G.quadQuote] ++ " read string input, set " ++ [G.quad] ++ " print with newline, set " ++ [G.quadQuote] ++ " print without newline"
     putStrLn $ "* array notation: " ++ [fst G.vector, G.separator, snd G.vector] ++ " vector, " ++ [fst G.highRank, G.separator, snd G.highRank] ++ " higher rank array (combine major cells)"
+    putStrLn $ "* comments: " ++ [fst G.inlineComment, snd G.inlineComment] ++ " inline"
 
     void $ go scope 

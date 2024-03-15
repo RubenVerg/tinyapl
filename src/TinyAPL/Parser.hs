@@ -7,7 +7,7 @@ import TinyAPL.Util
 import Text.Parsec
 import Text.Parsec.String
 import Data.Complex
-import Data.Functor (($>))
+import Data.Functor (($>), void)
 import Data.Maybe (fromJust, fromMaybe, mapMaybe)
 import Data.List (elemIndex)
 import Control.Applicative (liftA3, (<**>))
@@ -15,6 +15,7 @@ import Data.Function (on)
 import Data.Bifunctor (Bifunctor(first))
 import Control.Monad ((>=>))
 import Text.Parsec.Error (errorMessages, showErrorMessages)
+import Data.Char (isSpace)
 
 data Token
   = TokenNumber (Complex Double) SourcePos
@@ -92,8 +93,14 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
   identifierRest :: String
   identifierRest = arrayStart ++ functionStart ++ ['0'..'9']
 
+  whitespace :: Parser ()
+  whitespace = do
+    let comm :: Parser ()
+        comm = char (fst G.inlineComment) *> void (many $ noneOf [snd G.inlineComment]) <* char (snd G.inlineComment)
+    void $ many $ try comm <|> void (satisfy isSpace)
+
   array :: Parser Token
-  array = between spaces spaces (try number <|> try charVec <|> try str <|> try arrayAssign <|> try (withPos $ TokenArrayName <$> arrayName) <|> try vectorNotation <|> try highRankNotation <|> primArray) where
+  array = between whitespace whitespace (try number <|> try charVec <|> try str <|> try arrayAssign <|> try (withPos $ TokenArrayName <$> arrayName) <|> try vectorNotation <|> try highRankNotation <|> primArray) where
     number :: Parser Token
     number = withPos $ TokenNumber <$> complex where
       sign :: Parser Double
@@ -154,10 +161,10 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     arrayName = try (string [G.alpha, G.alpha]) <|> try (string [G.omega, G.omega]) <|> try (string [G.alpha]) <|> try (string [G.omega]) <|> try (string [G.quad]) <|> try (string [G.quadQuote]) <|> liftA2 (:) (oneOf arrayStart) (many $ oneOf identifierRest)
 
     arrayAssign :: Parser Token
-    arrayAssign = withPos $ liftA2 TokenArrayAssign arrayName (between spaces spaces (char G.assign) *> bits)
+    arrayAssign = withPos $ liftA2 TokenArrayAssign arrayName (between whitespace whitespace (char G.assign) *> bits)
 
   function :: Parser Token
-  function = between spaces spaces (try dfn <|> try functionAssign <|> try (withPos $ TokenFunctionName <$> functionName) <|> primFunction) where
+  function = between whitespace whitespace (try dfn <|> try functionAssign <|> try (withPos $ TokenFunctionName <$> functionName) <|> primFunction) where
     dfn :: Parser Token
     dfn = withPos $ TokenDfn <$> (string [fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces])
 
@@ -168,10 +175,10 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     functionName = try (string [G.alphaBar, G.alphaBar]) <|> try (string [G.omegaBar, G.omegaBar]) <|> liftA2 (:) (oneOf functionStart) (many $ oneOf identifierRest)
 
     functionAssign :: Parser Token
-    functionAssign = withPos $ liftA2 TokenFunctionAssign functionName (between spaces spaces (char G.assign) *> bits)
+    functionAssign = withPos $ liftA2 TokenFunctionAssign functionName (between whitespace whitespace (char G.assign) *> bits)
 
   adverb :: Parser Token
-  adverb = between spaces spaces (try dadv <|> try adverbAssign <|> try (withPos $ TokenAdverbName <$> adverbName) <|> primAdverb) where
+  adverb = between whitespace whitespace (try dadv <|> try adverbAssign <|> try (withPos $ TokenAdverbName <$> adverbName) <|> primAdverb) where
     dadv :: Parser Token
     dadv = withPos $ TokenDadv <$> (string [G.underscore, fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces])
 
@@ -182,10 +189,10 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     adverbName = liftA2 (:) (char G.underscore) (many1 $ oneOf identifierRest)
 
     adverbAssign :: Parser Token
-    adverbAssign = withPos $ liftA2 TokenAdverbAssign adverbName (between spaces spaces (char G.assign) *> bits)
+    adverbAssign = withPos $ liftA2 TokenAdverbAssign adverbName (between whitespace whitespace (char G.assign) *> bits)
 
   conjunction :: Parser Token
-  conjunction = between spaces spaces (try dconj <|> try conjunctionAssign <|> try (withPos $ TokenConjunctionName <$> conjunctionName) <|> primConjunction) where
+  conjunction = between whitespace whitespace (try dconj <|> try conjunctionAssign <|> try (withPos $ TokenConjunctionName <$> conjunctionName) <|> primConjunction) where
     dconj :: Parser Token
     dconj = withPos $ TokenDconj <$> (string [G.underscore, fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces, G.underscore])
 
@@ -196,7 +203,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     conjunctionName = liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (many1 $ oneOf identifierRest) (char G.underscore)
 
     conjunctionAssign :: Parser Token
-    conjunctionAssign = withPos $ liftA2 TokenConjunctionAssign conjunctionName (between spaces spaces (char G.assign) *> bits)
+    conjunctionAssign = withPos $ liftA2 TokenConjunctionAssign conjunctionName (between whitespace whitespace (char G.assign) *> bits)
 
   guard :: Parser Token
   guard = withPos $ liftA2 TokenGuard bits (char G.guard *> definedBits)
