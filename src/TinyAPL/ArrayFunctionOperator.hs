@@ -497,7 +497,7 @@ data Scope = Scope
   deriving (Show)
 
 specialNames :: [String]
-specialNames = [[G.alpha], [G.omega], [G.alpha, G.alpha], [G.omega, G.omega], [G.alphaBar, G.alphaBar], [G.omegaBar, G.omegaBar]]
+specialNames = [[G.alpha], [G.omega], [G.alpha, G.alpha], [G.omega, G.omega], [G.alphaBar, G.alphaBar], [G.omegaBar, G.omegaBar], [G.del], [G.underscore, G.del], [G.underscore, G.del, G.underscore]]
 
 scopeLookupArray :: String -> Scope -> Maybe Array
 scopeLookupArray name sc =
