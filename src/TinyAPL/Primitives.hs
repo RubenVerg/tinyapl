@@ -96,7 +96,7 @@ or = pureFunction Nothing (Just $ dyadBB2B' (||)) [G.or]
 nand = pureFunction Nothing (Just $ dyadBB2B' $ not .: (&&)) [G.nand]
 nor = pureFunction Nothing (Just $ dyadBB2B' $ not .: (||)) [G.nor]
 cartesian = pureFunction (Just $ monadN2N' (* (0 :+ 1))) (Just $ dyadNN2N' $ \x y -> x + (0 :+ 1) * y) [G.cartesian]
-polar = pureFunction (Just $ monadN2N' $ exp . (* (0 :+ 1))) (Just $ dyadNN2N' $ \x y -> x * (exp y * (0 :+ 1))) [G.polar]
+polar = pureFunction (Just $ monadN2N' $ exp . (* (0 :+ 1))) (Just $ dyadNN2N' $ \x y -> x * exp (y * (0 :+ 1))) [G.polar]
 match = pureFunction Nothing (Just $ pure .: scalar .: boolToScalar .: (==)) [G.match]
 notMatch = pureFunction (Just $ pure . genericLength . majorCells) (Just $ pure .: scalar .: boolToScalar .: (/=)) [G.notMatch]
 rho = pureFunction (Just $ \(Array sh _) -> pure $ vector $ Number . fromInteger . toEnum . fromEnum <$> sh) (Just $ \sh (Array _ xs) -> do
