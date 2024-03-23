@@ -76,7 +76,7 @@ circle = pureFunction (Just $ monadN2N' (pi *)) (Just $ dyadNN2N $ \cases
   12    y -> pure $ Data.Complex.phase y :+ 0
   (-12) y -> pure $ exp $ y * (0 :+ 1)
   _     _ -> err $ DomainError "Invalid left argument to circular") [G.circle]
-root = pureFunction (Just $ monadN2N' sqrt) (Just $ dyadNN2N' $ \x y -> x ** recip y) [G.root]
+root = pureFunction (Just $ monadN2N' sqrt) (Just $ dyadNN2N' $ \x y -> y ** recip x) [G.root]
 floor = pureFunction (Just $ monadN2N' $ \(a :+ b) -> fromInteger (Prelude.floor a) :+ fromInteger (Prelude.floor b)) (Just $ scalarDyad $ pure .: Ord.min) [G.floor]
 ceil = pureFunction (Just $ monadN2N' $ \(a :+ b) -> fromInteger (ceiling a) :+ fromInteger (ceiling b)) (Just $ scalarDyad $ pure .: Ord.max) [G.ceil]
 round = pureFunction (Just $ monadN2N' $ \(a :+ b) -> let
