@@ -181,7 +181,7 @@ replicate = pureFunction Nothing (Just $ \r arr -> do
 abs = pureFunction (Just $ monadN2N' Prelude.abs) (Just $ dyadNN2N $ \x y ->
   if x == 0 then err $ DomainError "Remainder by zero"
   else return $ y - (fromInteger (Prelude.floor $ realPart $ y / x) :+ fromInteger (Prelude.floor $ imagPart $ y / x)) * x) [G.abs]
-phase = pureFunction (Just $ monadN2N' $ \x -> Data.Complex.phase x :+ 0) (Just $ dyadNN2N' $ \x y -> Prelude.abs x * exp (0 :+ Data.Complex.phase y)) [G.phase]
+phase = pureFunction (Just $ monadN2N' $ \x -> Data.Complex.phase x :+ 0) (Just $ dyadNN2N' $ \x y -> Prelude.abs x * exp ((0 :+ 1) * y)) [G.phase]
 real = pureFunction (Just $ monadN2N' $ \x -> realPart x :+ 0) (Just $ dyadNN2N' $ \x y -> realPart y :+ imagPart x) [G.real]
 imag = pureFunction (Just $ monadN2N' $ \x -> imagPart x :+ 0) (Just $ dyadNN2N' $ \x y -> realPart x :+ imagPart y) [G.imag]
 union = pureFunction (Just $ return . fromMajorCells . List.nub . majorCells) (Just $ \x y ->
