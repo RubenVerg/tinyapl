@@ -124,12 +124,12 @@ Marked features are supported, unmarked features are planned
 		* [x] `⊕` pure imaginary (`⊕y` is $iy$)
 		* [x] `⊗` polar (`x⊗y` is $xe^{iy}$)
 		* [x] `⊗` unit polar (`⊗y` is $e^{iy}$)
-		* [x] `∡` phase?
-		* [x] `∡` set phase? (`(|y)⊗x`)
-		* [x] `ℜ` real part?
-		* [x] `ℜ` set real part?
-		* [x] `ℑ` imaginary part?
-		* [x] `ℑ` set imaginary part?
+		* [x] `∡` phase
+		* [x] `∡` set phase (`(|y)⊗x`)
+		* [x] `ℜ` real part
+		* [x] `ℜ` set real part
+		* [x] `ℑ` imaginary part
+		* [x] `ℑ` set imaginary part
 		* [ ] `⊥` decode
 		* [ ] `⊥` base 2 decode
 		* [ ] `⊤` encode
@@ -247,7 +247,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⌸` key with vocabulary
 		* [ ] `⍁` diagonals?
 		* [ ] `⌺` stencil
-		* [ ] `⍠`(?) valences? (call left if monad and right if dyad)
+		* [ ] `⁖` valences (call left if monad and right if dyad)
 		* [ ] `⍢` strucutral under
 	* combinators
 		* [x] `⍨` constant
@@ -261,6 +261,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⟜` right hook
 		* [x] `⍤` atop
 		* [x] `⍥` over
+		* [ ] `⸚` mirror (`_{(⍵ ⍹⍹ ⍺)⍶⍶(⍺ ⍹⍹ ⍵)}_`)
 		* [ ] `«`/`»` fork?
 * system names (quad names)
 	* [ ] support for system names in parsing and interpreting
