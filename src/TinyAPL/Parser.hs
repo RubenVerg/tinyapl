@@ -9,7 +9,7 @@ import Text.Parsec.String
 import Data.Complex
 import Data.Functor (($>), void)
 import Data.Maybe (fromJust, fromMaybe, mapMaybe)
-import Data.List (elemIndex)
+import Data.List (elemIndex, intercalate)
 import Control.Applicative (liftA3, (<**>))
 import Data.Function (on)
 import Data.Bifunctor (Bifunctor(first))
@@ -41,7 +41,57 @@ data Token
   | TokenExit [Token] SourcePos
   | TokenVector [[Token]] SourcePos
   | TokenHighRank [[Token]] SourcePos
-  deriving (Show)
+
+instance Eq Token where
+  (TokenNumber x _) == (TokenNumber y _) = x == y
+  (TokenChar x _) == (TokenChar y _) = x == y
+  (TokenString x _) == (TokenString y _) = x == y
+  (TokenPrimArray x _) == (TokenPrimArray y _) = x == y
+  (TokenPrimFunction x _) == (TokenPrimFunction y _) = x == y
+  (TokenPrimAdverb x _) == (TokenPrimAdverb y _) = x == y
+  (TokenPrimConjunction x _) == (TokenPrimConjunction y _) = x == y
+  (TokenDfn x _) == (TokenDfn y _) = x == y
+  (TokenDadv x _) == (TokenDadv y _) = x == y
+  (TokenDconj x _) == (TokenDconj y _) = x == y
+  (TokenArrayName x _) == (TokenArrayName y _) = x == y
+  (TokenFunctionName x _) == (TokenFunctionName y _) = x == y
+  (TokenAdverbName x _) == (TokenAdverbName y _) = x == y
+  (TokenConjunctionName x _) == (TokenConjunctionName y _) = x == y
+  (TokenArrayAssign xn x _) == (TokenArrayAssign yn y _) = xn == yn && x == y
+  (TokenFunctionAssign xn x _) == (TokenFunctionAssign yn y _) = xn == yn && x == y
+  (TokenAdverbAssign xn x _) == (TokenAdverbAssign yn y _) = xn == yn && x == y
+  (TokenConjunctionAssign xn x _) == (TokenConjunctionAssign yn y _) = xn == yn && x == y
+  (TokenParens x _) == (TokenParens y _) = x == y
+  (TokenGuard xc xe _) == (TokenGuard yc ye _) = xc == yc && xe == ye
+  (TokenExit x _) == (TokenExit y _) = x == y
+  (TokenVector x _) == (TokenVector y _) = x == y
+  (TokenHighRank x _) == (TokenHighRank y _) = x == y
+  _ == _ = False
+
+instance Show Token where
+  show (TokenNumber x _) = "(number " ++ show x ++ ")"
+  show (TokenChar x _) = "(character " ++ [G.charDelimiter] ++ x ++ [G.charDelimiter] ++ ")"
+  show (TokenString x _) = "(string " ++ [G.stringDelimiter] ++ x ++ [G.stringDelimiter] ++ ")"
+  show (TokenPrimArray x _) = "(primitive array " ++ [x] ++ ")"
+  show (TokenPrimFunction x _) = "(primitive function " ++ [x] ++ ")"
+  show (TokenPrimAdverb x _) = "(primitive adverb " ++ [x] ++ ")"
+  show (TokenPrimConjunction x _) = "(primitive conjunction " ++ [x] ++ ")"
+  show (TokenDfn xs _) = "(dfn " ++ [fst G.braces, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [' ', snd G.braces] ++ ")"
+  show (TokenDadv xs _) = "(dadv " ++ [G.underscore, fst G.braces, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [' ', snd G.braces] ++ ")"
+  show (TokenDconj xs _) = "(dconj " ++ [G.underscore, fst G.braces, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [' ', snd G.braces, G.underscore] ++ ")"
+  show (TokenArrayName x _) = "(array name " ++ x ++ ")"
+  show (TokenFunctionName x _) = "(function name " ++ x ++ ")"
+  show (TokenAdverbName x _) = "(adverb name " ++ x ++ ")"
+  show (TokenConjunctionName x _) = "(conjunction name " ++ x ++ ")"
+  show (TokenArrayAssign x xs _) = "(array assign " ++ x ++ [' ', G.assign, ' '] ++ unwords (show <$> xs) ++ ")"
+  show (TokenFunctionAssign x xs _) = "(function assign " ++ x ++ [' ', G.assign, ' '] ++ unwords (show <$> xs) ++ ")"
+  show (TokenAdverbAssign x xs _) = "(adverb assign " ++ x ++ [' ', G.assign, ' '] ++ unwords (show <$> xs) ++ ")"
+  show (TokenConjunctionAssign x xs _) = "(conjunction assign " ++ x ++ [' ', G.assign, ' '] ++ unwords (show <$> xs) ++ ")"
+  show (TokenParens xs _) = "(parens (" ++ unwords (show <$> xs) ++ "))"
+  show (TokenGuard gs rs _) = "(guard " ++ unwords (show <$> gs) ++ " : " ++ unwords (show <$> rs) ++ ")"
+  show (TokenExit xs _) = "(exit " ++ [G.exit, ' '] ++ unwords (show <$> xs) ++ ")"
+  show (TokenVector xs _) = "(vector " ++ [fst G.vector, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.vector] ++ ")"
+  show (TokenHighRank xs _) = "(high rank " ++ [fst G.highRank, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.highRank] ++ ")"
 
 tokenPos :: Token -> SourcePos
 tokenPos (TokenNumber _ pos) = pos
@@ -67,6 +117,9 @@ tokenPos (TokenGuard _ _ pos) = pos
 tokenPos (TokenExit _ pos) = pos
 tokenPos (TokenVector _ pos) = pos
 tokenPos (TokenHighRank _ pos) = pos
+
+emptyPos :: SourcePos
+emptyPos = case Text.Parsec.parse getPosition "<empty>" "" of Right x -> x; Left err -> error $ show err
 
 makeSyntaxError :: SourcePos -> String -> String -> Error
 makeSyntaxError pos source msg = let
@@ -97,7 +150,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
   whitespace = do
     let comm :: Parser ()
         comm = char (fst G.inlineComment) *> void (many $ noneOf [snd G.inlineComment]) <* char (snd G.inlineComment)
-    void $ many $ try comm <|> void (satisfy isSpace)
+    void $ many $ try comm <|> void (satisfy (\x -> isSpace x && x /= '\n'))
 
   array :: Parser Token
   array = between whitespace whitespace (try number <|> try charVec <|> try str <|> try arrayAssign <|> try (withPos $ TokenArrayName <$> arrayName) <|> try vectorNotation <|> try highRankNotation <|> primArray) where
