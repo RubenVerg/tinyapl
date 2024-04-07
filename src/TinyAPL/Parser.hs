@@ -306,6 +306,7 @@ data Tree
   | ExitBranch { exitBranchResult :: Tree }
   | VectorBranch { vectorEntries :: [Tree] }
   | HighRankBranch { highRankEntries :: [Tree] }
+  deriving (Eq)
 
 instance Show Tree where
   show tree = unlines $ go 0 tree where
@@ -332,7 +333,7 @@ treeCategory (AdverbCallBranch _ _)      = CatFunction
 treeCategory (ConjunctionCallBranch _ _) = CatAdverb
 treeCategory (AssignBranch c _ _)        = c
 treeCategory (DefinedBranch c _)         = c
-treeCategory (GuardBranch _ _)           = CatArray
+treeCategory (GuardBranch _ t)           = treeCategory t
 treeCategory (ExitBranch _)              = CatArray
 treeCategory (VectorBranch _)            = CatArray
 treeCategory (HighRankBranch _)          = CatArray
