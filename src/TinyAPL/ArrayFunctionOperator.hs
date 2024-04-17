@@ -140,13 +140,14 @@ showComplex (a :+ b)
 instance Show ScalarValue where
   show (Number x) = showComplex x
   show (Character x) = [x]
-  show (Box xs) = "[box " ++ show xs ++ "]"
+  show (Box xs) = [G.enclose, fst G.parens] ++ show xs ++ [snd G.parens]
 
 -- We'll implement proper array formatting later.
 instance Show Array where
   show (Array [] [s])                                                    = show s
-  show (Array [_] xs) | all (\case (Character _) -> True; _ -> False) xs = xs >>= show
-                      | otherwise                                        = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (show <$> xs) ++ [snd G.vector]
+  show (Array [_] xs)
+    | not (null xs) && all (\case (Character _) -> True; _ -> False) xs = xs >>= show
+    | otherwise                                        = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (show . fromScalar <$> xs) ++ [snd G.vector]
   show arr                                                               = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (show <$> majorCells arr) ++ [snd G.highRank]
 
 -- * Conversions

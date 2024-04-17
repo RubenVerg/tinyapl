@@ -90,7 +90,7 @@ eval (AssignBranch _ n val)         = eval val >>= evalAssign n
 eval (DefinedBranch cat statements) = evalDefined statements cat
 eval (VectorBranch es)              = do
   entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) es
-  return $ VArray $ vector $ toScalar <$> entries
+  return $ VArray $ vector $ box <$> entries
 eval (HighRankBranch es)            = do
   entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) es
   return $ VArray $ fromMajorCells entries
