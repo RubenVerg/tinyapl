@@ -140,15 +140,14 @@ showComplex (a :+ b)
 instance Show ScalarValue where
   show (Number x) = showComplex x
   show (Character x) = [x]
-  show (Box xs) = [G.enclose, fst G.parens] ++ show xs ++ [snd G.parens]
+  show (Box xs) = G.enclose : show xs
 
--- We'll implement proper array formatting later.
 instance Show Array where
-  show (Array [] [s])                                                    = show s
+  show (Array [] [s])                                                   = show s
   show (Array [_] xs)
     | not (null xs) && all (\case (Character _) -> True; _ -> False) xs = xs >>= show
-    | otherwise                                        = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (show . fromScalar <$> xs) ++ [snd G.vector]
-  show arr                                                               = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (show <$> majorCells arr) ++ [snd G.highRank]
+    | otherwise                                                         = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (show . fromScalar <$> xs) ++ [snd G.vector]
+  show arr                                                              = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (show <$> majorCells arr) ++ [snd G.highRank]
 
 -- * Conversions
 
@@ -398,7 +397,7 @@ callMonad (ScanDown f) xs = do
 callMonad (ScanUp f) xs = do
   if isScalar xs then return xs
   else fromMajorCells <$> mapM (callMonad (ReduceUp f) . fromMajorCells) (suffixes $ majorCells xs)
-callMonad (Each f) (Array sh cs) = Array sh <$> mapM (fmap toScalar . callMonad f . fromScalar) cs
+callMonad (Each f) (Array sh cs) = Array sh <$> mapM (fmap box . callMonad f . fromScalar) cs
 callMonad f@(EachLeft _) _ = throwError $ noMonad $ show f
 callMonad f@(EachRight _) _ = throwError $ noMonad $ show f
 
@@ -436,13 +435,13 @@ callDyad (ReduceUp _) _ _ = throwError $ NYIError "Windowed reduce not implement
 callDyad f@(ScanDown _) _ _ = throwError $ noDyad $ show f
 callDyad f@(ScanUp _) _ _ = throwError $ noDyad $ show f
 callDyad (Each f) (Array ash acs) (Array bsh bcs)
-  | null ash && null bsh = scalar . toScalar <$> callDyad f (fromScalar $ head acs) (fromScalar $ head bcs)
-  | null ash = Array bsh <$> mapM (fmap toScalar . callDyad f (fromScalar $ head acs) . fromScalar) bcs
-  | null bsh = Array ash <$> mapM (fmap toScalar . (\a -> callDyad f a (fromScalar $ head bcs)) . fromScalar) acs
-  | ash == bsh = Array ash <$> zipWithM (fmap toScalar .: callDyad f) (fromScalar <$> acs) (fromScalar <$> bcs)
+  | null ash && null bsh = scalar . box <$> callDyad f (fromScalar $ head acs) (fromScalar $ head bcs)
+  | null ash = Array bsh <$> mapM (fmap box . callDyad f (fromScalar $ head acs) . fromScalar) bcs
+  | null bsh = Array ash <$> mapM (fmap box . (\a -> callDyad f a (fromScalar $ head bcs)) . fromScalar) acs
+  | ash == bsh = Array ash <$> zipWithM (fmap box .: callDyad f) (fromScalar <$> acs) (fromScalar <$> bcs)
   | otherwise = throwError $ LengthError "Incompatible shapes in arguments to Each"
-callDyad (EachLeft f) (Array ash acs) b = Array ash <$> mapM (fmap toScalar . (\a -> callDyad f a b) . fromScalar) acs
-callDyad (EachRight f) a (Array bsh bcs) = Array bsh <$> mapM (fmap toScalar . callDyad f a . fromScalar) bcs
+callDyad (EachLeft f) (Array ash acs) b = Array ash <$> mapM (fmap box . (\a -> callDyad f a b) . fromScalar) acs
+callDyad (EachRight f) a (Array bsh bcs) = Array bsh <$> mapM (fmap box . callDyad f a . fromScalar) bcs
 
 -- * Operators
 
