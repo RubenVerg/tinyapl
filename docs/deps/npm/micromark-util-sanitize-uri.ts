@@ -1,0 +1,1 @@
+export * from 'npm:micromark-util-sanitize-uri@1.2.0';

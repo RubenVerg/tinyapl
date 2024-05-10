@@ -1,0 +1,12 @@
+@font-face {
+	font-family: APL386;
+	src: url('/APL386.ttf');
+}
+
+code, pre {
+	font-family: APL386, 'APL386 Unicode', 'BQN386 Unicode', APL385, APL333, 'Fira Code', monospace !important;
+}
+
+pre > code {
+	overflow-x: hidden;
+}
