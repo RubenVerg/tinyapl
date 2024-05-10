@@ -181,7 +181,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⊂` enclose
 		* [ ] `⊆` nest
 		* [ ] `⊂` partitioned enclose
-		* [ ] `⊆` partition
+		* [ ] `⊆` group (not partition!)
 		* [ ] `⍋` grade up
 		* [ ] `⍒` grade down
 		* [ ] `⍋` sort by up?
@@ -282,6 +282,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⎕Unicode` convert between unicode representations
 		* [ ] `⎕Exists` does a variable exist?
 		* [ ] `⎕C`/`⎕Case` case fold/uppercase/lowercase
+		* [ ] `⎕Partition` convert Partition representation to Group representation (so that Partition is `⎕Partition⍛⊆`)
 	* system adverbs
 		* [ ] `⎕_BinFile` read/write binary files, with format chosen from the operand
 	* system conjunctions
