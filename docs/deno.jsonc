@@ -1,6 +1,0 @@
-{
-  "tasks": {
-    "dev": "deno run --unstable --allow-net --allow-read --allow-env --watch main.tsx --dev",
-    "serve": "deno run --unstable --allow-net --allow-read --allow-env --no-check main.tsx"
-  }
-}

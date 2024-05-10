@@ -48,6 +48,8 @@ const docPage = (page: Page) => render(<FullPage pages={pages}><DocsPage page={p
 	title: `${page.name} - TinyAPL`,
 });
 
+const docPages = Object.fromEntries(await Promise.all([...Object.entries(pages)].map(async ([k, v]) => [k, await docPage(v)])));
+
 async function handler(req: Request) {
 	const { pathname } = new URL(req.url);
 	
@@ -55,7 +57,7 @@ async function handler(req: Request) {
 		return index;
 	}
 	if (pathname.replaceAll('/', '') in pages) {
-		return await docPage(pages[pathname.replaceAll('/', '')]);
+		return docPages[pathname.replaceAll('/', '')];
 	}
 
 	return await serveDir(req, { fsRoot: './assets' });

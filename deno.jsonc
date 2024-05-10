@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "dev": "cd docs && deno run --unstable --allow-net --allow-read --allow-env --watch main.tsx --dev",
+    "serve": "cd docs && deno run --unstable --allow-net --allow-read --allow-env --no-check main.tsx"
+  }
+}
