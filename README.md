@@ -192,18 +192,13 @@ Marked features are supported, unmarked features are planned
 		* [ ] `∊` enlist
 		* [x] `⌿` replicate
 		* [ ] `⍀` expand? (might not make much sense without prototypes)
-		* [ ] `/` replicate last
-		* [ ] `\` expand last?
 		* [x] `,` ravel
 		* [ ] `⍪` table
 		* [ ] `⍪` catenate
-		* [ ] `,` catenate last
 		* [x] `⍴` reshape
 		* [ ] `ϼ` rerank (generalized version of promote/demote: introduce leading length-1 axes or combine leading axes)
 		* [x] `⊖` reverse
 		* [x] `⊖` rotate
-		* [ ] `⌽` reverse last
-		* [ ] `⌽` rotate last
 		* [ ] `⍉` transpose
 		* [ ] `⍉` reorder axes
 	* array lookup functions
@@ -224,14 +219,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⤈` windowed reduce top-to-bottom (first)
 		* [x] `⤉` reduce bottom-to-top (first)
 		* [ ] `⤉` windowed reduce bottom-to-top (first)
-		* [ ] `⇸` reduce left-to-right (last)
-		* [ ] `⇸` windowed reduce left-to-right (last)
-		* [ ] `⇷` reduce right-to-left (last)
-		* [ ] `⇷` windowed reduce right-to-left (last)
 		* [x] `⇟` scan (on prefixes) top-to-bottom (first)
 		* [x] `⇞` scan (on suffixes) bottom-to-top (first)
-		* [ ] `⇻` scan (on prefixes) left-to-right (last)
-		* [ ] `⇺` scan (on suffixes) right-to-left (last)
 		* [ ] `¨` each
 		* [ ] `ᐵ` each-left?
 		* [ ] `ᑈ` each-right?
