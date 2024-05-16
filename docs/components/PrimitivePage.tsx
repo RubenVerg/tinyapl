@@ -12,9 +12,9 @@ export interface PrimitivePageProps {
 
 function PrimitivePage({ primitive }: PrimitivePageProps) {
 	return <>
-		<h1>{primitive.planned && <PlannedAlert />}<code>{primitive.glyph}</code> {primitive.name} <code class='float-end'>{primitive.pattern}</code></h1>
+		<h1>{primitive.planned && <PlannedBadge />}<code>{primitive.glyph}</code> {primitive.name} <code class='float-end'>{primitive.pattern}</code></h1>
 
-		{primitive.planned && <PlannedBadge />}
+		{primitive.planned && <PlannedAlert />}
 
 		<div dangerouslySetInnerHTML={{ __html: primitive.body }} />
 	</>;

@@ -12,9 +12,9 @@ export interface InfoPageProps {
 
 function InfoPage({ info }: InfoPageProps) {
 	return <>
-		<h1>{info.planned && <PlannedAlert />}{info.name}</h1>
+		<h1>{info.planned && <PlannedBadge />}{info.name}</h1>
 
-		{info.planned && <PlannedBadge />}
+		{info.planned && <PlannedAlert />}
 
 		<div dangerouslySetInnerHTML={{ __html: info.body }} />
 	</>;
