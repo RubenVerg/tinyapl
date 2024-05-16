@@ -49,18 +49,29 @@ const infoPage = (info: Info) => render(<FullPage pages={pages}><InfoPage info={
 	title: `${info.name} - TinyAPL`,
 });
 
-const infoPages: Record<string, Response> = Object.fromEntries(await Promise.all([...Object.entries(pages.info)].map(async ([k, v]) => [k, await infoPage(v)])));
-
 const primitivePage = (primitive: Primitive) => render(<FullPage pages={pages}><PrimitivePage primitive={primitive} /></FullPage>, {
 	title: `${primitive.name} - TinyAPL`,
 });
 
-const primitivePages: Record<string, Response> = Object.fromEntries(await Promise.all([...Object.entries(pages.primitives)].map(async ([k, v]) => [k, await primitivePage(v)])));
+const directories: Record<string, keyof typeof pages> = {
+	info: 'info',
+	primitive: 'primitives',
+}
 
-const allPages = {
-	info: infoPages,
-	primitive: primitivePages,
+const renderers = {
+	info: infoPage,
+	primitives: primitivePage,
 };
+
+if (Deno.args.includes('--dev')) {
+	// In dev mode, render all pages once to be sure that they don't have mistakes.
+	console.log('Checking pages...');
+	for (const [typ, ps] of Object.entries(pages)) {
+		for (const p of Object.keys(ps)) {
+			await (renderers[typ as keyof typeof pages] as (p: unknown) => Promise<Response>)(ps[p]).then(x => x.text());
+		}
+	}
+}
 
 async function handler(req: Request) {
 	const { pathname } = new URL(req.url);
@@ -69,9 +80,10 @@ async function handler(req: Request) {
 		return index;
 	}
 
-	for (const t of Object.keys(allPages)) {
-		if (pathname.startsWith(`/${t}`) && pathname.replace(`/${t}`, '').replaceAll('/', '') in allPages[t as keyof typeof allPages]) {
-			return allPages[t as keyof typeof allPages][pathname.replace(`/${t}`, '').replaceAll('/', '')];
+	for (const [dir, typ] of Object.entries(directories)) {
+		if (pathname.startsWith(`/${dir}`)) {
+			const path = pathname.replace(`/${dir}`, '').replaceAll('/', '');
+			return (renderers[typ] as (p: unknown) => Promise<Response>)(pages[typ][path]);
 		}
 	}
 	
