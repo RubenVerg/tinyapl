@@ -1,0 +1,7 @@
+---
+glyph: '≠'
+pattern: 'r←≠y'
+name: Nub Sieve
+---
+
+`r` is the nub sieve of the major cells `y`, i.e. a boolean mask that indicates if it's the first time that a cell appears.

@@ -1,0 +1,7 @@
+---
+glyph: '∊'
+pattern: 'r←∊y'
+name: Enlist
+---
+
+`r` is a vector containing all simple scalars that appear in `y`, traveling through layers of nesting.

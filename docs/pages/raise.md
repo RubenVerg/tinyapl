@@ -1,0 +1,22 @@
+---
+glyph: '↗'
+pattern: 'r←[x]↗y'
+name: Raise
+planned: true
+---
+
+`x` must be a scalar natural. `y` must be a character vector. If `x` is not provided, it defaults to `1`.
+
+If `x` is `0`, nothing happens and `r` is the empty vector.
+
+If `x` is not `0`, fails with an error type indexed by `x` and message `y`:
+
+|`x`|Error type|
+|---|----------|
+|`1`|User error|
+|`2`|Domain error|
+|`3`|Length error|
+|`4`|Rank error|
+|`5`|Not yet implemented!|
+|`6`|Syntax error|
+|`7`|Assertion failed|

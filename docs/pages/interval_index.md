@@ -1,0 +1,8 @@
+---
+glyph: '⍸'
+pattern: 'r←x⍸y'
+name: Interval Index
+planned: true
+---
+
+`r` is the index of each major cell of `y` in the intervals defined by the major cells of `x`, which is assumed to be sorted: cells of `y` before all cells of `x` are labeled `0`, cells of `y` between the first cell and the second cell of `x` are labeled `1`, ..., cells of `y` after all cells of `x` are labeled `≢x+1`.

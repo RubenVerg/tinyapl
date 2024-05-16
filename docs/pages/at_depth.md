@@ -1,0 +1,12 @@
+---
+glyph: '⍥'
+pattern: 'r←[x](F⍥m)y'
+name: At Depth
+planned: true
+---
+
+`m` must be a 1-, 2-, or 3-element integer vector. Define three numbers `a`, `b` and `c`: if `m` is `⟨d⟩`, `a`, `b`, and `c` are `d`; if `m` is `⟨d⋄e⟩`, `a` and `c` are `e`, and `b` is `d`; if `m` is `⟨d⋄e⋄f⟩`, `a` is `d`, `b` is `e` and `c` is `f`.
+
+If `x` is not provided, `r` is the result of applying `F` to nested elements of `y` of depth `a`. If `x` is provided, `r` is the result of applying `F` to nested elements of `x` of depth `b` and nested elements of `y` of depth `c`.
+
+If `a`, `b` or `c` are positive, they indicate the maximum depth that the cells should have when applying the function. If they are negative, they indicate how many depths should be traversed before applying the function.

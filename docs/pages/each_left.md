@@ -1,0 +1,7 @@
+---
+glyph: 'ᐵ'
+pattern: 'r←x(Fᐵ)y'
+name: Each Left
+---
+
+`r` is the result of calling `F` on each element of `x` and `y` as a whole: `r←x(F¨)⊂y`.

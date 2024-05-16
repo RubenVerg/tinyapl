@@ -1,0 +1,7 @@
+---
+glyph: '>'
+pattern: 'r←x>y'
+name: Greater Than
+---
+
+`r` is the result of the scalar greater-than comparison of `x` and `y`, according to total array ordering.

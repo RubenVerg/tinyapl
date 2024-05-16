@@ -1,0 +1,7 @@
+---
+glyph: '|'
+pattern: 'r←x|y'
+name: Remainder
+---
+
+`r` is the result of the scalar application of the remainder function, $y \mod x$. If `x` is `0`, `r` is `y`, otherwise `r` is `y-x×⌊y÷x`.

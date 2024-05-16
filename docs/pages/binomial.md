@@ -1,0 +1,18 @@
+---
+glyph: '!'
+pattern: 'r←x!y'
+name: Binomial
+planned: true
+---
+
+`r` is the result of the scalar application of the binomial function, $\binom y x = \frac {y!} {x!(y - x)!}$, it represents the ways of picking `x` things from `y` things.
+
+For non-positive integer arguments, the following operation is performed:
+
+* if `y` is a negative integer:
+	* if `x` is a positive integer, `r` is `(¯1*x)×x!x-y+1`
+	* if `x` is an integer less than or equal to `y`, `r` is `(¯1*y-x)×(y-x)!-k+1`
+	* if `x` is an integer, `r` is `0`
+	* if `x` is not an integer, fails
+* if `x` and `y` are integers and if `x` is negative or greater than `y`, `r` is `0`
+* otherwise, `r` is `(!y)÷x×⍥!y-x`

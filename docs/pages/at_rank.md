@@ -1,0 +1,12 @@
+---
+glyph: '⍤'
+pattern: 'r←[x](F⍤m)y'
+name: At Rank
+planned: true
+---
+
+`m` must be a 1-, 2-, or 3-element integer vector. Define three numbers `a`, `b` and `c`: if `m` is `⟨d⟩`, `a`, `b`, and `c` are `d`; if `m` is `⟨d⋄e⟩`, `a` and `c` are `e`, and `b` is `d`; if `m` is `⟨d⋄e⋄f⟩`, `a` is `d`, `b` is `e` and `c` is `f`.
+
+If `x` is not provided, `r` is the result of applying `F` to cells of `y` of rank `a`. If `x` is provided, `r` is the result of applying `F` to cells of `x` of rank `b` and cells of `y` of rank `c`.
+
+If `a`, `b` or `c` are positive, they indicate the maximum rank that the cells should have when applying the function. If they are negative, they indicate how many ranks should be dropped before applying the function.

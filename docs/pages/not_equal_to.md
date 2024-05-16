@@ -1,0 +1,7 @@
+---
+glyph: '≠'
+pattern: 'r←x≠y'
+name: Not Equal To
+---
+
+`r` is the result of the scalar not-equality comparsion of `x` and `y`: `r←~x=y`.

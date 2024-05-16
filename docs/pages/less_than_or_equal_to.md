@@ -1,0 +1,7 @@
+---
+glyph: '≤'
+pattern: 'r←x≤y'
+name: Less Than or Equal To
+---
+
+`r` is result of the scalar application of the less-than-or-equals comparsion of `x` and `y`: `r←(x=y)∨x<y`.

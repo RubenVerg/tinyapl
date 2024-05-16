@@ -1,0 +1,7 @@
+---
+glyph: '≥'
+pattern: 'r←x≥y'
+name: Greater Than or Equal To
+---
+
+`r` is the result of the scalar greater-than-or-equals comparison: `r←(x=y)∨x>y`

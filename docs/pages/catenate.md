@@ -1,0 +1,15 @@
+---
+glyph: '⍪'
+pattern: 'r←x⍪y'
+name: Catenate
+planned: true
+---
+
+`x` and `y`, after extension, must have the same trailing axes (that is, the only difference in shape is the first element). Extension is as follows:
+
+* if `x` and `y` have the same rank, no operation is performed
+* if one of the arguments has rank one less than the other, the argument with lesser rank is promoted to have a 1-length leading axis
+* if one of the arguments is scalar, it is reshaped to an array with leading axis of length 1 and trailing axes of the other argument
+* if both arguments are scalar, they are reshaped to 1-element vectors.
+
+After extension, `r` is the major cells of `x` followed by the major cells of `y`.

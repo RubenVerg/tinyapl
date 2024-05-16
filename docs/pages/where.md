@@ -1,0 +1,7 @@
+---
+glyph: '⍸'
+pattern: 'r←⍸y'
+name: Where
+---
+
+`y` is an array of naturals. `r` is a vector containing all the indices of the elements of `y`, with a multiplicity equal to the element itself. This means that a `0` corresponds to that index not appearing in `r`, a `1` appearing once, a `2` appearing twice, et cetera.

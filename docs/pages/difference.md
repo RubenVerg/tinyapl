@@ -1,0 +1,7 @@
+---
+glyph: '~'
+pattern: 'r←x~y'
+name: Difference
+---
+
+`r` is the difference of the major cells of `x` and `y`, i.e. the cells of `x` that don't appear in `y`: `r←x⌿⍨~x∊y`.

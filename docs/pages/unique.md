@@ -1,0 +1,7 @@
+---
+glyph: '∪'
+pattern: 'r←∪y'
+name: Unique
+---
+
+`r` is the unique major cells of `y`, i.e. duplicate cells are removed: `r←y⌿⍨≠y`.
