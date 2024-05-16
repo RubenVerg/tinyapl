@@ -2,12 +2,12 @@
 /** @jsxFrag Fragment */
 
 import Sidebar from './Sidebar.tsx';
-import { Page } from '../types.d.ts';
+import { Pages } from '../types.d.ts';
 
 import { Fragment, h } from '../deps/x/htm.ts';
 
 export interface FullPageProps {
-	pages: Record<string, Page>;
+	pages: Pages;
 	children?: string | JSX.Element | JSX.Element[];
 }
 

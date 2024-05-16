@@ -1,9 +1,10 @@
 /** @jsx h */
 
-import DocsPage from './components/DocsPage.tsx';
+import InfoPage from './components/InfoPage.tsx';
+import PrimitivePage from './components/PrimitivePage.tsx';
 import FullPage from './components/FullPage.tsx';
 import Index from './components/Index.tsx';
-import { Page } from './types.d.ts';
+import { Info, Primitive } from './types.d.ts';
 import pages from './pages.ts';
 
 import { serveDir } from './deps/std/http.ts';
@@ -44,11 +45,22 @@ const index = await render(<FullPage pages={pages}><Index /></FullPage>, {
 	title: 'TinyAPL',
 });
 
-const docPage = (page: Page) => render(<FullPage pages={pages}><DocsPage page={page} /></FullPage>, {
-	title: `${page.name} - TinyAPL`,
+const infoPage = (info: Info) => render(<FullPage pages={pages}><InfoPage info={info} /></FullPage>, {
+	title: `${info.name} - TinyAPL`,
 });
 
-const docPages = Object.fromEntries(await Promise.all([...Object.entries(pages)].map(async ([k, v]) => [k, await docPage(v)])));
+const infoPages: Record<string, Response> = Object.fromEntries(await Promise.all([...Object.entries(pages.info)].map(async ([k, v]) => [k, await infoPage(v)])));
+
+const primitivePage = (primitive: Primitive) => render(<FullPage pages={pages}><PrimitivePage primitive={primitive} /></FullPage>, {
+	title: `${primitive.name} - TinyAPL`,
+});
+
+const primitivePages: Record<string, Response> = Object.fromEntries(await Promise.all([...Object.entries(pages.primitives)].map(async ([k, v]) => [k, await primitivePage(v)])));
+
+const allPages = {
+	info: infoPages,
+	primitive: primitivePages,
+};
 
 async function handler(req: Request) {
 	const { pathname } = new URL(req.url);
@@ -56,10 +68,13 @@ async function handler(req: Request) {
 	if (pathname === '/') {
 		return index;
 	}
-	if (pathname.replaceAll('/', '') in pages) {
-		return docPages[pathname.replaceAll('/', '')];
-	}
 
+	for (const t of Object.keys(allPages)) {
+		if (pathname.startsWith(`/${t}`) && pathname.replace(`/${t}`, '').replaceAll('/', '') in allPages[t as keyof typeof allPages]) {
+			return allPages[t as keyof typeof allPages][pathname.replace(`/${t}`, '').replaceAll('/', '')];
+		}
+	}
+	
 	return await serveDir(req, { fsRoot: './assets' });
 }
 
