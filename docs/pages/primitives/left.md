@@ -5,3 +5,6 @@ name: Left
 ---
 
 If `x` is provided, `r` is `x`; otherwise `r` is `y`.
+
+![Same diagram](/combinators/same.svg)
+![Left diagram](/combinators/left.svg)
