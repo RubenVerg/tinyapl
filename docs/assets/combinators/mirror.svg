@@ -24,9 +24,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      showguides="true"
-     inkscape:zoom="1.195569"
-     inkscape:cx="253.01761"
-     inkscape:cy="258.87256"
+     inkscape:zoom="0.99829575"
+     inkscape:cx="257.93959"
+     inkscape:cy="260.94471"
      inkscape:window-width="1400"
      inkscape:window-height="775"
      inkscape:window-x="26"
@@ -212,10 +212,6 @@
      id="path95" />
   <path
      style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:2.11667;stroke-dasharray:none;stroke-opacity:1"
-     d="M 93.133452,50.799999 42.333447,101.59999"
-     id="path96" />
-  <path
-     style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:2.11667;stroke-dasharray:none;stroke-opacity:1"
      d="m 33.866666,33.866666 c 0,0 0.0141,-15.694937 16.933333,-16.933331"
      id="path97" />
   <path
@@ -236,4 +232,12 @@
        style="font-size:28.2223px;font-family:'APL386 Unicode';-inkscape-font-specification:'APL386 Unicode';stroke-width:2.11667"
        aria-label="y" />
   </g>
+  <path
+     style="fill:none;stroke-width:2.11667"
+     d="m 84.666666,50.799999 c 0,0 -16.933344,-5e-6 -16.933344,16.933331 0,16.933336 0,16.933336 0,16.933336 0,0 1.6e-5,16.933324 -16.933323,16.933324"
+     id="path1" />
+  <path
+     style="fill:none;stroke:#000000;stroke-width:2.11667;stroke-opacity:1"
+     d="m 93.133333,50.800003 c 0,0 -16.933336,-5e-6 -16.933336,16.933331 0,16.933336 0,16.933336 0,16.933336 0,0 8e-6,16.93332 -16.933331,16.93332"
+     id="path2" />
 </svg>
