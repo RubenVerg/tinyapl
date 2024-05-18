@@ -2,6 +2,7 @@ import * as Hast from './deps/npm/@types/hast.ts';
 import * as Mdast from './deps/npm/@types/mdast.ts';
 import { Handlers as MdastHandlers, revert } from './deps/npm/mdast-util-to-hast.ts';
 import { normalizeUri } from './deps/npm/micromark-util-sanitize-uri.ts';
+import { pointStart, pointEnd } from './deps/npm/unist-util-position.ts';
 import rehypeFormat from './deps/npm/rehype-format.ts';
 import rehypeKatex from './deps/npm/rehype-katex.ts';
 import rehypeStringify from './deps/npm/rehype-stringify.ts';
@@ -118,6 +119,45 @@ const handlers: MdastHandlers = {
 		state.patch(node, result);
 		return state.applyData(node, result);
 	},
+	table(state, node) {
+		const table = node as Mdast.Table;
+		const rows = state.all(table);
+		const firstRow = rows.shift();
+		const tableContent: Hast.Element[] = [];
+		if (firstRow) {
+			const head: Hast.Content = {
+				type: 'element',
+				tagName: 'thead',
+				properties: {},
+				children: state.wrap([firstRow], true),
+			};
+			state.patch(table.children[0], head);
+			tableContent.push(head)
+		}
+
+		if (rows.length > 0) {
+			const body: Hast.Content = {
+				type: 'element',
+				tagName: 'tbody',
+				properties: {},
+				children: state.wrap(rows, true),
+			}
+
+			const start = pointStart(table.children[1]);
+			const end = pointEnd(table.children.at(-1));
+			if (start && end) body.position = { start, end };
+			tableContent.push(body);
+		}
+
+		const result: Hast.Content = {
+			type: 'element',
+			tagName: 'table',
+			properties: { class: 'table' },
+			children: state.wrap(tableContent, true),
+		};
+		state.patch(table, result);
+		return state.applyData(table, result);
+	}
 };
 
 export function readFrontmatter(source: string) {
@@ -164,11 +204,11 @@ export function renderMarkdown(source: string) {
 		.use(remarkGfm)
 		.use(remarkFrontmatter)
 		.use(remarkMath)
-		.use(remarkRehype, null, { handlers })
+		.use(remarkRehype, null, { handlers, allowDangerousHtml: true })
 		.use(fixFootnoteLabels)
 		.use(rehypeKatex)
 		.use(rehypeFormat)
-		.use(rehypeStringify)
+		.use(rehypeStringify, { allowDangerousHtml: true })
 		.processSync(source)
 		.value as string;
 }

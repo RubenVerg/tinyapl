@@ -17,6 +17,7 @@
       "npm:remark-parse@10.0.2": "npm:remark-parse@10.0.2",
       "npm:remark-rehype@10.1.0": "npm:remark-rehype@10.1.0",
       "npm:unified@10.1.2": "npm:unified@10.1.2",
+      "npm:unist-util-position@5.0.0": "npm:unist-util-position@5.0.0",
       "npm:unist-util-visit@5.0.0": "npm:unist-util-visit@5.0.0",
       "npm:yaml@2.3.1": "npm:yaml@2.3.1"
     },
@@ -1493,6 +1494,12 @@
         "integrity": "sha512-kUBE91efOWfIVBo8xzh/uZQ7p9ffYRtUbMRZBNFYwf0RK8koUMx6dGUfwylLOKmaT2cs4wSW96QoYUSXAyEtpg==",
         "dependencies": {
           "@types/unist": "@types/unist@2.0.10"
+        }
+      },
+      "unist-util-position@5.0.0": {
+        "integrity": "sha512-fucsC7HjXvkB5R3kTCO7kUjRdrS0BJt3M/FPxmHMBOm8JQi2BsHAHFsy27E0EolP8rp0NzXsJ+jNPyDWvOJZPA==",
+        "dependencies": {
+          "@types/unist": "@types/unist@3.0.2"
         }
       },
       "unist-util-remove-position@4.0.2": {
