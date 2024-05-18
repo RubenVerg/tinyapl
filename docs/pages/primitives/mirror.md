@@ -7,4 +7,6 @@ planned: true
 
 `r` is `(y G x) F (x G y)`.
 
-![Mirror diagram](/combinators/mirror.svg)
+|Dyad|
+|:--:|
+|<img src="/combinators/mirror.svg" width="128" alt="Mirror diagram">|

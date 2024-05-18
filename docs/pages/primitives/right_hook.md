@@ -6,5 +6,6 @@ name: Right Hook
 
 If `x` is not provided, `r` is `y F (G y)`; if `x` is provided, `r` is `x F (G y)`.
 
-![Right hook diagram](/combinators/right_hook.svg)
-![After diagram](/combinators/after.svg)
+|Monad|Dyad|
+|:---:|:--:|
+|<img src="/combinators/right_hook.svg" width="128" alt="Right Hook diagram">|<img src="/combinators/after.svg" width="128" alt="After diagram">|

@@ -6,5 +6,6 @@ name: Right
 
 `r` is `y`.
 
-![Same diagram](/combinators/same.svg)
-![Right diagram](/combinators/right.svg)
+|Monad|Dyad|
+|:---:|:--:|
+|<img src="/combinators/same.svg" width="128" alt="Same diagram">|<img src="/combinators/right.svg" width="128" alt="Right diagram">|

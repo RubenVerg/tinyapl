@@ -6,5 +6,6 @@ name: Before
 
 If `x` is not provided, `r` is `G (F y)`; if `x` is provided, `r` is `(F x) G y`.
 
-![Reverse compose diagram](/combinators/reverse_compose.svg)
-![Before diagram](/combinators/before.svg)
+|Monad|Dyad|
+|:---:|:--:|
+|<img src="/combinators/reverse_compose.svg" width="128" alt="Reverse Compose diagram">|<img src="/combinators/before.svg" width="128" alt="Before diagram">|

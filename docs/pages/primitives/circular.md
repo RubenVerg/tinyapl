@@ -26,11 +26,11 @@ name: Circular
 |`8`|$\sqrt{-1 - y^2}$|
 |`¯8`|$-\sqrt{-1 - y^2}$|
 |`9`|$\mathop{\text{Re}} y$|
-|`¯9`|y$|
+|`¯9`|$y$|
 |`10`|$\mid y \mid$|
 |`¯10`|$\overline y$ (conjugate of $y$)|
 |`11`|$\mathop{\text{Im}} y$|
-|`¯11`|iy$|
+|`¯11`|$iy$|
 |`12`|$\mathop{\text{Arg}} y$|
 |`¯12`|$e^{iy}$|
 

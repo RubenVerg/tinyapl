@@ -6,5 +6,6 @@ name: Constant
 
 `r` is `n`.
 
-![Constant (monad) diagram](/combinators/constant_1.svg)
-![Constant (dyad) diagram](/combinators/constant_2.svg)
+|Monad|Dyad|
+|:---:|:--:|
+|<img src="/combinators/constant_1.svg" width="128" alt="Constant (monad) diagram">|<img src="/combinators/constant_2.svg" width="128" alt="Constant (dyad) diagram">|

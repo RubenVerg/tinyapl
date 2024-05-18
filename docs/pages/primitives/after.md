@@ -6,5 +6,6 @@ name: After
 
 If `x` is not provided, `r` is `F (G y)`; if `x` is provided, `r` is `x F (G y)`.
 
-![Compose diagram](/combinators/compose.svg)
-![After diagram](/combinators/after.svg)
+|Monad|Dyad|
+|:---:|:--:|
+|<img src="/combinators/compose.svg" width="128" alt="Compose diagram">|<img src="/combinators/after.svg" width="128" alt="After diagram">|

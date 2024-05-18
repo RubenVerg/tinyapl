@@ -6,4 +6,6 @@ name: Commute
 
 `r` is `y F x`.
 
-![Commute diagram](/combinators/commute.svg)
+|Dyad|
+|:--:|
+|<img src="/combinators/commute.svg" width="128" alt="Commute diagram">|

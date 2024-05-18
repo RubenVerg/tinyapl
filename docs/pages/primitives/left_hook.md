@@ -6,5 +6,6 @@ name: Left Hook
 
 If `x` is not provided, `r` is `(F y) G y`; if `x` is provided, `r` is `(F x) G y`.
 
-![Left hook diagram](/combinators/left_hook.svg)
-![Before diagram](/combinators/before.svg)
+|Monad|Dyad|
+|:---:|:--:|
+|<img src="/combinators/left_hook.svg" width="128" alt="Left Hook diagram">|<img src="/combinators/before.svg" width="128" alt="Before diagram">|
