@@ -4,4 +4,4 @@ pattern: 'r←b∨c'
 name: Or
 ---
 
-`r` is the result of the scalar application of the or function, $b \lor c$. For non-boolean arguments, see Greatest Common Divisor.
+`r` is the result of the scalar application of the or function, $b \lor c$. For non-boolean arguments, see [Greatest Common Divisor](/primitive/gcd).

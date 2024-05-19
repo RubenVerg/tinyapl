@@ -225,8 +225,8 @@ spec = do
       describe "floor" $ do
         it "floors real numbers" $ do
           m P.floor (vector [Number 1, Number 1.25, Number -1.75]) `shouldReturn` pure (vector [Number 1, Number 1, Number -2])
-        it "floors components of complex numbers" $ do
-          m P.floor (vector [Number (1.2 :+ 1.7), Number (0.25 :+ 2.9)]) `shouldReturn` pure (vector [Number (1 :+ 1), Number (0 :+ 2)])
+        it "floors complex numbers" $ do
+          m P.floor (vector [Number (0.25 :+ 0.25), Number (0.75 :+ 0.25), Number (0.25 :+ 0.75)]) `shouldReturn` pure (vector [Number 0, Number 1, Number (0 :+ 1)])
       describe "min" $ do
         it "returns the minimum of real numbers" $ do
           d P.floor (vector [Number 3, Number -1]) (vector [Number 2, Number 5]) `shouldReturn` pure (vector [Number 2, Number -1])
@@ -237,8 +237,8 @@ spec = do
       describe "ceiling" $ do
         it "ceils real numbers" $ do
           m P.ceil (vector [Number 1, Number 1.25, Number -1.75]) `shouldReturn` pure (vector [Number 1, Number 2, Number -1])
-        it "ceils components of complex numbers" $ do
-          m P.ceil (vector [Number (1.2 :+ 1.7), Number (0.25 :+ 2.9)]) `shouldReturn` pure (vector [Number (2 :+ 2), Number (1 :+ 3)])
+        it "ceils complex numbers" $ do
+          m P.ceil (vector [Number (0.25 :+ 0.25), Number (0.75 :+ 0.25), Number (0.75 :+ 0.75)]) `shouldReturn` pure (vector [Number (0 :+ 1), Number 1, Number (1 :+ 1)])
       describe "max" $ do
         it "returns the maximum of real numbers" $ do
           d P.ceil (vector [Number 3, Number -1]) (vector [Number 2, Number 5]) `shouldReturn` pure (vector [Number 3, Number 5])
@@ -273,11 +273,17 @@ spec = do
       describe "and" $ do
         it "combines boolean values with the and logical operation" $ do
           d P.and (vector [Number 0, Number 0, Number 1, Number 1]) (vector [Number 0, Number 1, Number 0, Number 1]) `shouldReturn` pure (vector [Number 0, Number 0, Number 0, Number 1])
+      describe "lcm" $ do
+        it "applies the LCM function to numbers" $ do
+          d P.and (vector [Number 2, Number 0.5]) (vector [Number 3, Number 4.5]) `shouldReturn` pure (vector [Number 6, Number 4.5])
     
     describe [G.or] $ do
       describe "or" $ do
         it "combines boolean values with the or logical operation" $ do
           d P.or (vector [Number 0, Number 0, Number 1, Number 1]) (vector [Number 0, Number 1, Number 0, Number 1]) `shouldReturn` pure (vector [Number 0, Number 1, Number 1, Number 1])
+      describe "gcd" $ do
+        it "applies the GCD function to numbers" $ do
+          d P.or (vector [Number 2, Number 0.5]) (vector [Number 3, Number 4.5]) `shouldReturn` pure (vector [Number 1, Number 0.5])
 
     describe [G.nand] $ do
       describe "nand" $ do
@@ -479,8 +485,8 @@ spec = do
       describe "residue" $ do
         it "returns the residue of division" $ do
           d P.abs (vector [Number 2, Number 2, Number 0.5]) (vector [Number 4, Number -5, Number 3.2]) `shouldReturn` pure (vector [Number 0, Number 1, Number 0.2])
-        it "fails with zero left argument" $ do
-          e2m <$> d P.abs (scalar $ Number 0) (scalar $ Number 3) `shouldReturn` Nothing
+        it "returns the right argument with zero left argument" $ do
+          d P.abs (scalar $ Number 0) (scalar $ Number 3) `shouldReturn` pure (scalar $ Number 3)
     
     describe [G.phase] $ do
       describe "phase" $ do

@@ -77,11 +77,9 @@ circle = pureFunction (Just $ monadN2N' (pi *)) (Just $ dyadNN2N $ \cases
   (-12) y -> pure $ exp $ y * (0 :+ 1)
   _     _ -> err $ DomainError "Invalid left argument to circular") [G.circle]
 root = pureFunction (Just $ monadN2N' sqrt) (Just $ dyadNN2N' $ \x y -> y ** recip x) [G.root]
-floor = pureFunction (Just $ monadN2N' $ \(a :+ b) -> fromInteger (Prelude.floor a) :+ fromInteger (Prelude.floor b)) (Just $ scalarDyad $ pure .: Ord.min) [G.floor]
-ceil = pureFunction (Just $ monadN2N' $ \(a :+ b) -> fromInteger (ceiling a) :+ fromInteger (ceiling b)) (Just $ scalarDyad $ pure .: Ord.max) [G.ceil]
-round = pureFunction (Just $ monadN2N' $ \(a :+ b) -> let
-  r x = Prelude.floor $ x + 0.5
-  in fromInteger (r a) :+ fromInteger (r b)) Nothing [G.round]
+floor = pureFunction (Just $ monadN2N' complexFloor) (Just $ scalarDyad $ pure .: Ord.min) [G.floor]
+ceil = pureFunction (Just $ monadN2N' complexCeiling) (Just $ scalarDyad $ pure .: Ord.max) [G.ceil]
+round = pureFunction (Just $ monadN2N' $ \(a :+ b) -> componentFloor $ (a + 0.5) :+ (b + 0.5)) Nothing [G.round]
 less = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (<)) [G.less]
 lessEqual = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (<=)) [G.lessEqual]
 equal = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (==)) [G.equal]
@@ -91,8 +89,8 @@ notEqual = pureFunction (Just $ \x -> do
   let cells = majorCells x
   return $ vector $ (\(c, idx) -> boolToScalar $ fromJust (c `elemIndex` cells) == idx) <$> zip cells [0..]
   ) (Just $ scalarDyad $ pure .: boolToScalar .: (/=)) [G.notEqual]
-and = pureFunction Nothing (Just $ dyadBB2B' (&&)) [G.and]
-or = pureFunction Nothing (Just $ dyadBB2B' (||)) [G.or]
+and = pureFunction Nothing (Just $ dyadNN2N' complexLCM) [G.and]
+or = pureFunction Nothing (Just $ dyadNN2N' complexGCD) [G.or]
 nand = pureFunction Nothing (Just $ dyadBB2B' $ not .: (&&)) [G.nand]
 nor = pureFunction Nothing (Just $ dyadBB2B' $ not .: (||)) [G.nor]
 cartesian = pureFunction (Just $ monadN2N' (* (0 :+ 1))) (Just $ dyadNN2N' $ \x y -> x + (0 :+ 1) * y) [G.cartesian]
@@ -178,9 +176,7 @@ replicate = pureFunction Nothing (Just $ \r arr -> do
   let cells = majorCells arr
   if length rs /= length cells then err $ LengthError "Replicate: different lengths in left and right argument"
   else return $ fromMajorCells $ concat $ zipWith genericReplicate rs cells) [G.replicate]
-abs = pureFunction (Just $ monadN2N' Prelude.abs) (Just $ dyadNN2N $ \x y ->
-  if x == 0 then err $ DomainError "Remainder by zero"
-  else return $ y - (fromInteger (Prelude.floor $ realPart $ y / x) :+ fromInteger (Prelude.floor $ imagPart $ y / x)) * x) [G.abs]
+abs = pureFunction (Just $ monadN2N' Prelude.abs) (Just $ dyadNN2N' complexRemainder) [G.abs]
 phase = pureFunction (Just $ monadN2N' $ \x -> Data.Complex.phase x :+ 0) (Just $ dyadNN2N' $ \x y -> Prelude.abs x * exp ((0 :+ 1) * y)) [G.phase]
 real = pureFunction (Just $ monadN2N' $ \x -> realPart x :+ 0) (Just $ dyadNN2N' $ \x y -> realPart y :+ imagPart x) [G.real]
 imag = pureFunction (Just $ monadN2N' $ \x -> imagPart x :+ 0) (Just $ dyadNN2N' $ \x y -> realPart x :+ imagPart y) [G.imag]

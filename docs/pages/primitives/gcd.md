@@ -2,7 +2,6 @@
 glyph: '∨'
 pattern: 'r←x∨y'
 name: Greatest Common Divisor
-planned: true
 ---
 
 `r` is the result of the scalar application of the GCD function, $\mathop{\text{gcd}}(x, y)$.
