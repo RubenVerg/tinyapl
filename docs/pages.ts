@@ -1,4 +1,4 @@
-import { Info, Primitive, Pages } from './types.d.ts';
+import { Info, Primitive, Quad, Pages } from './types.d.ts';
 import { readFrontmatter, renderMarkdown } from './markdown.ts';
 import { recordGetter } from './utils.ts';
 
@@ -30,7 +30,24 @@ function readPrimitive(path: string, src: string): Primitive {
 	};
 }
 
-const pages: Pages = { info: {}, primitives: {} };
+function readQuad(path: string, src: string): Quad {
+	const frontmatter = recordGetter(readFrontmatter(src));
+	const body = renderMarkdown(src);
+	const name = frontmatter.get<string>('name') ?? (console.warn(`No name for ${path}`), path);
+	const glyph = frontmatter.get<string>('glyph') ?? (console.warn(`No glyph for ${name}`), '');
+	const pattern = frontmatter.get<string>('pattern') ?? (console.warn(`No pattern for ${name}`), '');
+	const category = frontmatter.get<string>('category') ?? (console.warn(`No category for ${name}`), 'Core');
+	return {
+		glyph,
+		pattern,
+		name,
+		category,
+		planned: frontmatter.get('planned') ?? false,
+		body,
+	};
+}
+
+const pages: Pages = { info: {}, primitives: {}, quads: {} };
 
 for await (const file of Deno.readDir('pages/info')) {
 	if (file.isFile && file.name.endsWith('.md')) {
@@ -43,6 +60,13 @@ for await (const file of Deno.readDir('pages/primitives')) {
 	if (file.isFile && file.name.endsWith('.md')) {
 		const path = file.name.slice(0, -3);
 		pages.primitives[path] = readPrimitive(path, await Deno.readTextFile(`pages/primitives/${file.name}`));
+	}
+}
+
+for await (const file of Deno.readDir('pages/quads')) {
+	if (file.isFile && file.name.endsWith('.md')) {
+		const path = file.name.slice(0, -3);
+		pages.quads[path] = readQuad(path, await Deno.readTextFile(`pages/quads/${file.name}`))
 	}
 }
 

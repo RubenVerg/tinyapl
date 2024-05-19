@@ -2,9 +2,10 @@
 
 import InfoPage from './components/InfoPage.tsx';
 import PrimitivePage from './components/PrimitivePage.tsx';
+import QuadPage from './components/QuadPage.tsx';
 import FullPage from './components/FullPage.tsx';
 import Index from './components/Index.tsx';
-import { Info, Primitive } from './types.d.ts';
+import { Info, Primitive, Quad } from './types.d.ts';
 import pages from './pages.ts';
 
 import { serveDir } from './deps/std/http.ts';
@@ -53,14 +54,20 @@ const primitivePage = (primitive: Primitive) => render(<FullPage pages={pages}><
 	title: `${primitive.name} - TinyAPL`,
 });
 
+const quadPage = (quad: Quad) => render(<FullPage pages={pages}><QuadPage quad={quad} /></FullPage>, {
+	title: `${quad.name} - TinyAPL`,
+});
+
 const directories: Record<string, keyof typeof pages> = {
 	info: 'info',
 	primitive: 'primitives',
+	quad: 'quads',
 }
 
 const renderers = {
 	info: infoPage,
 	primitives: primitivePage,
+	quads: quadPage,
 };
 
 if (Deno.args.includes('--dev')) {

@@ -5,9 +5,18 @@ export interface Info {
 }
 
 export interface Primitive {
-	glyph: string
+	glyph: string;
 	pattern: string;
 	name: string;
+	planned: boolean;
+	body: string;
+}
+
+export interface Quad {
+	glyph: string;
+	pattern: string;
+	name: string;
+	category: string;
 	planned: boolean;
 	body: string;
 }
@@ -15,4 +24,5 @@ export interface Primitive {
 export interface Pages {
 	info: Record<string, Info>;
 	primitives: Record<string, Primitive>;
+	quads: Record<string, Quad>;
 }
