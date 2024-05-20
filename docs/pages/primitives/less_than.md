@@ -4,4 +4,4 @@ pattern: 'r←x<y'
 name: Less Than
 ---
 
-`r` is the result of the scalar less-than comparsion of `x` and `y`, according to total array ordering.
+`r` is the result of the scalar less-than comparsion of `x` and `y`, according to [total array ordering](/info/ordering).
