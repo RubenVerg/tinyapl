@@ -1,0 +1,13 @@
+# <img width='64' height='64' src='/logo.svg' /> TinyAPL
+
+TinyAPL is a tiny[^1] APL dialect and interpreter in Haskell.
+
+It is being implemented in a [series of posts](https://blog.rubenverg.com/?tag=tinyapl) on my blog.
+
+Source code is available [<i class='bi bi-github'></i> on GitHub](https://github.com/RubenVerg/tinyapl).
+
+<a class='btn btn-primary me-1' href='https://github.com/RubenVerg/tinyapl/releases/'><i class='bi bi-download'></i> Download</a> (requires [Wasmtime](https://wasmtime.dev/) or another WASM runtime).
+
+This documentation is split in three parts: information, which contains useful info; primitives, which describe each primitive (including planned ones); quad names, which describe each quad name and list its category (Core, for quad names that are always available; I/O, for quad names that are only available in contexts where IO can be performed).
+
+[^1]: Well, I say tiny, but there's ~150 primitives including planned ones...

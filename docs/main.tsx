@@ -5,7 +5,7 @@ import PrimitivePage from './components/PrimitivePage.tsx';
 import QuadPage from './components/QuadPage.tsx';
 import FullPage from './components/FullPage.tsx';
 import Index from './components/Index.tsx';
-import { Info, Primitive, Quad } from './types.d.ts';
+import { Info, Primitive, Quad, Pages } from './types.d.ts';
 import pages from './pages.ts';
 
 import { serveDir } from './deps/std/http.ts';
@@ -42,7 +42,7 @@ function render(page: JSX.Element, options: Partial<HtmlOptions>) {
 	});
 }
 
-const index = await render(<FullPage pages={pages}><Index /></FullPage>, {
+const index = await render(<FullPage pages={pages}><Index body={pages.index} /></FullPage>, {
 	title: 'TinyAPL',
 });
 
@@ -65,6 +65,7 @@ const directories: Record<string, keyof typeof pages> = {
 }
 
 const renderers = {
+	index: (_: unknown) => Promise.resolve(index),
 	info: infoPage,
 	primitives: primitivePage,
 	quads: quadPage,
@@ -74,6 +75,7 @@ if (Deno.args.includes('--dev')) {
 	// In dev mode, render all pages once to be sure that they don't have mistakes.
 	console.log('Checking pages...');
 	for (const [typ, ps] of Object.entries(pages)) {
+		if (typ === 'index') continue;
 		for (const p of Object.keys(ps)) {
 			await (renderers[typ as keyof typeof pages] as (p: unknown) => Promise<Response>)(ps[p]).then(x => x.text());
 		}
@@ -88,9 +90,10 @@ async function handler(req: Request) {
 	}
 
 	for (const [dir, typ] of Object.entries(directories)) {
+		if (typ === 'index') continue;
 		if (pathname.startsWith(`/${dir}`)) {
 			const path = pathname.replace(`/${dir}`, '').replaceAll('/', '');
-			return (renderers[typ] as (p: unknown) => Promise<Response>)(pages[typ][path]);
+			return (renderers[typ] as (p: unknown) => Promise<Response>)((pages as Pick<Pages, Exclude<keyof Pages, 'index'>>)[typ][path]);
 		}
 	}
 	

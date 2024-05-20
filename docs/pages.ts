@@ -47,7 +47,9 @@ function readQuad(path: string, src: string): Quad {
 	};
 }
 
-const pages: Pages = { info: {}, primitives: {}, quads: {} };
+const pages: Pages = { index: '', info: {}, primitives: {}, quads: {} };
+
+pages.index = renderMarkdown(await Deno.readTextFile('pages/index.md'));
 
 for await (const file of Deno.readDir('pages/info')) {
 	if (file.isFile && file.name.endsWith('.md')) {

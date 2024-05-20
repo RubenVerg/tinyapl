@@ -1,5 +1,5 @@
 ---
-glpyh: '⍞'
+glyph: '⍞'
 pattern: 'r←⍞'
 name: Character Input
 ---

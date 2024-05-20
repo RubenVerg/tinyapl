@@ -22,6 +22,7 @@ export interface Quad {
 }
 
 export interface Pages {
+	index: string;
 	info: Record<string, Info>;
 	primitives: Record<string, Primitive>;
 	quads: Record<string, Quad>;
