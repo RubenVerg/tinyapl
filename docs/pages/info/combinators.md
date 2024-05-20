@@ -22,7 +22,7 @@ A combinator is a function or operator that only refers to its arguments and ope
 |$\Phi$|$\lambda FGHy.F(Gy)(Hy)$|Phoenix|[`«»`](/primitive/fork)|<img src="/combinators/fork_1.svg" width="128" alt="Fork (monad) diagram">|
 |$\Phi_1$|$\lambda FGHxy.F(Gxy)(Hxy)$|Pheasant|[`«»`](/primitive/fork)|<img src="/combinators/fork_2.svg" width="128" alt="Fork (dyad) diagram">|
 |${\mathrm D}_2$|$\lambda FGHxy.G(Fx)(Hy)$|Dovekie|[`⊸`](/primitive/left_hook) + [`⟜`](/primitive/right_hook)|<img src="/combinators/bracket.svg" width="128" alt="Bracket diagram">|
-|$\mathrm P$[^2]|$\lambda FGxy.F(Gyx)(Gxy)$|Parrot|[`⸚`](/primitive/mirror)|<img src="/combinators/mirror.svg" width="128" alt="Mirror diagram">|
+|$\mathrm P$|$\lambda FGxy.F(Gyx)(Gxy)$|Parrot[^2]|[`⸚`](/primitive/mirror)|<img src="/combinators/mirror.svg" width="128" alt="Mirror diagram">|
 
 Additionally, some other primitives have combinator-like behavior:
 
