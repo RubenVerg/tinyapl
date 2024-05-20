@@ -15,7 +15,7 @@ function Sidebar({ id, pages }: SidebarProps) {
 	return <div id={id} class='offcanvas offcanvas-start w-25' tabindex={-1} data-bs-keyboard='false' data-bs-backdrop='false'>
 		<div class='offcanvas-header'>
 			<h6 class='offcanvas-title d-none d-sm-block'>Docs</h6>
-			<button type='button' class='btn-close text-reset' data-bs-dismiss={id} />
+			<button type='button' class='btn-close text-reset' data-bs-dismiss='offcanvas' aria-label='Close' />
 		</div>
 		<div class='offcanvas-body'>
 			<ul class={navClass}>
