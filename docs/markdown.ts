@@ -34,7 +34,7 @@ const handlers: MdastHandlers = {
 		const properties = {
 			href: normalizeUri(link.url),
 			...link.title && { title: link.title },
-			class: 'link-body-emphasis link-underline-opacity-50',
+			class: 'link-underline link-underline-opacity-0 link-underline-opacity-75-hover',
 		};
 		const result = {
 			type: 'element',
