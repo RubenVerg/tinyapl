@@ -6,7 +6,7 @@ import QuadPage from './components/QuadPage.tsx';
 import FullPage from './components/FullPage.tsx';
 import Index from './components/Index.tsx';
 import { Info, Primitive, Quad, Pages } from './types.d.ts';
-import pages from './pages.ts';
+import pages, { loadPages } from './pages.ts';
 
 import { serveDir } from './deps/std/http.ts';
 import html, { h, HtmlOptions } from './deps/x/htm.ts';
@@ -74,6 +74,7 @@ const renderers = {
 if (Deno.args.includes('--dev')) {
 	// In dev mode, render all pages once to be sure that they don't have mistakes.
 	console.log('Checking pages...');
+	await loadPages();
 	for (const [typ, ps] of Object.entries(pages)) {
 		if (typ === 'index') continue;
 		for (const p of Object.keys(ps)) {
