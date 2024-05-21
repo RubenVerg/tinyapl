@@ -1,6 +1,7 @@
 {
   "tasks": {
     "dev": "cd docs && deno run --unstable --allow-net --allow-read --allow-env --watch main.tsx --dev",
-    "serve": "cd docs && deno run --unstable --allow-net --allow-read --allow-env --no-check main.tsx"
+    "serve": "cd docs && deno run --unstable --allow-net --allow-read --allow-env --no-check main.tsx",
+    "precompile": "cd docs && deno run --unstable --allow-read --allow-write --allow-env precompile.tsx"
   }
 }
