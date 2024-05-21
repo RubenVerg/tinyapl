@@ -2,7 +2,7 @@ import { Info, Primitive, Quad, Pages } from './types.d.ts';
 import { readFrontmatter, renderMarkdown } from './markdown.ts';
 import { recordGetter } from './utils.ts';
 
-if (!Deno.cwd().endsWith('docs')) Deno.chdir('docs');
+if (!Deno.cwd().endsWith('docs') && !Deno.cwd().endsWith('docs/')) Deno.chdir('docs');
 
 function readInfo(path: string, src: string): Info {
 	const frontmatter = recordGetter(readFrontmatter(src));
