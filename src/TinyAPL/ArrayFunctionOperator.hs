@@ -13,6 +13,7 @@ import Control.Monad.State
 import Control.Monad.Except
 import Control.Applicative (Alternative((<|>)))
 import Data.List.NonEmpty (NonEmpty, toList)
+import Data.Tuple (swap)
 
 -- * Arrays
 
@@ -148,6 +149,24 @@ instance Show Array where
     | not (null xs) && all (\case (Character _) -> True; _ -> False) xs = xs >>= show
     | otherwise                                                         = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (show . fromScalar <$> xs) ++ [snd G.vector]
   show arr                                                              = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (show <$> majorCells arr) ++ [snd G.highRank]
+
+scalarRepr :: ScalarValue -> String
+scalarRepr (Number x) = showComplex x
+scalarRepr (Character x) | x == '\'' = [G.first, G.stringDelimiter, G.charDelimiter, G.stringDelimiter]
+                         | otherwise = [G.charDelimiter, x, G.charDelimiter]
+scalarRepr (Box xs) = G.enclose : arrayRepr xs
+
+stringRepr :: [Char] -> String
+stringRepr str = [G.stringDelimiter] ++ concatMap (\c -> case lookup c (swap <$> G.escapes) of
+  Just e -> [G.stringEscape, e]
+  Nothing -> [c]) str ++ [G.stringDelimiter]
+
+arrayRepr :: Array -> String
+arrayRepr (Array [] [s]) = scalarRepr s
+arrayRepr (Array [_] xs)
+  | not (null xs) && all (\case (Character _) -> True; _ -> False) xs = stringRepr $ (\case (Character c) -> c; _ -> undefined) <$> xs
+  | otherwise = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (arrayRepr . fromScalar <$> xs) ++ [snd G.vector]
+arrayRepr arr = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (arrayRepr <$> majorCells arr) ++ [snd G.highRank]
 
 -- * Conversions
 

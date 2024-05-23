@@ -191,12 +191,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
       escape = do
         _ <- char G.stringEscape
         c <- oneOf [G.stringDelimiter, G.stringEscape, 'n', 'r', 't']
-        return $ fromJust $ lookup c
-          [ (G.stringDelimiter, G.stringDelimiter)
-          , (G.stringEscape, G.stringEscape)
-          , ('n', '\n')
-          , ('r', '\r')
-          , ('t', '\t') ]
+        return $ fromJust $ lookup c G.escapes
 
       nonEscape :: Parser Char
       nonEscape = noneOf [G.stringDelimiter, G.stringEscape]

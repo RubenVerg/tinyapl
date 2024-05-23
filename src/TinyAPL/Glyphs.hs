@@ -21,6 +21,13 @@ guard = ':'
 exit = '■'
 inlineComment = ('⟃', '⟄')
 
+escapes =
+  [ (stringDelimiter, stringDelimiter)
+  , (stringEscape, stringEscape)
+  , ('n', '\n')
+  , ('r', '\r')
+  , ('t', '\t') ]
+
 -- * Identifiers
 
 delta = '∆'
