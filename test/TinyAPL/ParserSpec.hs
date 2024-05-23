@@ -53,24 +53,29 @@ spec = do
     it "parses array names" $ do
       tok "abc ∆x" `shouldBe` pure [[TokenArrayName "abc" emptyPos, TokenArrayName "∆x" emptyPos]]
       tok "⍺ ⍺⍺ ⍵ ⍵⍵ ⎕ ⍞" `shouldBe` pure [[TokenArrayName "⍺" emptyPos, TokenArrayName "⍺⍺" emptyPos, TokenArrayName "⍵" emptyPos, TokenArrayName "⍵⍵" emptyPos, TokenArrayName "⎕" emptyPos, TokenArrayName "⍞" emptyPos]]
+      tok "⎕io" `shouldBe` pure [[TokenArrayName "⎕io" emptyPos]]
 
     it "parses function names" $ do
       tok "Abc ⍙y" `shouldBe` pure [[TokenFunctionName "Abc" emptyPos, TokenFunctionName "⍙y" emptyPos]]
       tok "⍶⍶ ⍹⍹ ∇" `shouldBe` pure [[TokenFunctionName "⍶⍶" emptyPos, TokenFunctionName "⍹⍹" emptyPos, TokenFunctionName "∇" emptyPos]]
+      tok "⎕C" `shouldBe` pure [[TokenFunctionName "⎕C" emptyPos]]
   
     it "parses adverb names" $ do
       tok "_Abc _abc" `shouldBe` pure [[TokenAdverbName "_Abc" emptyPos, TokenAdverbName "_abc" emptyPos]]
       tok "_∇" `shouldBe` pure [[TokenAdverbName "_∇" emptyPos]]
+      tok "⎕_BinFile" `shouldBe` pure [[TokenAdverbName "⎕_BinFile" emptyPos]]
 
     it "parses conjunction names" $ do
       tok "_Abc_ _abc_" `shouldBe` pure [[TokenConjunctionName "_Abc_" emptyPos, TokenConjunctionName "_abc_" emptyPos]]
       tok "_∇_" `shouldBe` pure [[TokenConjunctionName "_∇_" emptyPos]]
+      tok "⎕_Whatever_" `shouldBe` pure [[TokenConjunctionName "⎕_Whatever_" emptyPos]]
 
     it "parses assignment" $ do
       tok "abc←3" `shouldBe` pure [[TokenArrayAssign "abc" [TokenNumber 3 emptyPos] emptyPos]]
       tok "Abc←3" `shouldBe` pure [[TokenFunctionAssign "Abc" [TokenNumber 3 emptyPos] emptyPos]]
       tok "_Abc←3" `shouldBe` pure [[TokenAdverbAssign "_Abc" [TokenNumber 3 emptyPos] emptyPos]]
       tok "_Abc_←3" `shouldBe` pure [[TokenConjunctionAssign "_Abc_" [TokenNumber 3 emptyPos] emptyPos]]
+      tok "⎕seed←3" `shouldBe` pure [[TokenArrayAssign "⎕seed" [TokenNumber 3 emptyPos] emptyPos]]
 
     it "parses dfns and dops" $ do
       tok "{3⋄1}" `shouldBe` pure [[TokenDfn [[TokenNumber 3 emptyPos], [TokenNumber 1 emptyPos]] emptyPos]]

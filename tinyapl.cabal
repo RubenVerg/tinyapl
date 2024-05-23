@@ -26,6 +26,7 @@ library
     import:           warnings
     exposed-modules:  TinyAPL.Glyphs
                     , TinyAPL.ArrayFunctionOperator
+                    , TinyAPL.CoreQuads
                     , TinyAPL.Error
                     , TinyAPL.Interpreter
                     , TinyAPL.Parser

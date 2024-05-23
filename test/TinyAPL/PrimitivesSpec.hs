@@ -3,6 +3,7 @@
 module TinyAPL.PrimitivesSpec where
 
 import TinyAPL.ArrayFunctionOperator
+import TinyAPL.CoreQuads
 import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
 import qualified TinyAPL.Primitives as P
@@ -12,7 +13,7 @@ import Data.Complex
 
 spec :: Spec
 spec = do
-  let scope = Scope [("l", vector $ Character <$> ['a'..'z'])] [] [] [] Nothing
+  let scope = Scope [("l", vector $ Character <$> ['a'..'z'])] [] [] [] Nothing core
 
   let m :: Function -> Array -> IO (Result Array)
       m fn y = runResult $ fst <$> runSt (callMonad fn y) scope

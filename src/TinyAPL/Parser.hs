@@ -211,7 +211,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     primArray = withPos $ TokenPrimArray <$> oneOf G.arrays
 
     arrayName :: Parser String
-    arrayName = try (string [G.alpha, G.alpha]) <|> try (string [G.omega, G.omega]) <|> try (string [G.alpha]) <|> try (string [G.omega]) <|> try (string [G.quad]) <|> try (string [G.quadQuote]) <|> liftA2 (:) (oneOf arrayStart) (many $ oneOf identifierRest)
+    arrayName = try (liftA3 (\x y z -> x : y : z) (char G.quad) (oneOf arrayStart) (many $ oneOf identifierRest)) <|> try (string [G.alpha, G.alpha]) <|> try (string [G.omega, G.omega]) <|> try (string [G.alpha]) <|> try (string [G.omega]) <|> try (string [G.quad]) <|> try (string [G.quadQuote]) <|> liftA2 (:) (oneOf arrayStart) (many $ oneOf identifierRest)
 
     arrayAssign :: Parser Token
     arrayAssign = withPos $ liftA2 TokenArrayAssign arrayName (between whitespace whitespace (char G.assign) *> bits)
@@ -225,7 +225,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     primFunction = withPos $ TokenPrimFunction <$> oneOf G.functions
 
     functionName :: Parser String
-    functionName = try (string [G.del]) <|> try (string [G.alphaBar, G.alphaBar]) <|> try (string [G.omegaBar, G.omegaBar]) <|> liftA2 (:) (oneOf functionStart) (many $ oneOf identifierRest)
+    functionName = try (liftA3 (\x y z -> x : y : z) (char G.quad) (oneOf functionStart) (many $ oneOf identifierRest)) <|> try (string [G.del]) <|> try (string [G.alphaBar, G.alphaBar]) <|> try (string [G.omegaBar, G.omegaBar]) <|> liftA2 (:) (oneOf functionStart) (many $ oneOf identifierRest)
 
     functionAssign :: Parser Token
     functionAssign = withPos $ liftA2 TokenFunctionAssign functionName (between whitespace whitespace (char G.assign) *> bits)
@@ -239,7 +239,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     primAdverb = withPos $ TokenPrimAdverb <$> oneOf G.adverbs
 
     adverbName :: Parser String
-    adverbName = try (string [G.underscore, G.del]) <|> liftA2 (:) (char G.underscore) (many1 $ oneOf identifierRest)
+    adverbName = try (liftA3 (\x y z -> x : y : z) (char G.quad) (char G.underscore) (many $ oneOf identifierRest)) <|> try (string [G.underscore, G.del]) <|> liftA2 (:) (char G.underscore) (many1 $ oneOf identifierRest)
 
     adverbAssign :: Parser Token
     adverbAssign = withPos $ liftA2 TokenAdverbAssign adverbName (between whitespace whitespace (char G.assign) *> bits)
@@ -253,7 +253,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     primConjunction = withPos $ TokenPrimConjunction <$> oneOf G.conjunctions
 
     conjunctionName :: Parser String
-    conjunctionName = try (string [G.underscore, G.del, G.underscore]) <|> liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (many1 $ oneOf identifierRest) (char G.underscore)
+    conjunctionName = try ((\x y z w -> x : y : z ++ [w]) <$> char G.quad <*> char G.underscore <*> many (oneOf identifierRest) <*> char G.underscore) <|> try (string [G.underscore, G.del, G.underscore]) <|> liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (many1 $ oneOf identifierRest) (char G.underscore)
 
     conjunctionAssign :: Parser Token
     conjunctionAssign = withPos $ liftA2 TokenConjunctionAssign conjunctionName (between whitespace whitespace (char G.assign) *> bits)

@@ -487,6 +487,23 @@ callOnFunctionAndFunction :: Conjunction -> Function -> Function -> St Function
 callOnFunctionAndFunction (Conjunction _ _ _ (Just op) _) x y = op x y
 callOnFunctionAndFunction conj _ _ = throwError $ DomainError $ "Operator " ++ show conj ++ " cannot be applied to two functions."
 
+-- * Quads
+
+data Nilad = Nilad
+  { niladGet :: Maybe (St Array)
+  , niladSet :: Maybe (Array -> St ())
+  , niladRepr :: String }
+
+instance Show Nilad where 
+  show (Nilad { niladRepr = r }) = r
+
+data Quads = Quads
+  { quadArrays :: [(String, Nilad)]
+  , quadFunctions :: [(String, Function)]
+  , quadAdverbs :: [(String, Adverb)]
+  , quadConjunctions :: [(String, Conjunction)] }
+  deriving (Show)
+
 -- * State
 
 data Scope = Scope
@@ -494,7 +511,8 @@ data Scope = Scope
   , scopeFunctions :: [(String, Function)]
   , scopeAdverbs :: [(String, Adverb)]
   , scopeConjunctions :: [(String, Conjunction)]
-  , scopeParent :: Maybe Scope }
+  , scopeParent :: Maybe Scope
+  , scopeQuads :: Quads }
   deriving (Show)
 
 specialNames :: [String]

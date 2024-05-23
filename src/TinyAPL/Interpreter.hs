@@ -57,7 +57,7 @@ scopeUpdate name (VConjunction val) sc = scopeUpdateConjunction name val sc
 
 inChildScope :: Monad m => [(String, Value)] -> StateT Scope m a -> Scope -> m a
 inChildScope vals x parent = let
-  child = foldr (\(name, val) sc -> scopeUpdate name val sc) (Scope [] [] [] [] (Just parent)) vals
+  child = foldr (\(name, val) sc -> scopeUpdate name val sc) (Scope [] [] [] [] (Just parent) (scopeQuads parent)) vals
   in evalStateT x child
 
 interpret :: Tree -> Scope -> ResultIO (Value, Scope)
@@ -121,14 +121,43 @@ evalLeaf (TokenArrayName name _)
   | name == [G.quadQuote]              = do
     str <- liftIO getLine
     return $ VArray $ vector $ Character <$> str
+  | head name == G.quad                = do
+    quads <- gets scopeQuads
+    let nilad = lookup name $ quadArrays quads
+    case nilad of
+      Just x -> case niladGet x of
+        Just g -> VArray <$> g
+        Nothing -> throwError $ SyntaxError $ "Quad name " ++ name ++ " cannot be accessed"
+      Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                          =
     get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray . scopeLookupArray name)
-evalLeaf (TokenFunctionName name _)    =
-  get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VFunction . scopeLookupFunction name)
-evalLeaf (TokenAdverbName name _)      =
-  get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VAdverb . scopeLookupAdverb name)
-evalLeaf (TokenConjunctionName name _) =
-  get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VConjunction . scopeLookupConjunction name)
+evalLeaf (TokenFunctionName name _)
+  | head name == G.quad                = do
+    quads <- gets scopeQuads
+    let fn = lookup name $ quadFunctions quads
+    case fn of
+      Just x -> return $ VFunction x
+      Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
+  | otherwise                          =
+    get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VFunction . scopeLookupFunction name)
+evalLeaf (TokenAdverbName name _)
+  | head name == G.quad                = do
+    quads <- gets scopeQuads
+    let adv = lookup name $ quadAdverbs quads
+    case adv of
+      Just x -> return $ VAdverb x
+      Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
+  | otherwise                          =
+    get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VAdverb . scopeLookupAdverb name)
+evalLeaf (TokenConjunctionName name _)
+  | head name == G.quad                = do
+    quads <- gets scopeQuads
+    let conj = lookup name $ quadConjunctions quads
+    case conj of
+      Just x -> return $ VConjunction x
+      Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
+  | otherwise                          =
+    get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VConjunction . scopeLookupConjunction name)
 evalLeaf _                             = throwError $ DomainError "Invalid leaf type in evaluation"
 
 evalMonadCall :: Value -> Value -> St Value
@@ -154,7 +183,7 @@ evalConjunctionCall _ _                               = throwError $ DomainError
 
 evalAssign :: String -> Value -> St Value
 evalAssign name val
-  | name == [G.quad] = do
+  | name == [G.quad]      = do
     arr <- unwrapArray (DomainError "Cannot print non-array") val
     liftIO $ print arr
     return val
@@ -163,6 +192,17 @@ evalAssign name val
     liftIO $ hPutStr stderr $ show arr
     liftIO $ hFlush stderr
     return val
+  | head name == G.quad   = do
+    arr <- unwrapArray (DomainError "Cannot set quad name to non-array") val
+    quads <- gets scopeQuads
+    let nilad = lookup name $ quadArrays quads
+    case nilad of
+      Just x -> case niladSet x of
+        Just s -> do
+          s arr
+          return val
+        Nothing -> throwError $ SyntaxError $ "Quad name " ++ name ++ " cannot be set"
+      Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise = do
     sc <- get
     put $ scopeUpdate name val sc

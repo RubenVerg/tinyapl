@@ -1,6 +1,7 @@
 module Main where
 
 import TinyAPL.ArrayFunctionOperator
+import TinyAPL.CoreQuads
 import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
 import qualified TinyAPL.Primitives as P
@@ -33,7 +34,7 @@ main = do
   putStrLn "i"; print i
   putStrLn "I"; print inc
 
-  let scope = Scope [("a", a), ("b", b), ("i", i)] [("I", inc)] [] [] Nothing
+  let scope = Scope [("a", a), ("b", b), ("i", i)] [("I", inc)] [] [] Nothing core
 
   args <- getArgs
   case args of
