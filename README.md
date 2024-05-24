@@ -9,6 +9,9 @@ TinyAPL (read like *tiny apple*) is a tiny APL dialect and interpreter in Haskel
 * Part 3: [More Primitives](https://blog.rubenverg.com/tinyapl_3_more_primitives)
 * Part 4: [Finally, Parsing!](https://blog.rubenverg.com/tinyapl_4_parsing)
 * Part 5: [Array Notation and Reductions](https://blog.rubenverg.com/tinyapl_5_array_notation_reductions)
+* Part 6: [Tests, Docs, Each](https://blog.rubenverg.com/tinyapl_6_tests_docs_each)
+
+Documentation is available [here](https://tinyapl.rubenverg.com)
 
 ## Features
 
