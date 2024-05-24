@@ -276,6 +276,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⎕C`/`⎕Case` case fold/uppercase/lowercase
 		* [ ] `⎕Partition` convert Partition representation to Group representation (so that Partition is `⎕Partition⍛⊆`)
 		* [ ] `⎕Repr` convert an array to a representation that can be read with Execute
+		* [ ] `⎕Assert` assertions
 	* system adverbs
 		* [ ] `⎕_BinFile` read/write binary files, with format chosen from the operand
 	* system conjunctions
