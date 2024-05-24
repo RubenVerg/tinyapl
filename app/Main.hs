@@ -70,6 +70,11 @@ repl scope = let
     putStrLn $ "  " ++ unwords (singleton . fst <$> P.functions)
     putStrLn $ "  " ++ unwords (singleton . fst <$> P.adverbs)
     putStrLn $ "  " ++ unwords (singleton . fst <$> P.conjunctions)
+    putStrLn "Supported quad names:"
+    putStrLn $ "  " ++ unwords (fst <$> quadArrays core)
+    putStrLn $ "  " ++ unwords (fst <$> quadFunctions core)
+    putStrLn $ "  " ++ unwords (fst <$> quadAdverbs core)
+    putStrLn $ "  " ++ unwords (fst <$> quadConjunctions core)
     putStrLn "Supported features:"
     putStrLn $ "* dfns " ++ [fst G.braces] ++ "code" ++ [snd G.braces] ++ ", d-monadic-ops " ++ [G.underscore, fst G.braces] ++ "code" ++ [snd G.braces] ++ ", d-dyadic-ops " ++ [G.underscore, fst G.braces] ++ "code" ++ [snd G.braces, G.underscore]
     putStrLn $ "  " ++ [G.alpha] ++ " left argument, " ++ [G.omega] ++ " right argument,"
