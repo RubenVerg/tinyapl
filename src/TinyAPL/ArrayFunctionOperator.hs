@@ -150,16 +150,20 @@ instance Show Array where
     | otherwise                                                         = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (show . fromScalar <$> xs) ++ [snd G.vector]
   show arr                                                              = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (show <$> majorCells arr) ++ [snd G.highRank]
 
+charRepr :: Char -> (String, Bool)
+charRepr c = case lookup c (swap <$> G.escapes) of
+  Just e -> ([G.stringEscape, e], True)
+  Nothing -> ([c], False)
+
 scalarRepr :: ScalarValue -> String
 scalarRepr (Number x) = showComplex x
-scalarRepr (Character x) | x == '\'' = [G.first, G.stringDelimiter, G.charDelimiter, G.stringDelimiter]
-                         | otherwise = [G.charDelimiter, x, G.charDelimiter]
+scalarRepr (Character x) = case charRepr x of
+  (e, True) -> [G.first, G.stringDelimiter] ++ e ++ [G.stringDelimiter]
+  (c, False) -> [G.charDelimiter] ++ c ++ [G.charDelimiter]
 scalarRepr (Box xs) = G.enclose : arrayRepr xs
 
 stringRepr :: [Char] -> String
-stringRepr str = [G.stringDelimiter] ++ concatMap (\c -> case lookup c (swap <$> G.escapes) of
-  Just e -> [G.stringEscape, e]
-  Nothing -> [c]) str ++ [G.stringDelimiter]
+stringRepr str = [G.stringDelimiter] ++ concatMap (fst . charRepr) str ++ [G.stringDelimiter]
 
 arrayRepr :: Array -> String
 arrayRepr (Array [] [s]) = scalarRepr s

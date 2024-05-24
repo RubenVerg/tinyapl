@@ -253,14 +253,14 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⸚` mirror (`_{(⍵ ⍹⍹ ⍺)⍶⍶(⍺ ⍹⍹ ⍵)}_`)
 		* [ ] `«`/`»` fork?
 * system names (quad names)
-	* [ ] support for system names in parsing and interpreting
+	* [x] support for system names in parsing and interpreting
 	* system arrays (nilads, i guess)
-		* [ ] `⎕u` (constant) the uppercase alphabet
-		* [ ] `⎕l` (constant) the lowercase alphabet
-		* [ ] `⎕d` (constant) the digits
+		* [x] `⎕u` (constant) the uppercase alphabet
+		* [x] `⎕l` (constant) the lowercase alphabet
+		* [x] `⎕d` (constant) the digits
 		* [ ] `⎕ts` current Unix timestamp
-		* [ ] `⎕io` (constant) `1`
-		* [ ] `⎕ct` (constant) `1⏨¯14`
+		* [x] `⎕io` (constant) `1`
+		* [x] `⎕ct` (constant) `1⏨¯14`
 		* [ ] `⎕seed` (set only) seed the random number generator
 	* system functions
 		* [ ] `⎕File` read/write files
@@ -269,10 +269,10 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⎕CSV` convert from/to CSV
 		* [ ] `⎕JSON` convert from/to JSON
 		* [ ] `⎕Unicode` convert between unicode representations
-		* [ ] `⎕Exists` does a variable exist?
+		* [x] `⎕Exists` does a variable exist?
 		* [ ] `⎕C`/`⎕Case` case fold/uppercase/lowercase
 		* [ ] `⎕Partition` convert Partition representation to Group representation (so that Partition is `⎕Partition⍛⊆`)
-		* [ ] `⎕Repr` convert an array to a representation that can be read with Execute
+		* [x] `⎕Repr` convert an array to a representation that can be read with Execute
 	* system adverbs
 		* [ ] `⎕_BinFile` read/write binary files, with format chosen from the operand
 	* system conjunctions

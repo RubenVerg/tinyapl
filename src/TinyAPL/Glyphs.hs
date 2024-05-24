@@ -23,6 +23,7 @@ inlineComment = ('⟃', '⟄')
 
 escapes =
   [ (stringDelimiter, stringDelimiter)
+  , (charDelimiter, charDelimiter)
   , (stringEscape, stringEscape)
   , ('n', '\n')
   , ('r', '\r')
