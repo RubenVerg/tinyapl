@@ -98,6 +98,7 @@ intersection = '∩'
 difference = '~'
 symdiff = '§'
 element = '∊'
+roll = '?'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -147,7 +148,8 @@ functions =
   , TinyAPL.Glyphs.intersection
   , TinyAPL.Glyphs.difference
   , TinyAPL.Glyphs.symdiff
-  , TinyAPL.Glyphs.element ]
+  , TinyAPL.Glyphs.element
+  , TinyAPL.Glyphs.roll ]
 
 -- * Adverbs
 

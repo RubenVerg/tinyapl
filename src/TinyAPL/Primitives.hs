@@ -12,6 +12,7 @@ import qualified Data.List as List
 import Control.Monad ((>=>))
 import Control.Monad.Except
 import Data.Maybe (fromJust)
+import System.Random
 
 pureFunction :: Maybe (Array -> Result Array) -> Maybe (Array -> Array -> Result Array) -> String -> Function
 pureFunction m d = DefinedFunction
@@ -77,18 +78,18 @@ circle = pureFunction (Just $ monadN2N' (pi *)) (Just $ dyadNN2N $ \cases
   (-12) y -> pure $ exp $ y * (0 :+ 1)
   _     _ -> err $ DomainError "Invalid left argument to circular") [G.circle]
 root = pureFunction (Just $ monadN2N' sqrt) (Just $ dyadNN2N' $ \x y -> y ** recip x) [G.root]
-floor = pureFunction (Just $ monadN2N' complexFloor) (Just $ scalarDyad $ pure .: Ord.min) [G.floor]
-ceil = pureFunction (Just $ monadN2N' complexCeiling) (Just $ scalarDyad $ pure .: Ord.max) [G.ceil]
+floor = pureFunction (Just $ monadN2N' complexFloor) (Just $ pureScalarDyad $ pure .: Ord.min) [G.floor]
+ceil = pureFunction (Just $ monadN2N' complexCeiling) (Just $ pureScalarDyad $ pure .: Ord.max) [G.ceil]
 round = pureFunction (Just $ monadN2N' $ \(a :+ b) -> componentFloor $ (a + 0.5) :+ (b + 0.5)) Nothing [G.round]
-less = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (<)) [G.less]
-lessEqual = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (<=)) [G.lessEqual]
-equal = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (==)) [G.equal]
-greaterEqual = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (>=)) [G.greaterEqual]
-greater = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (>)) [G.greater]
+less = pureFunction Nothing (Just $ pureScalarDyad $ pure .: boolToScalar .: (<)) [G.less]
+lessEqual = pureFunction Nothing (Just $ pureScalarDyad $ pure .: boolToScalar .: (<=)) [G.lessEqual]
+equal = pureFunction Nothing (Just $ pureScalarDyad $ pure .: boolToScalar .: (==)) [G.equal]
+greaterEqual = pureFunction Nothing (Just $ pureScalarDyad $ pure .: boolToScalar .: (>=)) [G.greaterEqual]
+greater = pureFunction Nothing (Just $ pureScalarDyad $ pure .: boolToScalar .: (>)) [G.greater]
 notEqual = pureFunction (Just $ \x -> do
   let cells = majorCells x
   return $ vector $ (\(c, idx) -> boolToScalar $ fromJust (c `elemIndex` cells) == idx) <$> zip cells [0..]
-  ) (Just $ scalarDyad $ pure .: boolToScalar .: (/=)) [G.notEqual]
+  ) (Just $ pureScalarDyad $ pure .: boolToScalar .: (/=)) [G.notEqual]
 and = pureFunction Nothing (Just $ dyadNN2N' complexLCM) [G.and]
 or = pureFunction Nothing (Just $ dyadNN2N' complexGCD) [G.or]
 nand = pureFunction Nothing (Just $ dyadBB2B' $ not .: (&&)) [G.nand]
@@ -193,6 +194,12 @@ element = pureFunction (Just $ \x -> do
       go (Array _ cs)       = concatMap (go . fromScalar) cs
   return $ vector $ go x
   ) Nothing [G.element]
+roll = DefinedFunction (Just $ scalarMonad throwError $ \x -> do
+  let e = DomainError "Roll argument must be a natural"
+  n <- liftEither (asNumber e x) >>= (liftEither . asNat e)
+  if n == 0 then Number . (:+ 0) <$> randomRIO (0, 1)
+  else Number . fromInteger <$> randomRIO (1, toInteger n)
+  ) Nothing [G.roll]
 
 functions = (\x -> (head $ dfnRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -242,7 +249,8 @@ functions = (\x -> (head $ dfnRepr x, x)) <$>
   , TinyAPL.Primitives.intersection
   , TinyAPL.Primitives.difference
   , TinyAPL.Primitives.symdiff
-  , TinyAPL.Primitives.element ]
+  , TinyAPL.Primitives.element
+  , TinyAPL.Primitives.roll ]
 
 -- * Primitive adverbs
 

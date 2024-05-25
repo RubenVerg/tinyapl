@@ -235,39 +235,50 @@ onMajorCells f x = do
 
 -- * Scalar functions
 
-scalarMonad ::
-  (ScalarValue -> Result ScalarValue)
-      -> Array -> Result Array
-scalarMonad f (Array sh cs) = Array sh <$> mapM f' cs where
-  f' (Box xs) = Box <$> scalarMonad f xs
+scalarMonad :: Monad m => (Error -> m Array)
+  -> (ScalarValue -> m ScalarValue)
+         -> Array -> m Array
+scalarMonad e f (Array sh cs) = Array sh <$> mapM f' cs where
+  f' (Box xs) = Box <$> scalarMonad e f xs
   f' x = f x
 
-scalarDyad ::
-  (ScalarValue -> ScalarValue -> Result ScalarValue)
-      -> Array ->       Array -> Result Array
-scalarDyad f a@(Array ash as) b@(Array bsh bs)
+pureScalarMonad ::
+  (ScalarValue -> Result ScalarValue)
+      -> Array -> Result Array
+pureScalarMonad = scalarMonad err
+
+scalarDyad :: Monad m => (Error -> m Array)
+  -> (ScalarValue -> ScalarValue -> m ScalarValue)
+         -> Array ->       Array -> m Array
+scalarDyad e f a@(Array ash as) b@(Array bsh bs)
   | isScalar a && isScalar b = let ([a'], [b']) = (as, bs) in scalar <$> f' a' b'
   | isScalar a = let [a'] = as in Array bsh <$> mapM (a' `f'`) bs
   | isScalar b = let [b'] = bs in Array ash <$> mapM (`f'` b') as
   | ash == bsh =
     Array (arrayShape a) <$> zipWithM f' (arrayContents a) (arrayContents b)
-  | otherwise = err $ DomainError "Mismatched left and right argument shapes"
+  | length ash /= length bsh = e $ RankError "Mismatched left and right argument ranks"
+  | otherwise = e $ LengthError "Mismatched left and right argument shapes"
   where
-    f' (Box as) (Box bs) = Box <$> scalarDyad f as bs
-    f' (Box as) b = Box <$> scalarDyad f as (scalar b)
-    f' a (Box bs) = Box <$> scalarDyad f (scalar a) bs
+    f' (Box as) (Box bs) = Box <$> scalarDyad e f as bs
+    f' (Box as) b = Box <$> scalarDyad e f as (scalar b)
+    f' a (Box bs) = Box <$> scalarDyad e f (scalar a) bs
     f' a b = f a b
+
+pureScalarDyad ::
+  (ScalarValue -> ScalarValue -> Result ScalarValue)
+      -> Array ->       Array -> Result Array
+pureScalarDyad = scalarDyad err
 
 -- * Instances for arrays
 
-monadN2N f = scalarMonad f' where
+monadN2N f = pureScalarMonad f' where
   f' x = do
     x' <- flip asNumber x $ DomainError "Expected number"
     Number <$> f x'
 
 monadN2N' = monadN2N . (pure .)
 
-dyadNN2N f = scalarDyad f' where
+dyadNN2N f = pureScalarDyad f' where
   f' a b = do
     a' <- flip asNumber a $ DomainError "Expected number"
     b' <- flip asNumber b $ DomainError "Expected number"
@@ -275,14 +286,14 @@ dyadNN2N f = scalarDyad f' where
 
 dyadNN2N' = dyadNN2N . (pure .:)
 
-monadB2B f = scalarMonad f' where
+monadB2B f = pureScalarMonad f' where
   f' x = do
     x' <- flip asBool x $ DomainError "Expected boolean"
     boolToScalar <$> f x'
 
 monadB2B' = monadB2B . (pure .)
 
-dyadBB2B f = scalarDyad f' where
+dyadBB2B f = pureScalarDyad f' where
   f' a b = do
     a' <- flip asBool a $ DomainError "Expected boolean"
     b' <- flip asBool b $ DomainError "Expected boolean"
