@@ -264,7 +264,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⎕ts` current Unix timestamp
 		* [x] `⎕io` (constant) `1`
 		* [x] `⎕ct` (constant) `1⏨¯14`
-		* [ ] `⎕seed` (set only) seed the random number generator
+		* [x] `⎕seed` (set only) seed the random number generator
 	* system functions
 		* [ ] `⎕File` read/write files
 		* [ ] `⎕DateTime` (or `⎕DT` maybe?) convert between time formats
