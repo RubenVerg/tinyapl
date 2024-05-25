@@ -171,7 +171,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `ϼ` rank
 	* array creation functions
 		* [x] `⍳` index generator
-		* [ ] `?` roll
+		* [x] `?` roll
 		* [ ] `?` deal
 		* [ ] `…` range?
 		* [x] `⍮` pair
