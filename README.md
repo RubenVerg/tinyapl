@@ -165,6 +165,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `∊` element of
 		* [ ] `⍷` find
 		* [ ] `⍷` type? depends on if prototypes are added or not
+		* [ ] `⋷` histogram (inverse of where)
+		* [ ] `⋷` count
 		* [ ] `≡` depth
 		* [x] `⍴` shape
 		* [x] `≢` tally
@@ -204,6 +206,9 @@ Marked features are supported, unmarked features are planned
 		* [x] `⊖` rotate
 		* [ ] `⍉` transpose
 		* [ ] `⍉` reorder axes
+		* [ ] `∧` promote (introduce leading axis)
+		* [ ] `∨` demote (combine two leading axes)
+		* [ ] `,` laminate
 	* array lookup functions
 		* [x] `⊃` first
 		* [x] `⊇` last
