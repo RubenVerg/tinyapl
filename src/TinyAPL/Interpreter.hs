@@ -11,7 +11,6 @@ import TinyAPL.Util
 import Control.Applicative ((<|>))
 import System.IO (hPutStr, stderr, hFlush, stdout)
 import Control.Monad.State
-import Control.Monad.Except
 import Data.Foldable (foldlM)
 import Control.Monad
 

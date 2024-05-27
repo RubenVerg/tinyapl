@@ -10,7 +10,6 @@ import Data.Complex
 import Data.List
 import qualified Data.List as List
 import Control.Monad ((>=>))
-import Control.Monad.Except
 import Data.Maybe (fromJust)
 import System.Random
 
@@ -36,18 +35,18 @@ plus = pureFunction (Just $ monadN2N' conjugate) (Just $ dyadNN2N' (+)) [G.plus]
 minus = pureFunction (Just $ monadN2N' negate) (Just $ dyadNN2N' (-)) [G.minus]
 times = pureFunction (Just $ monadN2N' signum) (Just $ dyadNN2N' (*)) [G.times]
 divide = pureFunction (Just $ monadN2N $ \case
-  0 -> err $ DomainError "Divide by zero"
+  0 -> throwError $ DomainError "Divide by zero"
   x -> pure $ recip x) (Just $ dyadNN2N $ \cases
   0 0 -> pure 1
-  _ 0 -> err $ DomainError "Divide by zero"
+  _ 0 -> throwError $ DomainError "Divide by zero"
   x y -> pure $ x / y) [G.divide]
 power = pureFunction (Just $ monadN2N' exp) (Just $ dyadNN2N' (**)) [G.power]
 logarithm = pureFunction (Just $ monadN2N $ \case
-  0 -> err $ DomainError "Logarithm of zero"
+  0 -> throwError $ DomainError "Logarithm of zero"
   x -> pure $ log x) (Just $ dyadNN2N $ \cases
   1 1 -> pure 1
-  1 _ -> err $ DomainError "Logarithm base one"
-  _ 0 -> err $ DomainError "Logarithm of zero"
+  1 _ -> throwError $ DomainError "Logarithm base one"
+  _ 0 -> throwError $ DomainError "Logarithm of zero"
   x y -> pure $ logBase x y
   ) [G.logarithm]
 circle = pureFunction (Just $ monadN2N' (pi *)) (Just $ dyadNN2N $ \cases
@@ -76,20 +75,20 @@ circle = pureFunction (Just $ monadN2N' (pi *)) (Just $ dyadNN2N $ \cases
   (-11) y -> pure $ y * (0 :+ 1)
   12    y -> pure $ Data.Complex.phase y :+ 0
   (-12) y -> pure $ exp $ y * (0 :+ 1)
-  _     _ -> err $ DomainError "Invalid left argument to circular") [G.circle]
+  _     _ -> throwError $ DomainError "Invalid left argument to circular") [G.circle]
 root = pureFunction (Just $ monadN2N' sqrt) (Just $ dyadNN2N' $ \x y -> y ** recip x) [G.root]
-floor = pureFunction (Just $ monadN2N' complexFloor) (Just $ pureScalarDyad $ pure .: Ord.min) [G.floor]
-ceil = pureFunction (Just $ monadN2N' complexCeiling) (Just $ pureScalarDyad $ pure .: Ord.max) [G.ceil]
+floor = pureFunction (Just $ monadN2N' complexFloor) (Just $ scalarDyad $ pure .: Ord.min) [G.floor]
+ceil = pureFunction (Just $ monadN2N' complexCeiling) (Just $ scalarDyad $ pure .: Ord.max) [G.ceil]
 round = pureFunction (Just $ monadN2N' $ \(a :+ b) -> componentFloor $ (a + 0.5) :+ (b + 0.5)) Nothing [G.round]
-less = pureFunction Nothing (Just $ pureScalarDyad $ pure .: boolToScalar .: (<)) [G.less]
-lessEqual = pureFunction Nothing (Just $ pureScalarDyad $ pure .: boolToScalar .: (<=)) [G.lessEqual]
-equal = pureFunction Nothing (Just $ pureScalarDyad $ pure .: boolToScalar .: (==)) [G.equal]
-greaterEqual = pureFunction Nothing (Just $ pureScalarDyad $ pure .: boolToScalar .: (>=)) [G.greaterEqual]
-greater = pureFunction Nothing (Just $ pureScalarDyad $ pure .: boolToScalar .: (>)) [G.greater]
+less = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (<)) [G.less]
+lessEqual = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (<=)) [G.lessEqual]
+equal = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (==)) [G.equal]
+greaterEqual = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (>=)) [G.greaterEqual]
+greater = pureFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (>)) [G.greater]
 notEqual = pureFunction (Just $ \x -> do
   let cells = majorCells x
   return $ vector $ (\(c, idx) -> boolToScalar $ fromJust (c `elemIndex` cells) == idx) <$> zip cells [0..]
-  ) (Just $ pureScalarDyad $ pure .: boolToScalar .: (/=)) [G.notEqual]
+  ) (Just $ scalarDyad $ pure .: boolToScalar .: (/=)) [G.notEqual]
 and = pureFunction Nothing (Just $ dyadNN2N' complexLCM) [G.and]
 or = pureFunction Nothing (Just $ dyadNN2N' complexGCD) [G.or]
 nand = pureFunction Nothing (Just $ dyadBB2B' $ not .: (&&)) [G.nand]
@@ -103,17 +102,17 @@ rho = pureFunction (Just $ \(Array sh _) -> pure $ vector $ Number . fromInteger
   shape <- (asVector (RankError "Shape must be a vector") sh >>= mapM (asNumber mustBeIntegral >=> asInt mustBeIntegral)) :: Result [Integer]
   let negative = count (< 0) shape
   if negative == 0 then case arrayReshaped (toEnum . fromEnum <$> shape) xs of
-    Nothing -> err $ DomainError "Cannot reshape empty array to non-empty array"
+    Nothing -> throwError $ DomainError "Cannot reshape empty array to non-empty array"
     Just rs -> pure rs
   else if negative == 1 && (-1) `elem` shape then do
     let allElements = genericLength xs
     let known = product $ filter (>= 0) shape
-    if known == 0 then err $ DomainError $ "Shape cannot and contain both 0 and " ++ [G.negative] ++ "1"
-    else if allElements `mod` known /= 0 then err $ DomainError "Shape is not a multiple of the bound of the array"
+    if known == 0 then throwError $ DomainError $ "Shape cannot and contain both 0 and " ++ [G.negative] ++ "1"
+    else if allElements `mod` known /= 0 then throwError $ DomainError "Shape is not a multiple of the bound of the array"
     else case arrayReshaped (toEnum . fromEnum <$> map (\x -> if x == (-1) then allElements `div` known else x) shape) xs of
-      Nothing -> err $ DomainError "Cannot reshape empty array to non-empty array"
+      Nothing -> throwError $ DomainError "Cannot reshape empty array to non-empty array"
       Just rs -> pure rs
-  else err $ DomainError "Invalid shape"
+  else throwError $ DomainError "Invalid shape"
   ) [G.rho]
 ravel = pureFunction (Just $ pure . vector . arrayContents) Nothing [G.ravel]
 reverse = pureFunction (Just $ onMajorCells $ pure . List.reverse) (Just $ \r arr -> let
@@ -132,10 +131,10 @@ reverse = pureFunction (Just $ onMajorCells $ pure . List.reverse) (Just $ \r ar
 pair = pureFunction (Just $ pure . vector . singleton . box) (Just $ \x y -> pure $ vector [box x, box y]) [G.pair]
 enclose = pureFunction (Just $ pure . scalar . box) Nothing [G.enclose]
 first = pureFunction (Just $ \case
-  Array _ [] -> err $ DomainError "First on empty array"
+  Array _ [] -> throwError $ DomainError "First on empty array"
   Array _ (x:_) -> pure $ fromScalar x) Nothing [G.first]
 last = pureFunction (Just $ \case
-  Array _ [] -> err $ DomainError "Last on empty array"
+  Array _ [] -> throwError $ DomainError "Last on empty array"
   Array _ xs -> pure $ fromScalar $ List.last xs) Nothing [G.last]
 take = pureFunction Nothing (Just $ \t arr -> let
   take' c = if c < 0 then List.reverse . genericTake (negate c) . List.reverse else genericTake c
@@ -175,7 +174,7 @@ replicate = pureFunction Nothing (Just $ \r arr -> do
   let error = DomainError "Replicate left argument must be a natural vector"
   rs <- asVector error r >>= mapM (asNumber error >=> asNat error)
   let cells = majorCells arr
-  if length rs /= length cells then err $ LengthError "Replicate: different lengths in left and right argument"
+  if length rs /= length cells then throwError $ LengthError "Replicate: different lengths in left and right argument"
   else return $ fromMajorCells $ concat $ zipWith genericReplicate rs cells) [G.replicate]
 abs = pureFunction (Just $ monadN2N' Prelude.abs) (Just $ dyadNN2N' complexRemainder) [G.abs]
 phase = pureFunction (Just $ monadN2N' $ \x -> Data.Complex.phase x :+ 0) (Just $ dyadNN2N' $ \x y -> Prelude.abs x * exp ((0 :+ 1) * y)) [G.phase]
@@ -194,9 +193,9 @@ element = pureFunction (Just $ \x -> do
       go (Array _ cs)       = concatMap (go . fromScalar) cs
   return $ vector $ go x
   ) Nothing [G.element]
-roll = DefinedFunction (Just $ scalarMonad throwError $ \x -> do
+roll = DefinedFunction (Just $ scalarMonad $ \x -> do
   let e = DomainError "Roll argument must be a natural"
-  n <- liftEither (asNumber e x) >>= (liftEither . asNat e)
+  n <- asNumber e x >>= asNat e
   if n == 0 then Number . (:+ 0) <$> randomRIO (0, 1)
   else Number . fromInteger <$> randomRIO (1, toInteger n)
   ) Nothing [G.roll]

@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE FlexibleContexts, LambdaCase #-}
 module TinyAPL.ArrayFunctionOperator where
 
 import TinyAPL.Error
@@ -10,7 +10,7 @@ import Data.List
 import Control.Monad
 import Data.Maybe (mapMaybe, fromJust)
 import Control.Monad.State
-import Control.Monad.Except
+import Control.Monad.Except (ExceptT, MonadError)
 import Control.Applicative (Alternative((<|>)))
 import Data.List.NonEmpty (NonEmpty, toList)
 import Data.Tuple (swap)
@@ -178,107 +178,97 @@ boolToScalar :: Bool -> ScalarValue
 boolToScalar True = Number 1
 boolToScalar False = Number 0
 
-asBool :: Error -> ScalarValue -> Result Bool
+asBool :: MonadError Error m => Error -> ScalarValue -> m Bool
 asBool _ (Number 0) = pure False
 asBool _ (Number 1) = pure True
-asBool e _ = err e
+asBool e _ = throwError e
 
-asNumber :: Error -> ScalarValue -> Result (Complex Double)
+asNumber :: MonadError Error m => Error -> ScalarValue -> m (Complex Double)
 asNumber _ (Number x) = pure x
-asNumber e _ = err e
+asNumber e _ = throwError e
 
-asReal :: Error -> Complex Double -> Result Double
+asReal :: MonadError Error m => Error -> Complex Double -> m Double
 asReal e x
   | isReal x = pure $ realPart x
-  | otherwise = err e
+  | otherwise = throwError e
 
-asInt' :: Integral num => Error -> Double -> Result num
+asInt' :: MonadError Error m => Integral num => Error -> Double -> m num
 asInt' e x
   | isInt x = pure $ fromInteger $ floor x
-  | otherwise = err e
+  | otherwise = throwError e
 
-asInt :: Integral num => Error -> Complex Double -> Result num
+asInt :: (MonadError Error m, Integral num) => Error -> Complex Double -> m num
 asInt e = asInt' e <=< asReal e
 
-asNat' :: Integral num => Error -> num -> Result Natural
+asNat' :: (MonadError Error m, Integral num) => Error -> num -> m Natural
 asNat' e x
   | x >= 0 = pure $ toEnum $ fromEnum x
-  | otherwise = err e
+  | otherwise = throwError e
 
-asNat :: Error -> Complex Double -> Result Natural
+asNat :: MonadError Error m => Error -> Complex Double -> m Natural
 asNat e = asNat' e <=< asInt e
 
 isScalar :: Array -> Bool
 isScalar (Array [] _) = True
 isScalar _ = False
 
-asScalar :: Error -> Array -> Result ScalarValue
+asScalar :: MonadError Error m => Error -> Array -> m ScalarValue
 asScalar _ (Array _ [x]) = pure x
-asScalar e _ = err e
+asScalar e _ = throwError e
 
 isEmpty :: Array -> Bool
 isEmpty (Array sh _) = 0 `elem` sh
 
-asVector :: Error -> Array -> Result [ScalarValue]
+asVector :: MonadError Error m => Error -> Array -> m [ScalarValue]
 asVector _ (Array [] scalar) = pure scalar
 asVector _ (Array [_] vec)   = pure vec
-asVector e _                 = err e
+asVector e _                 = throwError e
 
-onMajorCells ::
-  ([Array] -> Result [Array])
-  -> Array -> Result Array
+onMajorCells :: MonadError Error m =>
+  ([Array] -> m [Array])
+  -> Array -> m Array
 onMajorCells f x = do
   result <- f $ majorCells x
   case arrayReshaped (arrayShape x) $ concatMap arrayContents result of
-    Nothing -> err $ DomainError ""
+    Nothing -> throwError $ DomainError ""
     Just rs -> return rs
 
 -- * Scalar functions
 
-scalarMonad :: Monad m => (Error -> m Array)
-  -> (ScalarValue -> m ScalarValue)
+scalarMonad :: MonadError Error m =>
+  (ScalarValue -> m ScalarValue)
          -> Array -> m Array
-scalarMonad e f (Array sh cs) = Array sh <$> mapM f' cs where
-  f' (Box xs) = Box <$> scalarMonad e f xs
+scalarMonad f (Array sh cs) = Array sh <$> mapM f' cs where
+  f' (Box xs) = Box <$> scalarMonad f xs
   f' x = f x
 
-pureScalarMonad ::
-  (ScalarValue -> Result ScalarValue)
-      -> Array -> Result Array
-pureScalarMonad = scalarMonad err
-
-scalarDyad :: Monad m => (Error -> m Array)
-  -> (ScalarValue -> ScalarValue -> m ScalarValue)
+scalarDyad :: MonadError Error m =>
+  (ScalarValue -> ScalarValue -> m ScalarValue)
          -> Array ->       Array -> m Array
-scalarDyad e f a@(Array ash as) b@(Array bsh bs)
+scalarDyad f a@(Array ash as) b@(Array bsh bs)
   | isScalar a && isScalar b = let ([a'], [b']) = (as, bs) in scalar <$> f' a' b'
   | isScalar a = let [a'] = as in Array bsh <$> mapM (a' `f'`) bs
   | isScalar b = let [b'] = bs in Array ash <$> mapM (`f'` b') as
   | ash == bsh =
     Array (arrayShape a) <$> zipWithM f' (arrayContents a) (arrayContents b)
-  | length ash /= length bsh = e $ RankError "Mismatched left and right argument ranks"
-  | otherwise = e $ LengthError "Mismatched left and right argument shapes"
+  | length ash /= length bsh = throwError $ RankError "Mismatched left and right argument ranks"
+  | otherwise = throwError $ LengthError "Mismatched left and right argument shapes"
   where
-    f' (Box as) (Box bs) = Box <$> scalarDyad e f as bs
-    f' (Box as) b = Box <$> scalarDyad e f as (scalar b)
-    f' a (Box bs) = Box <$> scalarDyad e f (scalar a) bs
+    f' (Box as) (Box bs) = Box <$> scalarDyad f as bs
+    f' (Box as) b = Box <$> scalarDyad f as (scalar b)
+    f' a (Box bs) = Box <$> scalarDyad f (scalar a) bs
     f' a b = f a b
-
-pureScalarDyad ::
-  (ScalarValue -> ScalarValue -> Result ScalarValue)
-      -> Array ->       Array -> Result Array
-pureScalarDyad = scalarDyad err
 
 -- * Instances for arrays
 
-monadN2N f = pureScalarMonad f' where
+monadN2N f = scalarMonad f' where
   f' x = do
     x' <- flip asNumber x $ DomainError "Expected number"
     Number <$> f x'
 
 monadN2N' = monadN2N . (pure .)
 
-dyadNN2N f = pureScalarDyad f' where
+dyadNN2N f = scalarDyad f' where
   f' a b = do
     a' <- flip asNumber a $ DomainError "Expected number"
     b' <- flip asNumber b $ DomainError "Expected number"
@@ -286,20 +276,20 @@ dyadNN2N f = pureScalarDyad f' where
 
 dyadNN2N' = dyadNN2N . (pure .:)
 
-monadB2B f = pureScalarMonad f' where
+monadB2B f = scalarMonad f' where
   f' x = do
     x' <- flip asBool x $ DomainError "Expected boolean"
     boolToScalar <$> f x'
 
-monadB2B' = monadB2B . (pure .)
+monadB2B' f = monadB2B $ pure . f
 
-dyadBB2B f = pureScalarDyad f' where
+dyadBB2B f = scalarDyad f' where
   f' a b = do
     a' <- flip asBool a $ DomainError "Expected boolean"
     b' <- flip asBool b $ DomainError "Expected boolean"
     boolToScalar <$> f a' b'
 
-dyadBB2B' = dyadBB2B . (pure .:)
+dyadBB2B' f = dyadBB2B $ pure .: f
 
 instance Num Array where
   (+) = unerror .: dyadNN2N' (+)
@@ -311,11 +301,11 @@ instance Num Array where
 
 instance Fractional Array where
   recip = unerror . monadN2N (\case
-    0 -> err $ DomainError "Divide by zero"
+    0 -> throwError $ DomainError "Divide by zero"
     x -> pure $ recip x)
   (/) = unerror .: dyadNN2N (\cases
     0 0 -> pure 1
-    _ 0 -> err $ DomainError "Divide by zero"
+    _ 0 -> throwError $ DomainError "Divide by zero"
     x y -> pure $ x / y)
   fromRational = scalar . Number . fromRational
 
@@ -323,7 +313,7 @@ instance Floating Array where
   pi = scalar $ Number pi
   exp = unerror . monadN2N' exp
   log = unerror . monadN2N (\case
-    0 -> err $ DomainError "Logarithm of zero"
+    0 -> throwError $ DomainError "Logarithm of zero"
     x -> pure $ log x)
   sin = unerror . monadN2N' sin
   cos = unerror . monadN2N' cos

@@ -6,6 +6,7 @@ import TinyAPL.Error
 import Test.Hspec
 import Data.List.NonEmpty
 import Data.Complex
+import Numeric.Natural
 
 spec :: Spec
 spec = do
@@ -147,38 +148,38 @@ spec = do
 
   describe "asBool" $ do
     it "returns True for 1" $ do
-      asBool invalidValue (Number 1) `shouldBe` pure True
+      asBool invalidValue (Number 1) `shouldBe` (pure True :: Result Bool)
     it "returns False for 0" $ do
-      asBool invalidValue (Number 0) `shouldBe` pure False
+      asBool invalidValue (Number 0) `shouldBe` (pure False :: Result Bool)
     it "errors for other values" $ do
-      asBool invalidValue (Number 5) `shouldBe` err invalidValue
-      asBool invalidValue (Character 'b') `shouldBe` err invalidValue
+      asBool invalidValue (Number 5) `shouldBe` (throwError invalidValue :: Result Bool)
+      asBool invalidValue (Character 'b') `shouldBe` (throwError invalidValue :: Result Bool)
 
   describe "asNumber" $ do
     it "returns numbers unwrapped" $ do
-      asNumber invalidValue (Number (2 :+ 3.5)) `shouldBe` pure (2 :+ 3.5)
+      asNumber invalidValue (Number (2 :+ 3.5)) `shouldBe` (pure (2 :+ 3.5) :: Result (Complex Double))
     it "errors for other values" $ do
-      asNumber invalidValue (Character 'c') `shouldBe` err invalidValue
+      asNumber invalidValue (Character 'c') `shouldBe` (throwError invalidValue :: Result (Complex Double))
 
   describe "asReal" $ do
     it "returns real numbers unwrapped" $ do
-      asReal invalidValue (3 :+ 0) `shouldBe` pure 3
+      asReal invalidValue (3 :+ 0) `shouldBe` (pure 3 :: Result Double)
     it "errors for complex numbers" $ do
-      asReal invalidValue (3 :+ 1) `shouldBe` err invalidValue
+      asReal invalidValue (3 :+ 1) `shouldBe` (throwError invalidValue :: Result Double)
 
   describe "asInt and asInt'" $ do
     it "returns integers unwrapped" $ do
-      asInt' invalidValue 3 `shouldBe` pure (3 :: Integer)
+      asInt' invalidValue 3 `shouldBe` (pure 3 :: Result Integer)
     it "errors for non-integers" $ do
-      asInt' invalidValue 2.5 `shouldBe` err invalidValue
-      asInt invalidValue (3 :+ 2) `shouldBe` err invalidValue
+      asInt' invalidValue 2.5 `shouldBe` (throwError invalidValue :: Result Integer)
+      asInt invalidValue (3 :+ 2) `shouldBe` (throwError invalidValue :: Result Integer)
   
   describe "asNat and asNat'" $ do
     it "returns naturals unwrapped" $ do
-      asNat' invalidValue 5 `shouldBe` pure 5
+      asNat' invalidValue 5 `shouldBe` (pure 5 :: Result Natural)
     it "errors for non-naturals" $ do
-      asNat' invalidValue (-3) `shouldBe` err invalidValue
-      asNat invalidValue (3 :+ 1) `shouldBe` err invalidValue
+      asNat' invalidValue (-3) `shouldBe` (throwError invalidValue :: Result Natural)
+      asNat invalidValue (3 :+ 1) `shouldBe` (throwError invalidValue :: Result Natural)
     
   describe "isScalar" $ do
     it "returns True for scalar arrays" $ do
@@ -195,10 +196,10 @@ spec = do
 
   describe "asVector" $ do
     it "returns the entries of a vector" $ do
-      asVector invalidValue (vector [num, char]) `shouldBe` pure [num, char]
+      asVector invalidValue (vector [num, char]) `shouldBe` (pure [num, char] :: Result [ScalarValue])
     it "returns a scalar wrapped in a singleton list" $ do
-      asVector invalidValue (scalar num) `shouldBe` pure [num]
+      asVector invalidValue (scalar num) `shouldBe` (pure [num] :: Result [ScalarValue])
     it "errors with higher-rank arguments" $ do
-      asVector invalidValue matrix `shouldBe` err invalidValue
+      asVector invalidValue matrix `shouldBe` (throwError invalidValue :: Result [ScalarValue])
 
 

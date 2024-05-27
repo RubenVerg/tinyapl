@@ -347,7 +347,7 @@ pairs :: [Tree] -> [(Int, Tree -> Tree -> Tree)]
 pairs = mapAdjacent $ fromMaybe (0, undefined) .: (curry (`lookup` bindingMap) `on` treeCategory)
 
 bindPair :: [Tree] -> Result [Tree]
-bindPair [] = err $ SyntaxError "Bind empty array"
+bindPair [] = throwError $ SyntaxError "Bind empty array"
 bindPair x@[_] = pure x
 bindPair xs = let
   (sts, trees) = unzip $ pairs xs
@@ -355,13 +355,13 @@ bindPair xs = let
   nextBind = fromJust $ maxBind `elemIndex` sts
   tree = trees !! nextBind
   indexed = zip [0..] xs
-  in if maxBind == 0 then err $ SyntaxError "No binding found" else pure $ mapMaybe (\(idx, el) ->
+  in if maxBind == 0 then throwError $ SyntaxError "No binding found" else pure $ mapMaybe (\(idx, el) ->
     if idx == nextBind then Just $ tree el $ xs !! (idx + 1)
     else if idx == nextBind + 1 then Nothing
     else Just el) indexed
 
 bindAll :: [Tree] -> Result Tree
-bindAll [] = err $ SyntaxError "Bind empty array"
+bindAll [] = throwError $ SyntaxError "Bind empty array"
 bindAll [x] = pure x
 bindAll xs = bindPair xs >>= bindAll
 
@@ -375,13 +375,13 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
 
   requireOfCategory :: Category -> (Category -> Error) -> Tree -> Result Tree
   requireOfCategory cat msg tree | treeCategory tree == cat = pure tree
-                                 | otherwise                = err $ msg $ treeCategory tree
+                                 | otherwise                = throwError $ msg $ treeCategory tree
 
   defined :: Category -> String -> [[Token]] -> SourcePos -> Result Tree
   defined cat name statements pos = do
     ss <- mapM categorizeAndBind statements
-    if null ss then err $ makeSyntaxError pos source $ "Invalid empty " ++ name
-    else if treeCategory (last ss) /= CatArray then err $ makeSyntaxError (tokenPos $ head $ last statements) source $ "Invalid " ++ name ++ ": last statement must be an array"
+    if null ss then throwError $ makeSyntaxError pos source $ "Invalid empty " ++ name
+    else if treeCategory (last ss) /= CatArray then throwError $ makeSyntaxError (tokenPos $ head $ last statements) source $ "Invalid " ++ name ++ ": last statement must be an array"
     else Right $ DefinedBranch cat ss
 
   assignment :: Category -> String -> [Token] -> SourcePos -> Result Tree

@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module TinyAPL.Error where
 import GHC.Stack (HasCallStack)
 import Control.Monad.Except
@@ -32,11 +34,11 @@ unerror x = case x of
   Right x -> x
   Left  e -> error $ show e
 
-err :: Error -> Result a
-err = Left
-
 except :: Monad m => Either e a -> ExceptT e m a
 except m = ExceptT $ return m
+
+throwError :: MonadError Error m => Error -> m a
+throwError = Control.Monad.Except.throwError
 
 runResult :: ResultIO a -> IO (Result a)
 runResult = runExceptT
