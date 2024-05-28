@@ -154,20 +154,20 @@ functions =
 -- * Adverbs
 
 selfie = '⍨'
-reduceDown = '⤈'
-reduceUp = '⤉'
-scanDown = '⇟'
-scanUp = '⇞'
+reduce = '⍆'
+reduceBack = '⍅'
+onPrefixes = '↟'
+onSuffixes = '↡'
 each = '¨'
 eachLeft = 'ᐵ'
 eachRight = 'ᑈ'
 
 adverbs =
   [ TinyAPL.Glyphs.selfie
-  , TinyAPL.Glyphs.reduceDown
-  , TinyAPL.Glyphs.reduceUp
-  , TinyAPL.Glyphs.scanUp
-  , TinyAPL.Glyphs.scanDown
+  , TinyAPL.Glyphs.reduce
+  , TinyAPL.Glyphs.reduceBack
+  , TinyAPL.Glyphs.onPrefixes
+  , TinyAPL.Glyphs.onSuffixes
   , TinyAPL.Glyphs.each
   , TinyAPL.Glyphs.eachLeft
   , TinyAPL.Glyphs.eachRight ]

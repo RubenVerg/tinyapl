@@ -550,29 +550,27 @@ spec = do
         it "calls the operand with the arguments swapped" $ do
           afd P.selfie P.minus (scalar $ Number 2) (scalar $ Number 3) `shouldReturn` pure (scalar $ Number 1)
 
-    describe [G.reduceDown] $ do
-      describe "reduce down" $ do
-        it "reduces an array top-to-bottom" $ do
-          afm P.reduceDown P.plus (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 5, Number 7, Number 9])
-          afm P.reduceDown P.minus (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (scalar $ Number -4)
+    describe [G.reduce] $ do
+      describe "reduce" $ do
+        it "reduces an array left-to-right" $ do
+          afm P.reduce P.plus (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 5, Number 7, Number 9])
+          afm P.reduce P.minus (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (scalar $ Number -4)
 
-    describe [G.reduceUp] $ do
-      describe "reduce up" $ do
-        it "reduces an array bottom-to-top" $ do
-          afm P.reduceUp P.plus (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 5, Number 7, Number 9])
-          afm P.reduceUp P.minus (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (scalar $ Number 2)
+    describe [G.reduceBack] $ do
+      describe "reduce back" $ do
+        it "reduces an array right-to-left" $ do
+          afm P.reduceBack P.plus (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 5, Number 7, Number 9])
+          afm P.reduceBack P.minus (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (scalar $ Number 2)
 
-    describe [G.scanDown] $ do
-      describe "scan down" $ do
-        it "scans an array top-to-bottom (on prefixes)" $ do
-          afm P.scanDown P.plus (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 5, Number 7, Number 9]])
-          afm P.scanDown P.minus (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [Number 1, Number -1, Number -4])
+    describe [G.onPrefixes] $ do
+      describe "on prefixes" $ do
+        it "applies a function to prefixes of an array" $ do
+          afm P.onPrefixes P.enclose (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [box $ vector [Number 1], box $ vector [Number 1, Number 2], box $ vector [Number 1, Number 2, Number 3]])
 
-    describe [G.scanUp] $ do
-      describe "scan up" $ do
-        it "scans an array bottom-to-top (on suffixes)" $ do
-          afm P.scanUp P.plus (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (fromMajorCells [vector [Number 5, Number 7, Number 9], vector [Number 4, Number 5, Number 6]])
-          afm P.scanUp P.minus (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [Number 2, Number -1, Number 3])
+    describe [G.onSuffixes] $ do
+      describe "on suffixes" $ do
+        it "applies a function to suffixes of an array" $ do
+          afm P.onSuffixes P.enclose (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [box $ vector [Number 1, Number 2, Number 3], box $ vector [Number 2, Number 3], box $ vector [Number 3]])
     
     describe [G.each] $ do
       describe "monad each" $ do

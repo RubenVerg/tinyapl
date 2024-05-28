@@ -227,8 +227,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍆` windowed reduce left-to-right
 		* [x] `⍅` reduce right-to-left
 		* [ ] `⍅` windowed reduce right-to-left
-		* [ ] `↟` on prefixes
-		* [ ] `↡` on suffixes
+		* [x] `↟` on prefixes
+		* [x] `↡` on suffixes
 		* [x] `¨` each
 		* [x] `ᐵ` each-left
 		* [x] `ᑈ` each-right

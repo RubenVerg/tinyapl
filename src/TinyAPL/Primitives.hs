@@ -121,22 +121,22 @@ selfie = Adverb
   { adverbRepr = [G.selfie]
   , adverbOnArray = Just $ \x -> pure $ Constant x
   , adverbOnFunction = Just $ \f -> pure $ Selfie f }
-reduceDown = Adverb
-  { adverbRepr = [G.reduceDown]
+reduce = Adverb
+  { adverbRepr = [G.reduce]
   , adverbOnArray = Nothing
-  , adverbOnFunction = Just $ \f -> pure $ ReduceDown f }
-reduceUp = Adverb
-  { adverbRepr = [G.reduceUp]
+  , adverbOnFunction = Just $ \f -> pure $ Reduce f }
+reduceBack = Adverb
+  { adverbRepr = [G.reduceBack]
   , adverbOnArray = Nothing
-  , adverbOnFunction = Just $ \f -> pure $ ReduceUp f }
-scanDown = Adverb
-  { adverbRepr = [G.scanDown]
+  , adverbOnFunction = Just $ \f -> pure $ ReduceBack f }
+onPrefixes = Adverb
+  { adverbRepr = [G.onPrefixes]
   , adverbOnArray = Nothing
-  , adverbOnFunction = Just $ \f -> pure $ ScanDown f }
-scanUp = Adverb
-  { adverbRepr = [G.scanUp]
+  , adverbOnFunction = Just $ \f -> pure $ OnPrefixes f }
+onSuffixes = Adverb
+  { adverbRepr = [G.onSuffixes]
   , adverbOnArray = Nothing
-  , adverbOnFunction = Just $ \f -> pure $ ScanUp f }
+  , adverbOnFunction = Just $ \f -> pure $ OnSuffixes f }
 each = Adverb
   { adverbRepr = [G.each]
   , adverbOnArray = Just $ \arr -> pure $ Each $ Constant arr
@@ -152,10 +152,10 @@ eachRight = Adverb
 
 adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   [ TinyAPL.Primitives.selfie
-  , TinyAPL.Primitives.reduceDown
-  , TinyAPL.Primitives.reduceUp
-  , TinyAPL.Primitives.scanDown
-  , TinyAPL.Primitives.scanUp
+  , TinyAPL.Primitives.reduce
+  , TinyAPL.Primitives.reduceBack
+  , TinyAPL.Primitives.onPrefixes
+  , TinyAPL.Primitives.onSuffixes
   , TinyAPL.Primitives.each
   , TinyAPL.Primitives.eachLeft
   , TinyAPL.Primitives.eachRight ]

@@ -347,10 +347,10 @@ data Function
   | DefaultBindLeft { defaultBindLeftArray :: Array, defaultBindLeftFunction :: Function }
   | DefaultBindRight { defaultBindRightFunction :: Function, defaultBindRightArray :: Array }
   | Constant { constantArray :: Array }
-  | ReduceDown { reduceDownFunction :: Function }
-  | ReduceUp { reduceUpFunction :: Function }
-  | ScanDown { scanDownFunction :: Function }
-  | ScanUp { scanUpFunction :: Function }
+  | Reduce { reduceFunction :: Function }
+  | ReduceBack { reduceBackFunction :: Function }
+  | OnPrefixes { onPrefixesFunction :: Function }
+  | OnSuffixes { onSuffixesFunction :: Function }
   | Each { eachFunction :: Function }
   | EachLeft { eachLeftFunction :: Function }
   | EachRight { eachRightFunction :: Function }
@@ -369,10 +369,10 @@ instance Show Function where
   show (l `DefaultBindLeft` r) = "(" ++ show l ++ [')', G.before, '('] ++ show r ++ ")"
   show (l `DefaultBindRight` r) = "(" ++ show l ++ [')', G.before, '('] ++ show r ++ ")"
   show (Constant x) = "(" ++ show x ++ [')', G.selfie]
-  show (ReduceDown f) = "(" ++ show f ++ [')', G.reduceDown]
-  show (ReduceUp f) = "(" ++ show f ++ [')', G.reduceUp]
-  show (ScanDown f) = "(" ++ show f ++ [')', G.scanDown]
-  show (ScanUp f) = "(" ++ show f ++ [')', G.scanUp]
+  show (Reduce f) = "(" ++ show f ++ [')', G.reduce]
+  show (ReduceBack f) = "(" ++ show f ++ [')', G.reduceBack]
+  show (OnPrefixes f) = "(" ++ show f ++ [')', G.onPrefixes]
+  show (OnSuffixes f) = "(" ++ show f ++ [')', G.onSuffixes]
   show (Each f) = "(" ++ show f ++ [')', G.each]
   show (EachLeft f) = "(" ++ show f ++ [')', G.eachLeft]
   show (EachRight f) = "(" ++ show f ++ [')', G.eachRight]
@@ -399,7 +399,7 @@ callMonad (f `BindRight` a) x = callDyad f x a
 callMonad (a `DefaultBindLeft` f) x = callDyad f a x
 callMonad (f `DefaultBindRight` a) x = callDyad f x a
 callMonad (Constant x) _ = pure x
-callMonad (ReduceDown f) xs = do
+callMonad (Reduce f) xs = do
   let go :: [Array] -> St Array
       go []           = throwError $ DomainError "Reduce empty axis"
       go [x]          = return x
@@ -407,7 +407,7 @@ callMonad (ReduceDown f) xs = do
         x <- callDyad f a b
         go $ x : xs
   go $ majorCells xs
-callMonad (ReduceUp f) xs = do
+callMonad (ReduceBack f) xs = do
   let go :: [Array] -> St Array
       go []       = throwError $ DomainError "Reduce empty axis"
       go [x]      = return x
@@ -415,12 +415,12 @@ callMonad (ReduceUp f) xs = do
         y <- go xs
         callDyad f x y
   go $ majorCells xs
-callMonad (ScanDown f) xs = do
+callMonad (OnPrefixes f) xs = do
   if isScalar xs then return xs
-  else fromMajorCells <$> mapM (callMonad (ReduceDown f) . fromMajorCells) (prefixes $ majorCells xs)
-callMonad (ScanUp f) xs = do
+  else fromMajorCells <$> mapM (callMonad f . fromMajorCells) (prefixes $ majorCells xs)
+callMonad (OnSuffixes f) xs = do
   if isScalar xs then return xs
-  else fromMajorCells <$> mapM (callMonad (ReduceUp f) . fromMajorCells) (suffixes $ majorCells xs)
+  else fromMajorCells <$> mapM (callMonad f . fromMajorCells) (suffixes $ majorCells xs)
 callMonad (Each f) (Array sh cs) = Array sh <$> mapM (fmap box . callMonad f . fromScalar) cs
 callMonad f@(EachLeft _) _ = throwError $ noMonad $ show f
 callMonad f@(EachRight _) _ = throwError $ noMonad $ show f
@@ -454,10 +454,10 @@ callDyad (_ `BindRight` _) _ _ = throwError $ DomainError "Bound function called
 callDyad (_ `DefaultBindLeft` f) x y = callDyad f x y
 callDyad (f `DefaultBindRight` _) x y = callDyad f x y
 callDyad (Constant x) _ _ = pure x
-callDyad (ReduceDown _) _ _ = throwError $ NYIError "Windowed reduce not implemented yet"
-callDyad (ReduceUp _) _ _ = throwError $ NYIError "Windowed reduce not implemented yet"
-callDyad f@(ScanDown _) _ _ = throwError $ noDyad $ show f
-callDyad f@(ScanUp _) _ _ = throwError $ noDyad $ show f
+callDyad (Reduce _) _ _ = throwError $ NYIError "Windowed reduce not implemented yet"
+callDyad (ReduceBack _) _ _ = throwError $ NYIError "Windowed reduce not implemented yet"
+callDyad f@(OnPrefixes _) _ _ = throwError $ noDyad $ show f
+callDyad f@(OnSuffixes _) _ _ = throwError $ noDyad $ show f
 callDyad (Each f) (Array ash acs) (Array bsh bcs)
   | null ash && null bsh = scalar . box <$> callDyad f (fromScalar $ head acs) (fromScalar $ head bcs)
   | null ash = Array bsh <$> mapM (fmap box . callDyad f (fromScalar $ head acs) . fromScalar) bcs

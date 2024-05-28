@@ -2,7 +2,6 @@
 glyph: '⍅'
 pattern: 'r←(F⍅)y'
 name: Reduce Back
-planned: true
 ---
 
 `r` is the result of reducing the major cells of `y` using `F`, right-to-left. This is the reduction implemented in most APLs.
