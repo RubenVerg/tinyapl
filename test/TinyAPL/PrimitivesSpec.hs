@@ -493,26 +493,17 @@ spec = do
       describe "phase" $ do
         it "returns the phase of complex numbers" $ do
           m P.phase (vector [Number 1, Number -1, Number (0 :+ 1), Number (1 :+ 1)]) `shouldReturn` pure (vector [Number 0, Number pi, Number $ pi / 2, Number $ pi / 4])
-      describe "set phase" $ do
-        it "sets the phase of the left argument to the one of the right argument" $ do
-          d P.phase (vector [Number 1, Number (0 :+ 2)]) (vector [Number pi, Number $ 3 * pi / 2]) `shouldReturn` pure (vector [Number -1, Number (0 :+ -2)])
 
     describe [G.real] $ do
       describe "real part" $ do
         it "returns the real part of the argument" $ do
           m P.real (vector [Number 1, Number (2 :+ 3), Number (0 :+ 5)]) `shouldReturn` pure (vector [Number 1, Number 2, Number 0])
-      describe "set real part" $ do
-        it "combines the imaginary part from the left argument and the real part from the right argument" $ do
-          d P.real (vector [Number 1, Number (2 :+ 3), Number (0 :+ 5)]) (vector [Number (2 :+ 5), Number (3 :+ 1), Number 3]) `shouldReturn` pure (vector [Number 2, Number (3 :+ 3), Number (3 :+ 5)])
-    
+      
     describe [G.imag] $ do
       describe "imaginary part" $ do
         it "returns the imaginary part of the argument" $ do
           m P.imag (vector [Number 1, Number (2 :+ 3), Number (0 :+ 5)]) `shouldReturn` pure (vector [Number 0, Number 3, Number 5])
-      describe "set imaginary part" $ do
-        it "combines the real part from the left argument and the imaginary part from the right argument" $ do
-          d P.imag (vector [Number 1, Number (2 :+ 3), Number (0 :+ 5)]) (vector [Number (2 :+ 5), Number (3 :+ 1), Number 3]) `shouldReturn` pure (vector [Number (1 :+ 5), Number (2 :+ 1), Number 0])
-
+      
     describe [G.union] $ do
       describe "unique" $ do
         it "returns unique elements of an array" $ do

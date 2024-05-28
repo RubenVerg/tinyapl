@@ -28,6 +28,7 @@ library
                     , TinyAPL.ArrayFunctionOperator
                     , TinyAPL.CoreQuads
                     , TinyAPL.Error
+                    , TinyAPL.Functions
                     , TinyAPL.Interpreter
                     , TinyAPL.Parser
                     , TinyAPL.Primitives

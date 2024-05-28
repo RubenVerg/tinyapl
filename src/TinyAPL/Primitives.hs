@@ -1,17 +1,9 @@
-{-# LANGUAGE LambdaCase #-}
 module TinyAPL.Primitives where
 
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.Error
-import TinyAPL.Util
+import qualified TinyAPL.Functions as F
 import qualified TinyAPL.Glyphs as G
-import qualified Data.Ord as Ord
-import Data.Complex
-import Data.List
-import qualified Data.List as List
-import Control.Monad ((>=>))
-import Data.Maybe (fromJust)
-import System.Random
 
 -- * Primitive arrays
 
@@ -22,175 +14,55 @@ arrays =
 
 -- * Primitive functions
 
-plus = DefinedFunction (Just $ monadN2N' conjugate) (Just $ dyadNN2N' (+)) [G.plus]
-minus = DefinedFunction (Just $ monadN2N' negate) (Just $ dyadNN2N' (-)) [G.minus]
-times = DefinedFunction (Just $ monadN2N' signum) (Just $ dyadNN2N' (*)) [G.times]
-divide = DefinedFunction (Just $ monadN2N $ \case
-  0 -> throwError $ DomainError "Divide by zero"
-  x -> pure $ recip x) (Just $ dyadNN2N $ \cases
-  0 0 -> pure 1
-  _ 0 -> throwError $ DomainError "Divide by zero"
-  x y -> pure $ x / y) [G.divide]
-power = DefinedFunction (Just $ monadN2N' exp) (Just $ dyadNN2N' (**)) [G.power]
-logarithm = DefinedFunction (Just $ monadN2N $ \case
-  0 -> throwError $ DomainError "Logarithm of zero"
-  x -> pure $ log x) (Just $ dyadNN2N $ \cases
-  1 1 -> pure 1
-  1 _ -> throwError $ DomainError "Logarithm base one"
-  _ 0 -> throwError $ DomainError "Logarithm of zero"
-  x y -> pure $ logBase x y
-  ) [G.logarithm]
-circle = DefinedFunction (Just $ monadN2N' (pi *)) (Just $ dyadNN2N $ \cases
-  0     y -> pure $ sqrt $ 1 - y * y
-  1     y -> pure $ sin y
-  (-1)  y -> pure $ asin y
-  2     y -> pure $ cos y
-  (-2)  y -> pure $ acos y
-  3     y -> pure $ tan y
-  (-3)  y -> pure $ atan y
-  4     y -> pure $ sqrt $ 1 + y * y
-  (-4)  y -> pure $ sqrt $ y * y - 1
-  5     y -> pure $ sinh y
-  (-5)  y -> pure $ asinh y
-  6     y -> pure $ cosh y
-  (-6)  y -> pure $ acosh y
-  7     y -> pure $ tanh y
-  (-7)  y -> pure $ atanh y
-  8     y -> pure $ sqrt $ negate $ 1 + y * y
-  (-8)  y -> pure $ negate $ sqrt $ negate $ 1 + y * y
-  9     y -> pure $ realPart y :+ 0
-  (-9)  y -> pure y
-  10    y -> pure $ Prelude.abs y
-  (-10) y -> pure $ conjugate y
-  11    y -> pure $ imagPart y :+ 0
-  (-11) y -> pure $ y * (0 :+ 1)
-  12    y -> pure $ Data.Complex.phase y :+ 0
-  (-12) y -> pure $ exp $ y * (0 :+ 1)
-  _     _ -> throwError $ DomainError "Invalid left argument to circular") [G.circle]
-root = DefinedFunction (Just $ monadN2N' sqrt) (Just $ dyadNN2N' $ \x y -> y ** recip x) [G.root]
-floor = DefinedFunction (Just $ monadN2N' complexFloor) (Just $ scalarDyad $ pure .: Ord.min) [G.floor]
-ceil = DefinedFunction (Just $ monadN2N' complexCeiling) (Just $ scalarDyad $ pure .: Ord.max) [G.ceil]
-round = DefinedFunction (Just $ monadN2N' $ \(a :+ b) -> componentFloor $ (a + 0.5) :+ (b + 0.5)) Nothing [G.round]
-less = DefinedFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (<)) [G.less]
-lessEqual = DefinedFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (<=)) [G.lessEqual]
-equal = DefinedFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (==)) [G.equal]
-greaterEqual = DefinedFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (>=)) [G.greaterEqual]
-greater = DefinedFunction Nothing (Just $ scalarDyad $ pure .: boolToScalar .: (>)) [G.greater]
-notEqual = DefinedFunction (Just $ \x -> do
-  let cells = majorCells x
-  return $ vector $ (\(c, idx) -> boolToScalar $ fromJust (c `elemIndex` cells) == idx) <$> zip cells [0..]
-  ) (Just $ scalarDyad $ pure .: boolToScalar .: (/=)) [G.notEqual]
-and = DefinedFunction Nothing (Just $ dyadNN2N' complexLCM) [G.and]
-or = DefinedFunction Nothing (Just $ dyadNN2N' complexGCD) [G.or]
-nand = DefinedFunction Nothing (Just $ dyadBB2B' $ not .: (&&)) [G.nand]
-nor = DefinedFunction Nothing (Just $ dyadBB2B' $ not .: (||)) [G.nor]
-cartesian = DefinedFunction (Just $ monadN2N' (* (0 :+ 1))) (Just $ dyadNN2N' $ \x y -> x + (0 :+ 1) * y) [G.cartesian]
-polar = DefinedFunction (Just $ monadN2N' $ exp . (* (0 :+ 1))) (Just $ dyadNN2N' $ \x y -> x * exp (y * (0 :+ 1))) [G.polar]
-match = DefinedFunction Nothing (Just $ pure .: scalar .: boolToScalar .: (==)) [G.match]
-notMatch = DefinedFunction (Just $ pure . genericLength . majorCells) (Just $ pure .: scalar .: boolToScalar .: (/=)) [G.notMatch]
-rho = DefinedFunction (Just $ \(Array sh _) -> pure $ vector $ Number . fromInteger . toEnum . fromEnum <$> sh) (Just $ \sh (Array _ xs) -> do
-  let mustBeIntegral = DomainError "Shape must be integral"
-  shape <- (asVector (RankError "Shape must be a vector") sh >>= mapM (asNumber mustBeIntegral >=> asInt mustBeIntegral)) :: St [Integer]
-  let negative = count (< 0) shape
-  if negative == 0 then case arrayReshaped (toEnum . fromEnum <$> shape) xs of
-    Nothing -> throwError $ DomainError "Cannot reshape empty array to non-empty array"
-    Just rs -> pure rs
-  else if negative == 1 && (-1) `elem` shape then do
-    let allElements = genericLength xs
-    let known = product $ filter (>= 0) shape
-    if known == 0 then throwError $ DomainError $ "Shape cannot and contain both 0 and " ++ [G.negative] ++ "1"
-    else if allElements `mod` known /= 0 then throwError $ DomainError "Shape is not a multiple of the bound of the array"
-    else case arrayReshaped (toEnum . fromEnum <$> map (\x -> if x == (-1) then allElements `div` known else x) shape) xs of
-      Nothing -> throwError $ DomainError "Cannot reshape empty array to non-empty array"
-      Just rs -> pure rs
-  else throwError $ DomainError "Invalid shape"
-  ) [G.rho]
-ravel = DefinedFunction (Just $ pure . vector . arrayContents) Nothing [G.ravel]
-reverse = DefinedFunction (Just $ onMajorCells $ pure . List.reverse) (Just $ \r arr -> let
-  rotate c
-    | c < 0 = List.reverse . rotate (negate c) . List.reverse
-    | c == 0 = id
-    | otherwise = \case
-      []       -> []
-      (x : xs) -> rotate (c - 1) (xs ++ [x])
-  go []     xs = xs
-  go (d:ds) xs = fromMajorCells $ rotate d $ go ds <$> majorCells xs
-  mustBeIntegral = DomainError "Rotate left argument must be integral"
-  in do
-    rs <- asVector (RankError "Rotate left argument must be a vector") r >>= mapM (asNumber mustBeIntegral >=> asInt mustBeIntegral)
-    pure $ go rs arr) [G.reverse]
-pair = DefinedFunction (Just $ pure . vector . singleton . box) (Just $ \x y -> pure $ vector [box x, box y]) [G.pair]
-enclose = DefinedFunction (Just $ pure . scalar . box) Nothing [G.enclose]
-first = DefinedFunction (Just $ \case
-  Array _ [] -> throwError $ DomainError "First on empty array"
-  Array _ (x:_) -> pure $ fromScalar x) Nothing [G.first]
-last = DefinedFunction (Just $ \case
-  Array _ [] -> throwError $ DomainError "Last on empty array"
-  Array _ xs -> pure $ fromScalar $ List.last xs) Nothing [G.last]
-take = DefinedFunction Nothing (Just $ \t arr -> let
-  take' c = if c < 0 then List.reverse . genericTake (negate c) . List.reverse else genericTake c
-  go []     xs = xs
-  go (t:ts) xs = fromMajorCells $ take' t $ go ts <$> majorCells xs
-  mustBeIntegral = DomainError "Take left argument must be integral"
-  in do
-    ts <- asVector (RankError "Take left argument must be a vector") t >>= mapM (asNumber mustBeIntegral >=> asInt mustBeIntegral)
-    pure $ go ts arr
-  ) [G.take]
-drop = DefinedFunction Nothing (Just $ \d arr -> let
-  drop' c = if c < 0 then List.reverse . genericDrop (negate c) . List.reverse else genericDrop c
-  go []     xs = xs
-  go (d:ds) xs = fromMajorCells $ drop' d $ go ds <$> majorCells xs
-  mustBeIntegral = DomainError "Drop left argument must be integral"
-  in do
-    ds <- asVector (RankError "Drop left argument must be a vector") d >>= mapM (asNumber mustBeIntegral >=> asInt mustBeIntegral)
-    pure $ go ds arr
-  ) [G.drop]
+plus = DefinedFunction (Just F.conjugate') (Just F.add') [G.plus]
+minus = DefinedFunction (Just F.neg') (Just F.sub') [G.minus]
+times = DefinedFunction (Just F.sign') (Just F.times') [G.times]
+divide = DefinedFunction (Just F.reciprocal') (Just F.divide') [G.divide]
+power = DefinedFunction (Just F.ePow') (Just F.pow') [G.power]
+logarithm = DefinedFunction (Just F.ln') (Just F.log') [G.logarithm]
+circle = DefinedFunction (Just F.piTimes') (Just F.circular') [G.circle]
+root = DefinedFunction (Just F.squareRoot') (Just F.root') [G.root]
+floor = DefinedFunction (Just F.floor') (Just F.min') [G.floor]
+ceil = DefinedFunction (Just F.ceil') (Just F.max') [G.ceil]
+round = DefinedFunction (Just F.round') Nothing [G.round]
+less = DefinedFunction Nothing (Just F.less') [G.less]
+lessEqual = DefinedFunction Nothing (Just F.lessEqual') [G.lessEqual]
+equal = DefinedFunction Nothing (Just F.equal') [G.equal]
+greaterEqual = DefinedFunction Nothing (Just F.greaterEqual') [G.greaterEqual]
+greater = DefinedFunction Nothing (Just F.greater') [G.greater]
+notEqual = DefinedFunction (Just F.nubSieve') (Just F.notEqual') [G.notEqual]
+and = DefinedFunction Nothing (Just F.lcm') [G.and]
+or = DefinedFunction Nothing (Just F.gcd') [G.or]
+nand = DefinedFunction Nothing (Just F.nand') [G.nand]
+nor = DefinedFunction Nothing (Just F.nor') [G.nor]
+cartesian = DefinedFunction (Just F.imaginary') (Just F.cartesian') [G.cartesian]
+polar = DefinedFunction (Just F.unitPolar') (Just F.polar') [G.polar]
+match = DefinedFunction Nothing (Just F.match') [G.match]
+notMatch = DefinedFunction (Just F.tally') (Just F.notMatch') [G.notMatch]
+rho = DefinedFunction (Just F.shape') (Just F.reshape') [G.rho]
+ravel = DefinedFunction (Just F.ravel') Nothing [G.ravel]
+reverse = DefinedFunction (Just F.reverse') (Just F.rotate') [G.reverse]
+pair = DefinedFunction (Just F.halfPair) (Just F.pair) [G.pair]
+enclose = DefinedFunction (Just F.enclose') Nothing [G.enclose]
+first = DefinedFunction (Just F.first) Nothing [G.first]
+last = DefinedFunction (Just F.last) Nothing [G.last]
+take = DefinedFunction Nothing (Just F.take') [G.take]
+drop = DefinedFunction Nothing (Just F.drop') [G.drop]
 left = DefinedFunction (Just $ \x -> pure x) (Just $ \x _ -> pure x) [G.left]
 right = DefinedFunction (Just $ \x -> pure x) (Just $ \_ y -> pure y) [G.right]
-iota = DefinedFunction (Just $ \x -> do
-  let error = DomainError "Index Generator requires a vector (or scalar) of natural numbers"
-  vec <- asVector error x >>= mapM (asNumber error >=> asNat error)
-  let indices = generateIndices vec
-  return $ fromJust $ arrayReshaped vec $ box . fromJust . arrayReshaped (arrayShape x) . fmap (Number . fromInteger . toEnum . fromEnum) <$> indices
-  ) Nothing [G.iota]
-indices = DefinedFunction (Just $ \(Array sh cs) -> do
-  let error = DomainError "Indices requires an array of naturals"
-  let indices = generateIndices sh
-  let shape = if length sh == 1 then [] else [genericLength sh]
-  let rep idx c = genericReplicate c $ box $ fromJust $ arrayReshaped shape $ Number . fromInteger . toEnum . fromEnum <$> idx
-  counts <- mapM (asNumber error >=> asNat error) cs
-  return $ vector $ concat $ zipWith rep indices counts
-  ) Nothing [G.indices]
-replicate = DefinedFunction Nothing (Just $ \r arr -> do
-  let error = DomainError "Replicate left argument must be a natural vector"
-  rs <- asVector error r >>= mapM (asNumber error >=> asNat error)
-  let cells = majorCells arr
-  if length rs /= length cells then throwError $ LengthError "Replicate: different lengths in left and right argument"
-  else return $ fromMajorCells $ concat $ zipWith genericReplicate rs cells) [G.replicate]
-abs = DefinedFunction (Just $ monadN2N' Prelude.abs) (Just $ dyadNN2N' complexRemainder) [G.abs]
-phase = DefinedFunction (Just $ monadN2N' $ \x -> Data.Complex.phase x :+ 0) (Just $ dyadNN2N' $ \x y -> Prelude.abs x * exp ((0 :+ 1) * y)) [G.phase]
-real = DefinedFunction (Just $ monadN2N' $ \x -> realPart x :+ 0) (Just $ dyadNN2N' $ \x y -> realPart y :+ imagPart x) [G.real]
-imag = DefinedFunction (Just $ monadN2N' $ \x -> imagPart x :+ 0) (Just $ dyadNN2N' $ \x y -> realPart x :+ imagPart y) [G.imag]
-union = DefinedFunction (Just $ return . fromMajorCells . List.nub . majorCells) (Just $ \x y ->
-  return $ fromMajorCells $ majorCells x ++ filter (not . (`elem` majorCells x)) (majorCells y)) [G.union]
-intersection = DefinedFunction Nothing (Just $ \x y -> return $ fromMajorCells $ filter (`elem` majorCells y) $ majorCells x) [G.intersection]
-difference = DefinedFunction (Just $ monadN2N' (1 -)) (Just $ \x y -> return $ fromMajorCells $ filter (not . (`elem` majorCells y)) $ majorCells x) [G.difference]
-symdiff = DefinedFunction Nothing (Just $ \x y ->
-  return $ fromMajorCells $ filter (not . (`elem` majorCells y)) (majorCells x) ++ filter (not . (`elem` majorCells x)) (majorCells y)) [G.symdiff]
-element = DefinedFunction (Just $ \x -> do
-  let go :: Array -> [ScalarValue]
-      go (Array [] [Box a]) = go a
-      go (Array [] sc)      = sc
-      go (Array _ cs)       = concatMap (go . fromScalar) cs
-  return $ vector $ go x
-  ) Nothing [G.element]
-roll = DefinedFunction (Just $ scalarMonad $ \x -> do
-  let e = DomainError "Roll argument must be a natural"
-  n <- asNumber e x >>= asNat e
-  if n == 0 then Number . (:+ 0) <$> randomRIO (0, 1)
-  else Number . fromInteger <$> randomRIO (1, toInteger n)
-  ) Nothing [G.roll]
-transpose = DefinedFunction Nothing Nothing [G.transpose]
+iota = DefinedFunction (Just F.indexGenerator') Nothing [G.iota]
+indices = DefinedFunction (Just F.indices) Nothing [G.indices]
+replicate = DefinedFunction Nothing (Just F.replicate') [G.replicate]
+abs = DefinedFunction (Just F.abs') (Just F.remainder') [G.abs]
+phase = DefinedFunction (Just F.phase') Nothing [G.phase]
+real = DefinedFunction (Just F.real') Nothing [G.real]
+imag = DefinedFunction (Just F.imag') Nothing [G.imag]
+union = DefinedFunction (Just F.unique') (Just F.union') [G.union]
+intersection = DefinedFunction Nothing (Just F.intersection') [G.intersection]
+difference = DefinedFunction (Just F.not') (Just F.difference') [G.difference]
+symdiff = DefinedFunction Nothing (Just F.symmetricDifference') [G.symdiff]
+element = DefinedFunction (Just F.enlist') Nothing [G.element]
+roll = DefinedFunction (Just F.roll') Nothing [G.roll]
 
 functions = (\x -> (head $ dfnRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -241,8 +113,7 @@ functions = (\x -> (head $ dfnRepr x, x)) <$>
   , TinyAPL.Primitives.difference
   , TinyAPL.Primitives.symdiff
   , TinyAPL.Primitives.element
-  , TinyAPL.Primitives.roll
-  , TinyAPL.Primitives.transpose ]
+  , TinyAPL.Primitives.roll ]
 
 -- * Primitive adverbs
 

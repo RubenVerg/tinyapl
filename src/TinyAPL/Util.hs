@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module TinyAPL.Util where
 import qualified TinyAPL.Glyphs as G
 
@@ -5,6 +7,7 @@ import GHC.Float (floatToDigits)
 import GHC.Float.RealFracMethods (truncateDoubleInteger)
 import Data.Char (intToDigit)
 import Data.Complex
+import Data.List (sortOn, genericLength, genericIndex)
 
 infixr 9 .:
 (.:) f g x y = f $ g x y
@@ -67,6 +70,17 @@ prefixes (x:xs) = [x] : ((x :) <$> prefixes xs)
 suffixes :: [a] -> [[a]]
 suffixes = reverse . map reverse . prefixes . reverse
 
+i :: Num a => Complex a
+i = 0 :+ 1
+
+rotate :: (Ord n, Num n) => n -> [a] -> [a]
+rotate c 
+  | c < 0 = reverse . rotate (negate c) . reverse
+  | c == 0 = id
+  | otherwise = \case
+    [] -> []
+    (x:xs) -> rotate (c - 1) (xs ++ [x])
+
 componentFloor :: RealFrac a => Complex a -> Complex a
 componentFloor (r :+ i) = fromInteger (floor r) :+ fromInteger (floor i)
 
@@ -95,3 +109,24 @@ complexGCD a w = if a `complexRemainder` w == 0 then a else (a `complexRemainder
 
 complexLCM :: RealFloat a => Complex a -> Complex a -> Complex a
 complexLCM x y = if x == 0 && y == 0 then 0 else (x * y) / (x `complexGCD` y)
+
+group :: Eq k => [k] -> [a] -> [(k, [a])]
+group [] _ = []
+group (k:ks) (a:as) = let gs = group ks as in case lookup k gs of
+  Just g -> update k (a:g) gs
+  Nothing -> (k, [a]) : gs
+group _ _ = error "group: mismatched array lengths"
+
+groupBy :: Eq k => (a -> k) -> [a] -> [(k, [a])]
+groupBy f as = group (f <$> as) as
+
+sortByUp :: Ord a => [a] -> [b] -> [b]
+sortByUp as bs = snd <$> sortOn fst (zip as bs)
+
+oneIndex :: Integral n => [a] -> [n] -> Maybe [a]
+oneIndex _ [] = Just []
+oneIndex as (i:is)
+  | i == 0 = Nothing
+  | i < 0 = oneIndex as $ (1 + i + genericLength as) : is
+  | i > genericLength as = Nothing
+  | otherwise = ((as `genericIndex` (i - 1)) :) <$> oneIndex as is

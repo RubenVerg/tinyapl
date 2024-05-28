@@ -237,14 +237,14 @@ onMajorCells f x = do
 
 scalarMonad :: MonadError Error m =>
   (ScalarValue -> m ScalarValue)
-         -> Array -> m Array
+      -> Array -> m Array
 scalarMonad f (Array sh cs) = Array sh <$> mapM f' cs where
   f' (Box xs) = Box <$> scalarMonad f xs
   f' x = f x
 
 scalarDyad :: MonadError Error m =>
   (ScalarValue -> ScalarValue -> m ScalarValue)
-         -> Array ->       Array -> m Array
+      -> Array ->       Array -> m Array
 scalarDyad f a@(Array ash as) b@(Array bsh bs)
   | isScalar a && isScalar b = let ([a'], [b']) = (as, bs) in scalar <$> f' a' b'
   | isScalar a = let [a'] = as in Array bsh <$> mapM (a' `f'`) bs
@@ -266,7 +266,7 @@ monadN2N f = scalarMonad f' where
     x' <- flip asNumber x $ DomainError "Expected number"
     Number <$> f x'
 
-monadN2N' = monadN2N . (pure .)
+monadN2N' f = monadN2N $ pure . f
 
 dyadNN2N f = scalarDyad f' where
   f' a b = do
@@ -274,7 +274,7 @@ dyadNN2N f = scalarDyad f' where
     b' <- flip asNumber b $ DomainError "Expected number"
     Number <$> f a' b'
 
-dyadNN2N' = dyadNN2N . (pure .:)
+dyadNN2N' f = dyadNN2N $ pure .: f
 
 monadB2B f = scalarMonad f' where
   f' x = do
