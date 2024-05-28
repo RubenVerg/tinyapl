@@ -1,7 +1,7 @@
 /** @jsx h */
 /** @jsxFrag Fragment */
 
-import { PlannedAlert, PlannedBadge } from './Planned.tsx';
+import { PlannedAlert, PlannedBadge } from './Banners.tsx';
 import { Info } from '../types.d.ts';
 
 import { Fragment, h } from '../deps/x/htm.ts';

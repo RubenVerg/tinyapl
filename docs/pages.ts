@@ -24,6 +24,7 @@ function readPrimitive(path: string, src: string): Primitive {
 		pattern,
 		name,
 		planned: frontmatter.get('planned') ?? false,
+		deprecated: frontmatter.get('deprecated') ?? false,
 		body,
 	};
 }
@@ -41,6 +42,7 @@ function readQuad(path: string, src: string): Quad {
 		name,
 		category,
 		planned: frontmatter.get('planned') ?? false,
+		deprecated: frontmatter.get('deprecated') ?? false,
 		body,
 	};
 }

@@ -181,8 +181,8 @@ Marked features are supported, unmarked features are planned
 	* array manipulation functions
 		* [x] `↑` take
 		* [x] `↓` drop
-		* [ ] `↑` prefixes (mix is `⊃⍤0`)
-		* [ ] `↓` suffixes (split is `⊂⍤1`)
+		* [ ] `↑` mix
+		* [ ] `↓` major cells (split is `⊂⍤1`)
 		* [x] `⊂` enclose
 		* [ ] `⊆` nest
 		* [ ] `⊂` partitioned enclose
@@ -223,12 +223,12 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍕` format
 		* [ ] `↗` raise?
 	* operators
-		* [x] `⤈` reduce top-to-bottom (first)
-		* [ ] `⤈` windowed reduce top-to-bottom (first)
-		* [x] `⤉` reduce bottom-to-top (first)
-		* [ ] `⤉` windowed reduce bottom-to-top (first)
-		* [x] `⇟` scan (on prefixes) top-to-bottom (first)
-		* [x] `⇞` scan (on suffixes) bottom-to-top (first)
+		* [x] `⍆` reduce left-to-right
+		* [ ] `⍆` windowed reduce left-to-right
+		* [x] `⍅` reduce right-to-left
+		* [ ] `⍅` windowed reduce right-to-left
+		* [ ] `↟` on prefixes
+		* [ ] `↡` on suffixes
 		* [x] `¨` each
 		* [x] `ᐵ` each-left
 		* [x] `ᑈ` each-right
