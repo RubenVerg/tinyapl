@@ -1,7 +1,7 @@
 /** @jsx h */
 /** @jsxFrag Fragment */
 
-import { PlannedAlert, PlannedBadge } from './Planned.tsx';
+import { DeprecatedAlert, DeprecatedBadge, PlannedAlert, PlannedBadge } from './Banners.tsx';
 import { Primitive } from '../types.d.ts';
 
 import { Fragment, h } from '../deps/x/htm.ts';
@@ -12,9 +12,11 @@ export interface PrimitivePageProps {
 
 function PrimitivePage({ primitive }: PrimitivePageProps) {
 	return <>
-		<h1>{primitive.planned && <PlannedBadge />}<code>{primitive.glyph}</code> {primitive.name} <code class='float-end'>{primitive.pattern}</code></h1>
+		<h1>{primitive.planned && <PlannedBadge />}{primitive.planned && <DeprecatedBadge />}<code>{primitive.glyph}</code> {primitive.name} <code class='float-end'>{primitive.pattern}</code></h1>
 
 		{primitive.planned && <PlannedAlert />}
+
+		{primitive.deprecated && <DeprecatedAlert />}
 
 		<div dangerouslySetInnerHTML={{ __html: primitive.body }} />
 	</>;

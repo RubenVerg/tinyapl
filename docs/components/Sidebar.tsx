@@ -12,7 +12,7 @@ export interface SidebarProps {
 function Sidebar({ id, pages }: SidebarProps) {
 	const navClass = 'nav flex-column mb-0 mb-sm-auto align-items-start', subNavClass = `${navClass} ms-1`;
 
-	return <div id={id} class='offcanvas offcanvas-start w-25' tabindex={-1} data-bs-keyboard='false' data-bs-backdrop='false'>
+	return <div id={id} class='offcanvas offcanvas-start w-auto' tabindex={-1} data-bs-keyboard='false' data-bs-backdrop='false'>
 		<div class='offcanvas-header'>
 			<h6 class='offcanvas-title d-none d-sm-block'>Docs</h6>
 			<button type='button' class='btn-close text-reset' data-bs-dismiss='offcanvas' aria-label='Close' />

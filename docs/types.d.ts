@@ -9,6 +9,7 @@ export interface Primitive {
 	pattern: string;
 	name: string;
 	planned: boolean;
+	deprecated: boolean;
 	body: string;
 }
 
@@ -18,6 +19,7 @@ export interface Quad {
 	name: string;
 	category: string;
 	planned: boolean;
+	deprecated: boolean;
 	body: string;
 }
 
