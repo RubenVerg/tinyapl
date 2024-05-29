@@ -128,11 +128,9 @@ Marked features are supported, unmarked features are planned
 		* [x] `⊗` polar (`x⊗y` is $xe^{iy}$)
 		* [x] `⊗` unit polar (`⊗y` is $e^{iy}$)
 		* [x] `∡` phase
-		* [x] `∡` set phase (`(|y)⊗x`)
+		* [ ] `∡` atan2
 		* [x] `ℜ` real part
-		* [x] `ℜ` set real part
 		* [x] `ℑ` imaginary part
-		* [x] `ℑ` set imaginary part
 		* [ ] `⊥` decode
 		* [ ] `⊥` base 2 decode
 		* [ ] `⊤` encode
