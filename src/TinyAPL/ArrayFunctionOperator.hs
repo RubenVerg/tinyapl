@@ -331,141 +331,33 @@ instance Floating Array where
 -- * Functions
 
 data Function
-  = DefinedFunction
-    { dfnMonad :: Maybe (Array -> St Array)
-    , dfnDyad  :: Maybe (Array -> Array -> St Array)
-    , dfnRepr  :: String }
-  | Atop { atopLeft :: Function, atopRight :: Function }
-  | Over { overLeft :: Function, overRight :: Function }
-  | After { afterLeft :: Function, afterRight :: Function }
-  | Before { beforeLeft :: Function, beforeRight :: Function }
-  | LeftHook { leftHookLeft :: Function, leftHookRight :: Function }
-  | RightHook { rightHookLeft :: Function, rightHookRight :: Function }
-  | Selfie { selfieFunction :: Function }
-  | BindLeft { bindLeftArray :: Array, bindLeftFunction :: Function }
-  | BindRight { bindRightFunction :: Function, bindRightArray :: Array }
-  | DefaultBindLeft { defaultBindLeftArray :: Array, defaultBindLeftFunction :: Function }
-  | DefaultBindRight { defaultBindRightFunction :: Function, defaultBindRightArray :: Array }
-  | Constant { constantArray :: Array }
-  | Reduce { reduceFunction :: Function }
-  | ReduceBack { reduceBackFunction :: Function }
-  | OnPrefixes { onPrefixesFunction :: Function }
-  | OnSuffixes { onSuffixesFunction :: Function }
-  | Each { eachFunction :: Function }
-  | EachLeft { eachLeftFunction :: Function }
-  | EachRight { eachRightFunction :: Function }
+  = Function
+    { functionMonad :: Maybe (Array -> St Array)
+    , functionDyad  :: Maybe (Array -> Array -> St Array)
+    , functionRepr  :: String }
+
+makeAdverbRepr :: String -> Char -> String
+makeAdverbRepr l s = "(" ++ l ++ ")" ++ [s]
+
+makeConjRepr :: String -> Char -> String -> String
+makeConjRepr l s r = "(" ++ l ++ ")" ++ [s] ++ "(" ++ r ++ ")"
 
 instance Show Function where
-  show (DefinedFunction { dfnRepr = repr }) = repr
-  show (l `Atop` r) = "(" ++ show l ++ [')', G.atop, '('] ++ show r ++ ")"
-  show (l `Over` r) = "(" ++ show l ++ [')', G.over, '('] ++ show r ++ ")"
-  show (l `After` r) = "(" ++ show l ++ [')', G.after, '('] ++ show r ++ ")"
-  show (l `Before` r) = "(" ++ show l ++ [')', G.before, '('] ++ show r ++ ")"
-  show (l `LeftHook` r) = "(" ++ show l ++ [')', G.leftHook, '('] ++ show r ++ ")"
-  show (l `RightHook` r) = "(" ++ show l ++ [')', G.rightHook, '('] ++ show r ++ ")"
-  show (Selfie f) = show f ++ [G.selfie]
-  show (l `BindLeft` r) = "(" ++ show l ++ [')', G.after, '('] ++ show r ++ ")"
-  show (l `BindRight` r) = "(" ++ show l ++ [')', G.after, '('] ++ show r ++ ")"
-  show (l `DefaultBindLeft` r) = "(" ++ show l ++ [')', G.before, '('] ++ show r ++ ")"
-  show (l `DefaultBindRight` r) = "(" ++ show l ++ [')', G.before, '('] ++ show r ++ ")"
-  show (Constant x) = "(" ++ show x ++ [')', G.selfie]
-  show (Reduce f) = "(" ++ show f ++ [')', G.reduce]
-  show (ReduceBack f) = "(" ++ show f ++ [')', G.reduceBack]
-  show (OnPrefixes f) = "(" ++ show f ++ [')', G.onPrefixes]
-  show (OnSuffixes f) = "(" ++ show f ++ [')', G.onSuffixes]
-  show (Each f) = "(" ++ show f ++ [')', G.each]
-  show (EachLeft f) = "(" ++ show f ++ [')', G.eachLeft]
-  show (EachRight f) = "(" ++ show f ++ [')', G.eachRight]
+  show (Function { functionRepr = repr }) = repr
 
 noMonad :: String -> Error
 noMonad str = DomainError $ "Function " ++ str ++ " cannot be called monadically"
 
 callMonad :: Function -> Array -> St Array
-callMonad (DefinedFunction (Just f) _ _) x = f x
-callMonad f@(DefinedFunction Nothing _ _) _ = throwError $ noMonad $ show f
-callMonad (f `Atop` g) x = callMonad g x >>= callMonad f
-callMonad (f `Over` g) x = callMonad g x >>= callMonad f
-callMonad (f `After` g) x = callMonad g x >>= callMonad f
-callMonad (f `Before` g) x = callMonad f x >>= callMonad g
-callMonad (f `LeftHook` g) x = do
-  x' <- callMonad f x
-  callDyad g x' x
-callMonad (f `RightHook` g) x = do
-  x' <- callMonad g x
-  callDyad f x x'
-callMonad (Selfie f) x = callDyad f x x
-callMonad (a `BindLeft` f) x = callDyad f a x
-callMonad (f `BindRight` a) x = callDyad f x a
-callMonad (a `DefaultBindLeft` f) x = callDyad f a x
-callMonad (f `DefaultBindRight` a) x = callDyad f x a
-callMonad (Constant x) _ = pure x
-callMonad (Reduce f) xs = do
-  let go :: [Array] -> St Array
-      go []           = throwError $ DomainError "Reduce empty axis"
-      go [x]          = return x
-      go (a : b : xs) = do
-        x <- callDyad f a b
-        go $ x : xs
-  go $ majorCells xs
-callMonad (ReduceBack f) xs = do
-  let go :: [Array] -> St Array
-      go []       = throwError $ DomainError "Reduce empty axis"
-      go [x]      = return x
-      go (x : xs) = do
-        y <- go xs
-        callDyad f x y
-  go $ majorCells xs
-callMonad (OnPrefixes f) xs = do
-  if isScalar xs then return xs
-  else fromMajorCells <$> mapM (callMonad f . fromMajorCells) (prefixes $ majorCells xs)
-callMonad (OnSuffixes f) xs = do
-  if isScalar xs then return xs
-  else fromMajorCells <$> mapM (callMonad f . fromMajorCells) (suffixes $ majorCells xs)
-callMonad (Each f) (Array sh cs) = Array sh <$> mapM (fmap box . callMonad f . fromScalar) cs
-callMonad f@(EachLeft _) _ = throwError $ noMonad $ show f
-callMonad f@(EachRight _) _ = throwError $ noMonad $ show f
+callMonad (Function (Just f) _ _) x = f x
+callMonad f@(Function Nothing _ _) _ = throwError $ noMonad $ show f
 
 noDyad :: String -> Error
 noDyad str = DomainError $ "Function " ++ str ++ " cannot be called dyadically"
 
 callDyad :: Function -> Array -> Array -> St Array
-callDyad (DefinedFunction _ (Just g) _) a b = g a b
-callDyad f@(DefinedFunction _ Nothing _) _ _ = throwError $ noDyad $ show f
-callDyad (f `Atop` g) a b = callDyad g a b >>= callMonad f
-callDyad (f `Over` g) a b = do
-  a' <- callMonad g a
-  b' <- callMonad g b
-  callDyad f a' b'
-callDyad (f `After` g) a b = do
-  b' <- callMonad g b
-  callDyad f a b'
-callDyad (f `Before` g) a b = do
-  a' <- callMonad f a
-  callDyad g a' b
-callDyad (f `LeftHook` g) a b = do
-  a' <- callMonad f a
-  callDyad g a' b
-callDyad (f `RightHook` g) a b = do
-  b' <- callMonad g b
-  callDyad f a b'
-callDyad (Selfie f) a b = callDyad f b a
-callDyad (_ `BindLeft` _) _ _ = throwError $ DomainError "Bound function called dyadically"
-callDyad (_ `BindRight` _) _ _ = throwError $ DomainError "Bound function called dyadically"
-callDyad (_ `DefaultBindLeft` f) x y = callDyad f x y
-callDyad (f `DefaultBindRight` _) x y = callDyad f x y
-callDyad (Constant x) _ _ = pure x
-callDyad (Reduce _) _ _ = throwError $ NYIError "Windowed reduce not implemented yet"
-callDyad (ReduceBack _) _ _ = throwError $ NYIError "Windowed reduce not implemented yet"
-callDyad f@(OnPrefixes _) _ _ = throwError $ noDyad $ show f
-callDyad f@(OnSuffixes _) _ _ = throwError $ noDyad $ show f
-callDyad (Each f) (Array ash acs) (Array bsh bcs)
-  | null ash && null bsh = scalar . box <$> callDyad f (fromScalar $ head acs) (fromScalar $ head bcs)
-  | null ash = Array bsh <$> mapM (fmap box . callDyad f (fromScalar $ head acs) . fromScalar) bcs
-  | null bsh = Array ash <$> mapM (fmap box . (\a -> callDyad f a (fromScalar $ head bcs)) . fromScalar) acs
-  | ash == bsh = Array ash <$> zipWithM (fmap box .: callDyad f) (fromScalar <$> acs) (fromScalar <$> bcs)
-  | otherwise = throwError $ LengthError "Incompatible shapes in arguments to Each"
-callDyad (EachLeft f) (Array ash acs) b = Array ash <$> mapM (fmap box . (\a -> callDyad f a b) . fromScalar) acs
-callDyad (EachRight f) a (Array bsh bcs) = Array bsh <$> mapM (fmap box . callDyad f a . fromScalar) bcs
+callDyad (Function _ (Just g) _) a b = g a b
+callDyad f@(Function _ Nothing _) _ _ = throwError $ noDyad $ show f
 
 -- * Operators
 

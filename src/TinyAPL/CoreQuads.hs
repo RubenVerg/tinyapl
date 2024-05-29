@@ -20,19 +20,19 @@ seed = Nilad Nothing (Just $ \x -> do
   seed <- liftEither (asScalar e x) >>= liftEither . asNumber e >>= liftEither . asInt e
   setStdGen $ mkStdGen seed) (G.quad : "seed")
 
-exists = DefinedFunction (Just $ \x -> do
+exists = Function (Just $ \x -> do
   let var = show x
   scope <- get
   case scopeLookup var scope of
     Just _ -> return $ scalar $ Number 1
     Nothing -> return $ scalar $ Number 0
   ) Nothing (G.quad : "Exists")
-repr = DefinedFunction (Just $ \x -> return $ vector $ Character <$> arrayRepr x) Nothing (G.quad : "Repr")
+repr = Function (Just $ \x -> return $ vector $ Character <$> arrayRepr x) Nothing (G.quad : "Repr")
 
 core = Quads
   ((\x -> (niladRepr x, x)) <$>
   [ io, ct, u, l, d, seed ])
-  ((\x -> (dfnRepr x, x)) <$>
+  ((\x -> (functionRepr x, x)) <$>
   [ exists, repr ])
   ((\x -> (adverbRepr x, x)) <$>
   [])

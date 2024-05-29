@@ -17,6 +17,8 @@ import Control.Monad
 import Control.Monad.State (MonadIO)
 import System.Random
 
+-- * Functions
+
 expectedNumber = DomainError "Expected number"
 expectedReal = DomainError "Expected real"
 expectedInteger = DomainError "Expected integer"
@@ -554,3 +556,100 @@ roll' :: (MonadError Error m, MonadIO m) => Array -> m Array
 roll' = scalarMonad $ \y -> do
   n <- asNumber expectedNatural y >>= asNat expectedNatural
   Number . (:+ 0) <$> roll n
+
+-- * Operators
+
+compose :: MonadError Error m => (b -> m c) -> (a -> m b) -> a -> m c
+compose f g = g >=> f
+
+reverseCompose :: MonadError Error m => (a -> m b) -> (b -> m c) -> a -> m c
+reverseCompose = flip compose
+
+atop :: MonadError Error m => (c -> m d) -> (a -> b -> m c) -> a -> b -> m d
+atop f g x y = g x y >>= f
+
+over :: MonadError Error m => (b -> b -> m c) -> (a -> m b) -> a -> a -> m c
+over f g x y = do
+  x' <- g x
+  y' <- g y
+  f x' y'
+
+after :: MonadError Error m => (a -> c -> m d) -> (b -> m c) -> a -> b -> m d
+after f g x y = do
+  y' <- g y
+  f x y'
+
+before :: MonadError Error m => (a -> m b) -> (b -> c -> m d) -> a -> c -> m d
+before f g x y = do
+  x' <- f x
+  g x' y
+
+leftHook :: MonadError Error m => (a -> m b) -> (b -> a -> m c) -> a -> m c
+leftHook f g y = do
+  y' <- f y
+  g y' y
+
+rightHook :: MonadError Error m => (a -> b -> m c) -> (a -> m b) -> a -> m c
+rightHook f g y = do
+  y' <- g y
+  f y y'
+
+constant1 :: MonadError Error m => a -> b -> m a
+constant1 a _ = pure a
+
+constant2 :: MonadError Error m => a -> b -> c -> m a
+constant2 a _ _ = pure a
+
+duplicate :: MonadError Error m => (a -> a -> m b) -> a -> m b
+duplicate f y = f y y
+
+commute :: MonadError Error m => (b -> a -> m c) -> a -> b -> m c
+commute f x y = f y x
+
+reduce :: MonadError Error m => (a -> a -> m a) -> [a] -> m a
+reduce _ [] = throwError $ DomainError "Reduce empty axis"
+reduce _ [x] = pure x
+reduce f (a:b:xs) = do
+  x <- f a b
+  reduce f $ x : xs
+
+reduce' :: MonadError Error m => (Array -> Array -> m Array) -> Array -> m Array
+reduce' f = reduce f . majorCells
+
+reduceBack :: MonadError Error m => (a -> a -> m a) -> [a] -> m a
+reduceBack _ [] = throwError $ DomainError "Reduce empty axis"
+reduceBack _ [x] = pure x
+reduceBack f (x:xs) = reduceBack f xs >>= f x
+
+reduceBack' :: MonadError Error m => (Array -> Array -> m Array) -> Array -> m Array
+reduceBack' f = reduceBack f . majorCells
+
+onPrefixes :: MonadError Error m => ([a] -> m b) -> [a] -> m [b]
+onPrefixes f = mapM f . prefixes
+
+onPrefixes' :: MonadError Error m => (Array -> m Array) -> Array -> m Array
+onPrefixes' f arr = fromMajorCells <$> onPrefixes (f . fromMajorCells) (majorCells arr)
+
+onSuffixes :: MonadError Error m => ([a] -> m b) -> [a] -> m [b]
+onSuffixes f = mapM f . suffixes
+
+onSuffixes' :: MonadError Error m => (Array -> m Array) -> Array -> m Array
+onSuffixes' f arr = fromMajorCells <$> onSuffixes (f . fromMajorCells) (majorCells arr)
+
+each1 :: MonadError Error m => (Array -> m Array) -> Array -> m Array
+each1 f (Array sh cs) = Array sh <$> mapM (fmap box . f . fromScalar) cs
+
+each2 :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+each2 f (Array ash acs) (Array bsh bcs)
+  | null ash && null bsh = scalar . box <$> f (fromScalar $ head acs) (fromScalar $ head bcs)
+  | null ash = Array bsh <$> mapM (fmap box . ((fromScalar $ head acs) `f`) . fromScalar) bcs
+  | null bsh = Array ash <$> mapM (fmap box . (`f` (fromScalar $ head bcs)) . fromScalar) acs
+  | ash == bsh = Array ash <$> zipWithM (fmap box .: f) (fromScalar <$> acs) (fromScalar <$> bcs)
+  | length ash /= length bsh = throwError $ RankError "Incompatible ranks to Each"
+  | otherwise = throwError $ LengthError "Incompatible shapes to Each"
+
+eachLeft :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+eachLeft f x y = each2 f x (scalar $ box y)
+
+eachRight :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+eachRight f x = each2 f (scalar $ box x)

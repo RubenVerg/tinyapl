@@ -165,7 +165,7 @@ evalMonadCall _ _                         = throwError $ DomainError "Invalid ar
 
 evalDyadCall :: Value -> Value -> St Value
 evalDyadCall (VArray arr) (VFunction f) =
-  return $ VFunction $ DefinedFunction { dfnMonad = Just $ callDyad f arr, dfnDyad = Nothing, dfnRepr = "(" ++ show arr ++ show f ++ ")" }
+  return $ VFunction $ Function { functionMonad = Just $ callDyad f arr, functionDyad = Nothing, functionRepr = "(" ++ show arr ++ show f ++ ")" }
 evalDyadCall _ _                        = throwError $ DomainError "Invalid arguments to dyad call evaluation"
 
 evalAdverbCall :: Value -> Value -> St Value
@@ -229,23 +229,23 @@ evalDefined statements cat = let
     sc <- get
     case cat of
       CatFunction -> let
-        dfn = VFunction (DefinedFunction
-          { dfnRepr = "{...}"
-          , dfnMonad = Just $ \x -> run [([G.omega], VArray x), ([G.del], dfn)] sc
-          , dfnDyad = Just $ \x y -> run [([G.alpha], VArray x), ([G.omega], VArray y), ([G.del], dfn)] sc } )
+        dfn = VFunction (Function
+          { functionRepr = "{...}"
+          , functionMonad = Just $ \x -> run [([G.omega], VArray x), ([G.del], dfn)] sc
+          , functionDyad = Just $ \x y -> run [([G.alpha], VArray x), ([G.omega], VArray y), ([G.del], dfn)] sc } )
         in return dfn
       CatAdverb -> let
         dadv = VAdverb (Adverb
           { adverbRepr = "_{...}"
           , adverbOnArray = Just $ \a -> let
-            dfn = (DefinedFunction
-              { dfnRepr = "(" ++ show a ++ ")_{...}"
-              , dfnMonad = Just $ \x -> run
+            dfn = (Function
+              { functionRepr = "(" ++ show a ++ ")_{...}"
+              , functionMonad = Just $ \x -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omega], VArray x)
                 , ([G.underscore, G.del], dadv)
                 , ([G.del], VFunction dfn) ] sc
-              , dfnDyad = Just $ \x y -> run
+              , functionDyad = Just $ \x y -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.alpha], VArray x)
                 , ([G.omega], VArray y)
@@ -253,14 +253,14 @@ evalDefined statements cat = let
                 , ([G.del], VFunction dfn) ] sc } )
             in return dfn
           , adverbOnFunction = Just $ \a -> let
-            dfn = (DefinedFunction
-              { dfnRepr = "(" ++ show a ++ ")_{...}"
-              , dfnMonad = Just $ \x -> run
+            dfn = (Function
+              { functionRepr = "(" ++ show a ++ ")_{...}"
+              , functionMonad = Just $ \x -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omega], VArray x)
                 , ([G.underscore, G.del], dadv)
                 , ([G.del], VFunction dfn) ] sc
-              , dfnDyad = Just $ \x y -> run
+              , functionDyad = Just $ \x y -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.alpha], VArray x)
                 , ([G.omega], VArray y)
@@ -272,15 +272,15 @@ evalDefined statements cat = let
         dconj = VConjunction (Conjunction
           { conjRepr = "_{...}_"
           , conjOnArrayArray = Just $ \a b -> let
-            dfn = (DefinedFunction
-              { dfnRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
-              , dfnMonad = Just $ \x -> run
+            dfn = (Function
+              { functionRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
+              , functionMonad = Just $ \x -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omega, G.omega], VArray b)
                 , ([G.omega], VArray x)
                 , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc
-              , dfnDyad = Just $ \x y -> run
+              , functionDyad = Just $ \x y -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omega, G.omega], VArray b)
                 , ([G.alpha], VArray x)
@@ -289,15 +289,15 @@ evalDefined statements cat = let
                 , ([G.del], VFunction dfn) ] sc } )
             in return dfn
           , conjOnArrayFunction = Just $ \a b -> let
-            dfn = (DefinedFunction
-              { dfnRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
-              , dfnMonad = Just $ \x -> run
+            dfn = (Function
+              { functionRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
+              , functionMonad = Just $ \x -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omegaBar, G.omegaBar], VFunction b)
                 , ([G.omega], VArray x)
                 , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc
-              , dfnDyad = Just $ \x y -> run
+              , functionDyad = Just $ \x y -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omegaBar, G.omegaBar], VFunction b)
                 , ([G.alpha], VArray x)
@@ -306,15 +306,15 @@ evalDefined statements cat = let
                 , ([G.del], VFunction dfn) ] sc } )
             in return dfn
           , conjOnFunctionArray = Just $ \a b -> let
-            dfn = (DefinedFunction
-              { dfnRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
-              , dfnMonad = Just $ \x -> run
+            dfn = (Function
+              { functionRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
+              , functionMonad = Just $ \x -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omega, G.omega], VArray b)
                 , ([G.omega], VArray x)
                 , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc
-              , dfnDyad = Just $ \x y -> run
+              , functionDyad = Just $ \x y -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omega, G.omega], VArray b)
                 , ([G.alpha], VArray x)
@@ -323,15 +323,15 @@ evalDefined statements cat = let
                 , ([G.del], VFunction dfn) ] sc } )
             in return dfn
           , conjOnFunctionFunction = Just $ \a b -> let
-            dfn = (DefinedFunction
-              { dfnRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
-              , dfnMonad = Just $ \x -> run
+            dfn = (Function
+              { functionRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
+              , functionMonad = Just $ \x -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omegaBar, G.omegaBar], VFunction b)
                 , ([G.omega], VArray x)
                 , ([G.underscore, G.del, G.underscore], dconj)
                 , ([G.del], VFunction dfn) ] sc
-              , dfnDyad = Just $ \x y -> run
+              , functionDyad = Just $ \x y -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omegaBar, G.omegaBar], VFunction b)
                 , ([G.alpha], VArray x)
