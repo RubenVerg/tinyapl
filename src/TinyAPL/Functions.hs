@@ -653,3 +653,17 @@ eachLeft f x y = each2 f x (scalar $ box y)
 
 eachRight :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
 eachRight f x = each2 f (scalar $ box x)
+
+key :: (Eq a, MonadError Error m) => (a -> [b] -> m c) -> [a] -> [b] -> m [c]
+key f ks vs
+  | length ks == length vs = mapM (uncurry f) (group ks vs)
+  | otherwise = throwError $ LengthError "Incompatible shapes to Key"
+
+key' :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+key' f karr varr = fromMajorCells <$> key (\k vs -> f k $ vector $ toScalar <$> vs) (majorCells karr) (majorCells varr)
+
+keyMonad :: MonadError Error m => (Array -> Array -> m Array) -> Array -> m Array
+keyMonad f arr = do
+  t <- tally' arr
+  is <- indexGenerator' t
+  key' f arr is

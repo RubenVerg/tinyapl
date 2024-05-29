@@ -238,7 +238,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍤` at rank
 		* [ ] `⍥` at depth
 		* [ ] `@` at
-		* [ ] `⌸` key
+		* [x] `⌸` key
 		* [ ] `⌸` key with vocabulary
 		* [ ] `⍁` diagonals?
 		* [ ] `⌺` stencil

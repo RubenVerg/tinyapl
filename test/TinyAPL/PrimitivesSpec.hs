@@ -590,6 +590,16 @@ spec = do
         it "applies a function to the left argument and to each element of the right argument" $ do
           afd P.eachRight P.intersection (vector [Number 1, Number 2, Number 3]) (vector [box $ vector [Number 2, Number 3], box $ vector [Number 2, Number 1, Number 2]]) `shouldReturn` pure (vector [box $ vector [Number 2, Number 3], box $ vector [Number 1, Number 2]])
 
+    describe [G.key] $ do
+      describe "key" $ do
+        it "applies a function to each unique element of the left argument and the corresponding elements of the right argument" $ do
+          afd P.key P.pair (vector $ Character <$> "mississippi") (vector $ Number <$> [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) `shouldReturn` pure (fromMajorCells [vector [Character 'm', box $ vector [Number 1]], vector [Character 'i', box $ vector [Number 2, Number 5, Number 8, Number 11]], vector [Character 's', box $ vector [Number 3, Number 4, Number 6, Number 7]], vector [Character 'p', box $ vector [Number 9, Number 10]]])
+        it "fails when the arguments have mismatched lengths" $ do
+          e2m <$> afd P.key P.pair (vector []) (vector [Number 1]) `shouldReturn` Nothing
+      describe "monad key" $ do
+        it "applies a function to each unique element of the argument and the corresponding indices" $ do
+          afm P.key P.pair (vector $ Character <$> "mississippi") `shouldReturn` pure (fromMajorCells [vector [Character 'm', box $ vector [Number 1]], vector [Character 'i', box $ vector [Number 2, Number 5, Number 8, Number 11]], vector [Character 's', box $ vector [Number 3, Number 4, Number 6, Number 7]], vector [Character 'p', box $ vector [Number 9, Number 10]]])
+
   describe "conjunctions" $ do
     describe [G.atop] $ do
       describe "atop" $ do

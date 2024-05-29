@@ -149,6 +149,10 @@ eachRight = Adverb
   { adverbRepr = [G.eachRight]
   , adverbOnArray = Nothing
   , adverbOnFunction = Just $ \f -> pure $ Function Nothing (Just $ F.eachRight $ callDyad f) (makeAdverbRepr (show f) G.eachRight) }
+key = Adverb
+  { adverbRepr = [G.key]
+  , adverbOnArray = Nothing
+  , adverbOnFunction = Just $ \f -> pure $ Function (Just $ F.keyMonad $ callDyad f) (Just $ F.key' $ callDyad f) (makeAdverbRepr (show f) G.key) }
 
 adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   [ TinyAPL.Primitives.selfie
@@ -158,7 +162,8 @@ adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   , TinyAPL.Primitives.onSuffixes
   , TinyAPL.Primitives.each
   , TinyAPL.Primitives.eachLeft
-  , TinyAPL.Primitives.eachRight ]
+  , TinyAPL.Primitives.eachRight
+  , TinyAPL.Primitives.key ]
 
 -- * Primitive conjunctions
 

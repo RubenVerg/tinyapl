@@ -161,6 +161,7 @@ onSuffixes = '↡'
 each = '¨'
 eachLeft = 'ᐵ'
 eachRight = 'ᑈ'
+key = '⌸'
 
 adverbs =
   [ TinyAPL.Glyphs.selfie
@@ -170,7 +171,8 @@ adverbs =
   , TinyAPL.Glyphs.onSuffixes
   , TinyAPL.Glyphs.each
   , TinyAPL.Glyphs.eachLeft
-  , TinyAPL.Glyphs.eachRight ]
+  , TinyAPL.Glyphs.eachRight
+  , TinyAPL.Glyphs.key ]
 
 -- * Conjunctions
 

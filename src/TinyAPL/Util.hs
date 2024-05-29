@@ -59,6 +59,9 @@ update k v [] = [(k, v)]
 update k v (x@(k', _) : xs) | k == k' = (k, v) : xs
                             | otherwise = x : update k v xs
 
+delete :: Eq a => [(a, b)] -> a -> [(a, b)]
+delete xs k = filter ((k /=) . fst) xs
+
 maybeToEither :: b -> Maybe a -> Either b a
 maybeToEither _ (Just x) = Right x
 maybeToEither x Nothing = Left x
@@ -111,9 +114,9 @@ complexLCM :: RealFloat a => Complex a -> Complex a -> Complex a
 complexLCM x y = if x == 0 && y == 0 then 0 else (x * y) / (x `complexGCD` y)
 
 group :: Eq k => [k] -> [a] -> [(k, [a])]
-group [] _ = []
+group [] [] = []
 group (k:ks) (a:as) = let gs = group ks as in case lookup k gs of
-  Just g -> update k (a:g) gs
+  Just g -> (k, a:g) : delete gs k
   Nothing -> (k, [a]) : gs
 group _ _ = error "group: mismatched array lengths"
 

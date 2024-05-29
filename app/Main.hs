@@ -7,34 +7,18 @@ import qualified TinyAPL.Glyphs as G
 import qualified TinyAPL.Primitives as P
 import TinyAPL.Interpreter
 
-import Data.Complex
 import System.Environment
 import Control.Monad (void)
 import System.IO
 import Data.Functor (($>))
 import Data.List (singleton)
-import Data.Maybe (fromJust)
 
 main :: IO ()
 main = do
   hSetEncoding stdout utf8
   hSetEncoding stderr utf8
 
-  let a = vector $ Number <$> [1, 2, -1]
-  let b = vector $ Number <$> [5, 2.1, 3 :+ (-0.5)]
-
-  let i = fromJust $ arrayReshaped [3, 3] $ Number <$> [ 1, 0, 0
-                                                       , 0, 1, 0
-                                                       , 0, 0, 1 ]
-
-  let inc = BindRight P.plus (scalar $ Number 1)
-  
-  putStrLn "a"; print a
-  putStrLn "b"; print b
-  putStrLn "i"; print i
-  putStrLn "I"; print inc
-
-  let scope = Scope [("a", a), ("b", b), ("i", i)] [("I", inc)] [] [] Nothing core
+  let scope = Scope [] [] [] [] Nothing core
 
   args <- getArgs
   case args of
