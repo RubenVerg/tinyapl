@@ -57,6 +57,7 @@ sub (Number x) (Number y) = pure $ Number $ x - y
 sub (Character x) (Number y) = do
   y' <- asInt expectedInteger y
   pure $ Character $ chr $ ord x - y'
+sub (Character x) (Character y) = 
 sub _ _ = throwError expectedNumber
 
 sub' :: MonadError Error m => Array -> Array -> m Array
