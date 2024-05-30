@@ -76,6 +76,8 @@ spec = do
       describe "add" $ do
         it "adds complex numbers" $ do
           d P.plus (scalar $ Number (2 :+ 1)) (vector [Number 1, Number -3, Number (0 :+ 1)]) `shouldReturn` pure (vector [Number (3 :+ 1), Number (-1 :+ 1), Number (2 :+ 2)])
+        it "adds an integer and a character" $ do
+          d P.plus (scalar $ Number 1) (scalar $ Character '0') `shouldReturn` pure (scalar $ Character '1')
     
     describe [G.minus] $ do
       describe "negate" $ do
@@ -84,6 +86,10 @@ spec = do
       describe "subtract" $ do
         it "subtracts complex numbers" $ do
           d P.minus (scalar $ Number 3) (vector [Number 1, Number -3, Number (2 :+ 1)]) `shouldReturn` pure (vector [Number 2, Number 6, Number (1 :+ -1)])
+        it "subtracts an integer from a character" $ do
+          d P.minus (scalar $ Character '9') (scalar $ Number 3) `shouldReturn` pure (scalar $ Character '6')
+        it "subtracts characters" $ do
+          d P.minus (scalar $ Character '8') (scalar $ Character '0') `shouldReturn` pure (scalar $ Number 8)
 
     describe [G.times] $ do
       describe "signum" $ do
