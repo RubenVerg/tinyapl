@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               tinyapl
-version:            0.4.0.0
+version:            0.4.1.0
 synopsis:           TinyAPL is a tiny APL dialect
 
 -- A longer description of the package.
@@ -39,7 +39,6 @@ library
     build-depends:    base ^>=4.18.0.0
                     , parsec ^>=3.1.17.0
                     , mtl ^>=2.3.1
-                    , random ^>=1.2.1.2
     hs-source-dirs:   src
     default-language: Haskell2010
 

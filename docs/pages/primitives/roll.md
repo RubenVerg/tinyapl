@@ -2,6 +2,7 @@
 glyph: '?'
 pattern: 'r←?y'
 name: Roll
+planned: true
 ---
 
 `r` is the result of the scalar application of the roll function on `y`, which must be a natural array:
