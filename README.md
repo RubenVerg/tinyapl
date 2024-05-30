@@ -210,8 +210,8 @@ Marked features are supported, unmarked features are planned
 	* array lookup functions
 		* [x] `⊃` first
 		* [x] `⊇` last
-		* [ ] `⊇` from
-		* [ ] `⌷` index
+		* [x] `⊇` from
+		* [x] `⌷` index
 		* [ ] `⊃` pick
 	* misc functions
 		* [x] `⊢`/`⊣` same

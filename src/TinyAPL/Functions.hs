@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, NegativeLiterals #-}
+{-# LANGUAGE FlexibleContexts, LambdaCase, NegativeLiterals #-}
 
 module TinyAPL.Functions where
 
@@ -11,7 +11,7 @@ import qualified Data.Complex as Cx
 import Data.Complex ( Complex((:+)) )
 import Data.Char (ord, chr)
 import Data.Maybe (fromJust)
-import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericReplicate, nub)
+import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericReplicate, nub, genericIndex, singleton)
 import Numeric.Natural (Natural)
 import Control.Monad
 import Control.Monad.State (MonadIO)
@@ -556,6 +556,41 @@ roll' :: (MonadError Error m, MonadIO m) => Array -> m Array
 roll' = scalarMonad $ \y -> do
   n <- asNumber expectedNatural y >>= asNat expectedNatural
   Number . (:+ 0) <$> roll n
+
+indexCells :: MonadError Error m => [Integer] -> [a] -> m [a]
+indexCells [] _ = pure []
+indexCells (i:is) xs
+  | i < 0 = indexCells (genericLength xs + i + 1 : is) xs
+  | i == 0 || i > genericLength xs = throwError $ DomainError "Index out of bounds"
+  | otherwise = (genericIndex xs (i - 1) :) <$> indexCells is xs
+
+indexDeep :: MonadError Error m => [[Integer]] -> Array -> m Array
+indexDeep [] arr = pure arr
+indexDeep (i:is) arr = indexCells i (majorCells arr) >>= (fmap (\x -> if length x == 1 then head x else fromMajorCells x) . mapM (indexDeep is))
+
+indexScatter :: MonadError Error m => Array -> Array -> m Array
+indexScatter iarr carr = each1 (\i -> do
+  let err = DomainError "From left argument must be an integer vector or array of integer vectors"
+  is <- asVector err i >>= mapM (asNumber err >=> asInt err)
+  indexDeep (singleton <$> is) carr) iarr
+
+from :: MonadError Error m => Array -> Array -> m Array
+from iarr carr
+  | null (arrayShape iarr) && all (\case { Number _ -> True; _ -> False }) (arrayContents iarr) = do
+    let err = DomainError "From left argument must be an integer vector or an array of integer vectors"
+    index <- asScalar err iarr >>= asNumber err >>= asInt err
+    head <$> indexCells [index] (majorCells carr)
+  | length (arrayShape iarr) == 1 && all (\case { Number _ -> True; _ -> False }) (arrayContents iarr) = do
+    let err = DomainError "From left argument must be an integer vector or an array of integer vectors"
+    indices <- asVector err iarr >>= mapM (asNumber err >=> asInt err)
+    fromMajorCells <$> indexCells indices (majorCells carr)
+  | otherwise = indexScatter iarr carr
+
+squad :: MonadError Error m => Array -> Array -> m Array
+squad iarr carr = do
+  let err = DomainError "Squad left argument must be a vector of scalar integers or vectors of integers"
+  is <- asVector err iarr >>= mapM (asVector err >=> mapM (asNumber err >=> asInt err)) . fmap fromScalar
+  indexDeep is carr
 
 -- * Operators
 

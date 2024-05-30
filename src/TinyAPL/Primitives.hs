@@ -45,7 +45,7 @@ reverse = Function (Just F.reverse') (Just F.rotate') [G.reverse]
 pair = Function (Just F.halfPair) (Just F.pair) [G.pair]
 enclose = Function (Just F.enclose') Nothing [G.enclose]
 first = Function (Just F.first) Nothing [G.first]
-last = Function (Just F.last) Nothing [G.last]
+last = Function (Just F.last) (Just F.from) [G.last]
 take = Function Nothing (Just F.take') [G.take]
 drop = Function Nothing (Just F.drop') [G.drop]
 left = Function (Just $ \x -> pure x) (Just $ \x _ -> pure x) [G.left]
@@ -63,6 +63,7 @@ difference = Function (Just F.not') (Just F.difference') [G.difference]
 symdiff = Function Nothing (Just F.symmetricDifference') [G.symdiff]
 element = Function (Just F.enlist') Nothing [G.element]
 roll = Function (Just F.roll') Nothing [G.roll]
+squad = Function Nothing (Just $ F.squad) [G.squad]
 
 functions = (\x -> (head $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -113,7 +114,8 @@ functions = (\x -> (head $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.difference
   , TinyAPL.Primitives.symdiff
   , TinyAPL.Primitives.element
-  , TinyAPL.Primitives.roll ]
+  , TinyAPL.Primitives.roll
+  , TinyAPL.Primitives.squad ]
 
 -- * Primitive adverbs
 

@@ -2,7 +2,6 @@
 glyph: '⊇'
 pattern: 'r←x⊇y'
 name: From
-planned: true
 ---
 
 `x` must be a either a simple array of integers or a array of nested simple arrays of integers.

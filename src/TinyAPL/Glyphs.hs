@@ -99,6 +99,7 @@ difference = '~'
 symdiff = '§'
 element = '∊'
 roll = '?'
+squad = '⌷'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -149,7 +150,8 @@ functions =
   , TinyAPL.Glyphs.difference
   , TinyAPL.Glyphs.symdiff
   , TinyAPL.Glyphs.element
-  , TinyAPL.Glyphs.roll ]
+  , TinyAPL.Glyphs.roll
+  , TinyAPL.Glyphs.squad ]
 
 -- * Adverbs
 

@@ -412,6 +412,11 @@ spec = do
           m P.last (vector [box $ vector [Number 1, Number 2, Number 3], box $ vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 4, Number 5, Number 6])
         it "fails on an empty array" $ do
           e2m <$> m P.last (vector []) `shouldReturn` Nothing
+      describe "from" $ do
+        it "indexes major cells of an array" $ do
+          d P.last (vector [Number 1, Number -1]) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [Number 1, Number 3])
+        it "does scatter indexing" $ do
+          d P.last (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number -1]]) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number 3]])
     
     describe [G.take] $ do
       describe "take" $ do
@@ -536,6 +541,11 @@ spec = do
       describe "enlist" $ do
         it "flattens a nested array" $ do
           m P.element (fromMajorCells [vector [Number 1, box $ vector [Number 2, Number 3]], vector [Number 4, box $ vector [Number 5, box $ vector [Number 6, Number 7]]]]) `shouldReturn` pure (vector [Number 1, Number 2, Number 3, Number 4, Number 5, Number 6, Number 7])
+
+    describe [G.squad] $ do
+      describe "index" $ do
+        it "indexes cells of an array" $ do
+          d P.squad (vector [Number 1, box $ vector [Number 1, Number -2]]) (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 1, Number 2])
   
   describe "adverbs" $ do
     describe [G.selfie] $ do
