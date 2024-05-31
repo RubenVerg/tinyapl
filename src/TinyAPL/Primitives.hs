@@ -62,7 +62,7 @@ intersection = Function Nothing (Just F.intersection') [G.intersection]
 difference = Function (Just F.not') (Just F.difference') [G.difference]
 symdiff = Function Nothing (Just F.symmetricDifference') [G.symdiff]
 element = Function (Just F.enlist') Nothing [G.element]
--- roll = Function (Just F.roll') Nothing [G.roll]
+roll = Function (Just F.roll') Nothing [G.roll]
 squad = Function Nothing (Just $ F.squad) [G.squad]
 
 functions = (\x -> (head $ functionRepr x, x)) <$>
@@ -114,7 +114,7 @@ functions = (\x -> (head $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.difference
   , TinyAPL.Primitives.symdiff
   , TinyAPL.Primitives.element
---  , TinyAPL.Primitives.roll
+  , TinyAPL.Primitives.roll
   , TinyAPL.Primitives.squad ]
 
 -- * Primitive adverbs

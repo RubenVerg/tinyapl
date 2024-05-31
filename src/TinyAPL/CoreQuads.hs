@@ -3,10 +3,10 @@ module TinyAPL.CoreQuads where
 import TinyAPL.ArrayFunctionOperator
 import qualified TinyAPL.Glyphs as G
 import TinyAPL.Interpreter
+import TinyAPL.Random
 
 import Data.Complex
 import Control.Monad.State
--- import System.Random
 import Control.Monad.Error.Class
 import TinyAPL.Error (Error(DomainError))
 
@@ -15,12 +15,10 @@ ct = Nilad (Just $ pure $ scalar $ Number $ comparisonTolerance :+ 0) Nothing (G
 u = Nilad (Just $ pure $ vector $ Character <$> ['A'..'Z']) Nothing (G.quad : "u")
 l = Nilad (Just $ pure $ vector $ Character <$> ['a'..'z']) Nothing (G.quad : "l")
 d = Nilad (Just $ pure $ vector $ Character <$> ['0'..'9']) Nothing (G.quad : "d")
-{-
 seed = Nilad Nothing (Just $ \x -> do
   let e = DomainError "Seed must be a scalar integer"
-  seed <- liftEither (asScalar e x) >>= liftEither . asNumber e >>= liftEither . asInt e
-  setStdGen $ mkStdGen seed) (G.quad : "seed")
--}
+  s <- liftEither (asScalar e x) >>= liftEither . asNumber e >>= liftEither . asInt e
+  setSeed s) (G.quad : "seed")
 
 exists = Function (Just $ \x -> do
   let var = show x

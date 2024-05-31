@@ -4,6 +4,7 @@ module TinyAPL.Functions where
 
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.Error
+import TinyAPL.Random
 import TinyAPL.Util
 
 import Control.Monad.Except (MonadError)
@@ -15,7 +16,6 @@ import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericRep
 import Numeric.Natural (Natural)
 import Control.Monad
 import Control.Monad.State (MonadIO)
--- import System.Random
 
 -- * Functions
 
@@ -548,17 +548,15 @@ symmetricDifference xs ys = do
 symmetricDifference' :: MonadError Error m => Array -> Array -> m Array
 symmetricDifference' x y = fromMajorCells <$> symmetricDifference (majorCells x) (majorCells y)
 
-{-
 roll :: (MonadError Error m, MonadIO m) => Natural -> m Double
 roll y =
-  if y == 0 then randomRIO (0, 1)
-  else fromInteger <$> randomRIO (1, toInteger y)
+  if y == 0 then randomR (0, 1)
+  else fromInteger <$> randomR (1, toInteger y)
 
 roll' :: (MonadError Error m, MonadIO m) => Array -> m Array
 roll' = scalarMonad $ \y -> do
   n <- asNumber expectedNatural y >>= asNat expectedNatural
   Number . (:+ 0) <$> roll n
--}
 
 indexCells :: MonadError Error m => [Integer] -> [a] -> m [a]
 indexCells [] _ = pure []
