@@ -31,7 +31,7 @@ repr = Function (Just $ \x -> return $ vector $ Character <$> arrayRepr x) Nothi
 
 core = Quads
   ((\x -> (niladRepr x, x)) <$>
-  [ io, ct, u, l, d{-, seed -} ])
+  [ io, ct, u, l, d, seed ])
   ((\x -> (functionRepr x, x)) <$>
   [ exists, repr ])
   ((\x -> (adverbRepr x, x)) <$>
