@@ -5,13 +5,14 @@ module TinyAPL.Random
 where
 
 import qualified System.Random as R
+import Data.Time.Clock.POSIX
 import System.IO.Unsafe
 import Data.IORef
 import Control.Monad.IO.Class
 
 {-# NOINLINE theGenerator #-}
 theGenerator :: IORef R.StdGen
-theGenerator = unsafePerformIO $ newIORef $ R.mkStdGen 314159265
+theGenerator = unsafePerformIO $ getPOSIXTime >>= newIORef . R.mkStdGen . fromEnum
 
 withTheGenerator :: (R.Random a, MonadIO m) => (R.StdGen -> (a, R.StdGen)) -> m a
 withTheGenerator f = do
