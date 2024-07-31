@@ -236,7 +236,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `∙` inner product
 		* [ ] `∙` alternant?
 		* [ ] `⊞` outer product
-		* [ ] `⍤` at rank
+		* [x] `⍤` at rank
 		* [ ] `⍥` at depth
 		* [ ] `@` at
 		* [x] `⌸` key

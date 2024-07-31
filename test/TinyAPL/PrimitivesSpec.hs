@@ -618,6 +618,32 @@ spec = do
 
   describe "conjunctions" $ do
     describe [G.atop] $ do
+      describe "at rank" $ do
+        it "applies functions to cells of specified rank" $ do
+          let a = Array [2, 3, 4] $ Number <$> [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+          let b = Array [2, 3, 4] $ Number <$> [24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+
+          cfam P.atop P.enclose (scalar $ Number -1) a `shouldReturn` pure (vector [box $ Array [3, 4] (Number <$> [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]), box $ Array [3, 4] (Number <$> [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24])])
+          cfam P.atop P.enclose (scalar $ Number 2) a `shouldReturn` pure (vector [box $ Array [3, 4] (Number <$> [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]), box $ Array [3, 4] (Number <$> [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24])])
+          cfam P.atop P.enclose (scalar $ Number 1) a `shouldReturn` pure (Array [2, 3]
+            [ box $ vector $ Number <$> [1, 2, 3, 4], box $ vector $ Number <$> [5, 6, 7, 8], box $ vector $ Number <$> [9, 10, 11, 12]
+            , box $ vector $ Number <$> [13, 14, 15, 16], box $ vector $ Number <$> [17, 18, 19, 20], box $ vector $ Number <$> [21, 22, 23, 24] ])
+          
+          cfad P.atop P.pair (scalar $ Number -1) a b `shouldReturn` pure (Array [2, 2]
+            [ box $ Array [3, 4] $ Number <$> [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], box $ Array [3, 4] $ Number <$> [24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13]
+            , box $ Array [3, 4] $ Number <$> [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24], box $ Array [3, 4] $ Number <$> [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1] ])
+          cfad P.atop P.pair (scalar $ Number 1) a b `shouldReturn` pure (Array [2, 3, 2]
+            [ box $ vector $ Number <$> [1, 2, 3, 4], box $ vector $ Number <$> [24, 23, 22, 21]
+            , box $ vector $ Number <$> [5, 6, 7, 8], box $ vector $ Number <$> [20, 19, 18, 17]
+            , box $ vector $ Number <$> [9, 10, 11, 12], box $ vector $ Number <$> [16, 15, 14, 13]
+            
+            , box $ vector $ Number <$> [13, 14, 15, 16], box $ vector $ Number <$> [12, 11, 10, 9]
+            , box $ vector $ Number <$> [17, 18, 19, 20], box $ vector $ Number <$> [8, 7, 6, 5]
+            , box $ vector $ Number <$> [21, 22, 23, 24], box $ vector $ Number <$> [4, 3, 2, 1] ])
+          cfad P.atop P.pair (vector [Number 1, Number 2]) (Array [2, 3] $ Number <$> [1, 2, 3, 4, 5, 6]) b `shouldReturn` pure (Array [2, 2]
+            [ box $ vector $ Number <$> [1, 2, 3], box $ Array [3, 4] $ Number <$> [24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13]
+            , box $ vector $ Number <$> [4, 5, 6], box $ Array [3, 4] $ Number <$> [12, 11, 10, 9, 8,7, 6, 5, 4, 3, 2, 1] ])
+
       describe "atop" $ do
         it "monadically composes functions with f(gy)" $ do
           cffm P.atop P.times P.minus (scalar $ Number 3) `shouldReturn` pure (scalar $ Number -1)

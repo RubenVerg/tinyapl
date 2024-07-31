@@ -34,6 +34,9 @@ data Array = Array
 
 -- * Array helper functions
 
+arrayRank :: Array -> Natural
+arrayRank (Array sh _) = genericLength sh
+
 box :: Array -> ScalarValue
 box b@(Array [] [Box _]) = Box b
 box (Array [] [x]) = x

@@ -703,3 +703,38 @@ keyMonad f arr = do
   t <- tally' arr
   is <- indexGenerator' t
   key' f arr is
+
+parseRank :: MonadError Error m => Array -> m (Integer, Integer, Integer)
+parseRank arr = do
+  let err = DomainError "Rank or depth right operand must be a 1-, 2- or 3-element integer vector"
+  v <- asVector err arr >>= mapM (asNumber err >=> asInt err)
+  case v of
+    [d] -> pure (d, d, d)
+    [d, e] -> pure (e, d, e)
+    [d, e, f] -> pure (d, e, f)
+    _ -> throwError err
+
+atRank1 :: MonadError Error m => (Array -> m Array) -> Integer -> Array -> m Array
+atRank1 f rank arr
+  | arrayRank arr == 0 = f arr
+  | rank >= 0 && toInteger (arrayRank arr) <= rank = f arr
+  | rank >= 0 = fromMajorCells <$> mapM (atRank1 f rank) (majorCells arr)
+  | rank == -1 = fromMajorCells <$> mapM f (majorCells arr)
+  | otherwise = fromMajorCells <$> mapM (atRank1 f $ rank + 1) (majorCells arr)
+
+atRank2 :: MonadError Error m => (Array -> Array -> m Array) -> (Integer, Integer) -> Array -> Array -> m Array
+atRank2 f (ra, rb) a b = do
+  -- @dzaima (in fact, {a b c←⌽3⍴⌽⍵⍵ ⋄ ↑(⊂⍤b⊢⍺) ⍺⍺¨ ⊂⍤c⊢⍵} is an impl of the dyadic case from the monadic one (with Dyalog's ↑ meaning))
+  as <- atRank1 enclose' ra a
+  bs <- atRank1 enclose' rb b
+  each2 f as bs >>= atRank1 first 0
+
+atRank1' :: MonadError Error m => (Array -> m Array) -> Array -> Array -> m Array
+atRank1' f r y = do
+  (a, _, _) <- parseRank r
+  atRank1 f a y
+
+atRank2' :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> Array -> m Array
+atRank2' f r x y = do
+  (_, b, c) <- parseRank r
+  atRank2 f (b, c) x y
