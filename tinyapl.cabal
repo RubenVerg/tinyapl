@@ -37,7 +37,7 @@ library
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-    build-depends:    base ^>=4.18.0.0
+    build-depends:    base ^>=4.20.0.0
                     , parsec ^>=3.1.17.0
                     , mtl ^>=2.3.1
                     , random ^>=1.2.1.2
@@ -54,7 +54,7 @@ executable tinyapl
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-    build-depends:    base ^>=4.18.0.0
+    build-depends:    base ^>=4.20.0.0
                     , tinyapl
 
     hs-source-dirs:   app
@@ -69,7 +69,7 @@ test-suite tinyapl-tests
     other-modules:    TinyAPL.ArraySpec
                     , TinyAPL.ParserSpec
                     , TinyAPL.PrimitivesSpec
-    build-depends:    base ^>=4.18.0.0
+    build-depends:    base ^>=4.20.0.0
                     , hspec ^>=2.11.7
                     , hspec-discover ^>=2.11.7
                     , tinyapl
