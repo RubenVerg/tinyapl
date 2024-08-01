@@ -21,6 +21,31 @@ guard = ':'
 exit = '■'
 inlineComment = ('⟃', '⟄')
 
+syntax =
+  [ TinyAPL.Glyphs.decimal
+  , TinyAPL.Glyphs.negative
+  , TinyAPL.Glyphs.exponent
+  , TinyAPL.Glyphs.imaginary
+  , TinyAPL.Glyphs.infinity
+  , TinyAPL.Glyphs.charDelimiter
+  , TinyAPL.Glyphs.stringDelimiter
+  , TinyAPL.Glyphs.stringEscape
+  , fst TinyAPL.Glyphs.parens
+  , snd TinyAPL.Glyphs.parens
+  , fst TinyAPL.Glyphs.braces
+  , snd TinyAPL.Glyphs.braces
+  , fst TinyAPL.Glyphs.vector
+  , snd TinyAPL.Glyphs.vector
+  , fst TinyAPL.Glyphs.highRank
+  , snd TinyAPL.Glyphs.highRank
+  , TinyAPL.Glyphs.underscore
+  , TinyAPL.Glyphs.separator
+  , TinyAPL.Glyphs.assign
+  , TinyAPL.Glyphs.guard
+  , TinyAPL.Glyphs.exit
+  , fst TinyAPL.Glyphs.inlineComment
+  , snd TinyAPL.Glyphs.inlineComment ]
+
 escapes =
   [ (stringDelimiter, stringDelimiter)
   , (charDelimiter, charDelimiter)
@@ -40,6 +65,17 @@ omegaBar = '⍹'
 quad = '⎕'
 quadQuote = '⍞'
 del = '∇'
+
+identifiers =
+  [ TinyAPL.Glyphs.delta
+  , TinyAPL.Glyphs.deltaBar
+  , TinyAPL.Glyphs.alpha
+  , TinyAPL.Glyphs.alphaBar
+  , TinyAPL.Glyphs.omega
+  , TinyAPL.Glyphs.omegaBar
+  , TinyAPL.Glyphs.quad
+  , TinyAPL.Glyphs.quadQuote
+  , TinyAPL.Glyphs.del ]
 
 -- * Arrays
 

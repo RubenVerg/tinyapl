@@ -1,8 +1,22 @@
-import { newScope, runCode } from './tinyapl.js';
+import { newScope, runCode, glyphs } from './tinyapl.js';
 
+const buttons = document.querySelector('#buttons');
 const output = document.querySelector('#output');
 const input = document.querySelector('#input');
 const button = document.querySelector('#button');
+
+for (const k of ['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'conjunctions']) {
+	for (const i of glyphs[k]) {
+		const b = document.createElement('button');
+		b.textContent = i;
+		b.addEventListener('click', () => {
+			input.value += i;
+			input.focus();
+		});
+		buttons.appendChild(b);
+	}
+	buttons.appendChild(document.createElement('br'));
+}
 
 const scope = await newScope();
 
@@ -37,3 +51,4 @@ button.addEventListener('click', () => run());
 input.addEventListener('keyup', evt => {
 	if (evt.key == 'Enter') return run();
 });
+

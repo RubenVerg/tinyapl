@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [[ $PWD == */js ]]; then
 	echo "build.sh must be ran in the root tinyapl directory"
 	exit 1

@@ -11,6 +11,10 @@
 		:root {
 			--font: APL386, 'APL386 Unicode', 'BQN386 Unicode', 'APL333', monospace;
 		}
+		
+		#buttons button {
+			font-family: var(--font);
+		}
 	
 		#output {
 			height: 90%;
@@ -42,6 +46,7 @@
 	</style>
 </head>
 <body>
+	<div id="buttons"></div>
 	<pre id="output"></pre>
 	<input id="input" type="text">
 	<button id="button" type="button">Run</button>

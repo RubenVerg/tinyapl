@@ -22,14 +22,12 @@ wasi.initialize(instance);
 
 await instance.exports.hs_start();
 
-const { tinyapl_newScope, tinyapl_runCode } = instance.exports;
-
 /**
  * Create a new scope for TinyAPL code
  * @returns {number} Scope ID
  */
 export async function newScope() {
-	return await tinyapl_newScope();
+	return await instance.exports.tinyapl_newScope();
 }
 
 /**
@@ -39,7 +37,17 @@ export async function newScope() {
  * @returns {[string, boolean]} A pair containing the result of the code or the error and whether running succeeded
  */
 export async function runCode(scope, code) {
-	const [result, success] = await tinyapl_runCode(scope, code);
+	const [result, success] = await instance.exports.tinyapl_runCode(scope, code);
 	return [result, Boolean(success)];
 }
+
+
+export const glyphs = {
+	syntax: /** @type {string} */ await instance.exports.tinyapl_glyphsSyntax(),
+	identifiers: /** @type {string} */ await instance.exports.tinyapl_glyphsIdentifiers(),
+	arrays: /** @type {string} */ await instance.exports.tinyapl_glyphsArrays(),
+	functions: /** @type {string} */ await instance.exports.tinyapl_glyphsFunctions(),
+	adverbs: /** @type {string} */ await instance.exports.tinyapl_glyphsAdverbs(),
+	conjunctions: /** @type {string} */ await instance.exports.tinyapl_glyphsConjunctions(),
+};
 
