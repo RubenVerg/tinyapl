@@ -2,7 +2,48 @@
 <head>
 	<meta charset="utf-8">
 	<title>TinyAPL</title>
+	<style>
+		@font-face {
+			font-family: APL386;
+			src: url('https://abrudz.github.io/APL386/APL386.ttf');
+		}
+		
+		:root {
+			--font: APL386, 'APL386 Unicode', 'BQN386 Unicode', 'APL333', monospace;
+		}
+	
+		#output {
+			height: 90%;
+			font-family: var(--font);
+		}
+		
+		#input {
+			width: 90%;
+			font-family: var(--font);
+		}
+		
+		#button {
+			width: auto;
+			font-family: var(--font);
+		}
+		
+		.code {
+			color: darkgray;
+		}
+		
+		.error {
+			background: #ffcccc;
+			color: red;
+		}
+		
+		.result {
+			color: black;
+		}
+	</style>
 </head>
 <body>
-	<script type="module" src="./tinyapl.js"></script>
+	<pre id="output"></pre>
+	<input id="input" type="text">
+	<button id="button" type="button">Run</button>
+	<script type="module" src="./index.js"></script>
 </body>

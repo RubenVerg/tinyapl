@@ -32,8 +32,9 @@ library
                     , TinyAPL.Interpreter
                     , TinyAPL.Parser
                     , TinyAPL.Primitives
-    other-modules:    TinyAPL.Random
+                    , TinyAPL.Random
                     , TinyAPL.Util
+    -- other-modules:
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

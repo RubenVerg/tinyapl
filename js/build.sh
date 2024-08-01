@@ -8,15 +8,19 @@ fi
 rm -rf js/dist
 mkdir js/dist
 
+echo "Compiling library"
+
 wasm32-wasi-cabal build tinyapl-js
 
 out_path=$(find . -name "*-js.wasm")
 
-echo "Found $out_path"
+echo "Compiled, found $out_path"
 
-"$(wasm32-wasi-ghc --print-libdir)"/post-link.mjs --input "$out_path" --output js/dist/ghc_wasm_jsffi.js
+"$(wasm32-wasi-ghc --print-libdir)"/post-link.mjs --input "$out_path" --output js/ghc_wasm_jsffi.js
+
+echo "Post-linked, copying files"
 
 cp $out_path js/dist/tinyapl-js.wasm
 
-cp js/tinyapl.js js/dist
+cp js/*.js js/dist
 cp js/*.html js/dist

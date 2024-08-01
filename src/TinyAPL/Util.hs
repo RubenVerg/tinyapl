@@ -133,3 +133,9 @@ oneIndex as (i:is)
   | i < 0 = oneIndex as $ (1 + i + genericLength as) : is
   | i > genericLength as = Nothing
   | otherwise = ((as `genericIndex` (i - 1)) :) <$> oneIndex as is
+
+setAt :: Integral n => n -> a -> [a] -> [a]
+setAt 0 r [] = [r]
+setAt _ _ [] = error "setAt: out of bounds"
+setAt 0 r (_:xs) = r : xs
+setAt n r (x:xs) = x : setAt (n - 1) r xs
