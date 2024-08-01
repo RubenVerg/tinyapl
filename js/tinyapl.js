@@ -24,7 +24,7 @@ await instance.exports.hs_start();
 
 /**
  * Create a new scope for TinyAPL code
- * @returns {number} Scope ID
+ * @returns {Promise<number>} Scope ID
  */
 export async function newScope() {
 	return await instance.exports.tinyapl_newScope();
@@ -34,16 +34,18 @@ export async function newScope() {
  * Run code in a scope
  * @param {number} scope Scope ID
  * @param {string} code
- * @returns {[string, boolean]} A pair containing the result of the code or the error and whether running succeeded
+ * @returns {Promise<[string, boolean]>} A pair containing the result of the code or the error and whether running succeeded
  */
 export async function runCode(scope, code) {
 	const [result, success] = await instance.exports.tinyapl_runCode(scope, code);
 	return [result, Boolean(success)];
 }
 
-
+/**
+ * @type {Record<string, string[]>}
+ */
 export const glyphs = {
-	syntax: /** @type {string} */ await instance.exports.tinyapl_glyphsSyntax(),
+	syntax: await instance.exports.tinyapl_glyphsSyntax(),
 	identifiers: /** @type {string} */ await instance.exports.tinyapl_glyphsIdentifiers(),
 	arrays: /** @type {string} */ await instance.exports.tinyapl_glyphsArrays(),
 	functions: /** @type {string} */ await instance.exports.tinyapl_glyphsFunctions(),

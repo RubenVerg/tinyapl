@@ -2,6 +2,7 @@ import { newScope, runCode, glyphs } from './tinyapl.js';
 
 const buttons = document.querySelector('#buttons');
 const output = document.querySelector('#output');
+/** @type {HTMLInputElement} */
 const input = document.querySelector('#input');
 const button = document.querySelector('#button');
 
@@ -10,7 +11,7 @@ for (const k of ['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'con
 		const b = document.createElement('button');
 		b.textContent = i;
 		b.addEventListener('click', () => {
-			input.value += i;
+			input.setRangeText(i, input.selectionStart, input.selectionEnd, "end");
 			input.focus();
 		});
 		buttons.appendChild(b);
