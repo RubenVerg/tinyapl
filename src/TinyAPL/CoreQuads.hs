@@ -9,6 +9,7 @@ import Data.Complex
 import Control.Monad.State
 import Control.Monad.Error.Class
 import TinyAPL.Error (Error(DomainError))
+import Data.Time.Clock.POSIX
 
 io = Nilad (Just $ pure $ scalar $ Number 1) Nothing (G.quad : "io")
 ct = Nilad (Just $ pure $ scalar $ Number $ comparisonTolerance :+ 0) Nothing (G.quad : "ct")
@@ -19,6 +20,9 @@ seed = Nilad Nothing (Just $ \x -> do
   let e = DomainError "Seed must be a scalar integer"
   s <- liftEither (asScalar e x) >>= liftEither . asNumber e >>= liftEither . asInt e
   setSeed s) (G.quad : "seed")
+ts = Nilad (Just $ do
+  scalar . Number . realToFrac <$> liftIO getPOSIXTime
+  ) Nothing (G.quad : "ts")
 
 exists = Function (Just $ \x -> do
   let var = show x
@@ -31,7 +35,7 @@ repr = Function (Just $ \x -> return $ vector $ Character <$> arrayRepr x) Nothi
 
 core = Quads
   ((\x -> (niladRepr x, x)) <$>
-  [ io, ct, u, l, d, seed ])
+  [ io, ct, u, l, d, seed, ts ])
   ((\x -> (functionRepr x, x)) <$>
   [ exists, repr ])
   ((\x -> (adverbRepr x, x)) <$>
