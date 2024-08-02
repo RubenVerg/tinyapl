@@ -4,6 +4,7 @@ import TinyAPL.ArrayFunctionOperator
 import TinyAPL.CoreQuads
 import TinyAPL.Error
 import TinyAPL.Glyphs (syntax, identifiers, arrays, functions, adverbs, conjunctions)
+import TinyAPL.Highlighter
 import TinyAPL.Interpreter
 import TinyAPL.Util
 
@@ -22,6 +23,7 @@ toJSChar :: Char -> JSVal
 toJSChar = strToVal . toJSString . singleton
 
 foreign import javascript unsafe "return $1;" strToVal :: JSString -> JSVal
+foreign import javascript unsafe "return $1;" intToVal :: Int -> JSVal
 
 foreign export javascript "hs_start" main :: IO ()
 
@@ -82,3 +84,42 @@ glyphsFunctionsJS = toJSArray $ toJSChar <$> functions
 glyphsAdverbsJS = toJSArray $ toJSChar <$> adverbs
 glyphsConjunctionsJS = toJSArray $ toJSChar <$> conjunctions
 
+foreign export javascript "tinyapl_highlight" jsHighlight :: JSString -> JSVal
+
+jsHighlight :: JSString -> JSVal
+jsHighlight = toJSArray . map (intToVal . fromEnum). highlight . fromJSString
+
+foreign export javascript "tinyapl_splitString" splitString :: JSString -> JSVal
+
+splitString :: JSString -> JSVal
+splitString = toJSArray . map toJSChar . fromJSString
+
+foreign export javascript "tinyapl_hlOther" hlOther :: Int
+foreign export javascript "tinyapl_hlSyntax" hlSyntax :: Int
+foreign export javascript "tinyapl_hlNumber" hlNumber :: Int
+foreign export javascript "tinyapl_hlString" hlString :: Int
+foreign export javascript "tinyapl_hlStringEscape" hlStringEscape :: Int
+foreign export javascript "tinyapl_hlArrayName" hlArrayName :: Int
+foreign export javascript "tinyapl_hlPrimArray" hlPrimArray :: Int
+foreign export javascript "tinyapl_hlFunctionName" hlFunctionName :: Int
+foreign export javascript "tinyapl_hlPrimFunction" hlPrimFunction :: Int
+foreign export javascript "tinyapl_hlAdverbName" hlAdverbName :: Int
+foreign export javascript "tinyapl_hlPrimAdverb" hlPrimAdverb :: Int
+foreign export javascript "tinyapl_hlConjunctionName" hlConjunctionName :: Int
+foreign export javascript "tinyapl_hlPrimConjunction" hlPrimConjunction :: Int
+foreign export javascript "tinyapl_hlComment" hlComment :: Int
+
+hlOther = fromEnum COther
+hlSyntax = fromEnum CSyntax
+hlNumber = fromEnum CNumber
+hlString = fromEnum CString
+hlStringEscape = fromEnum CStringEscape
+hlArrayName = fromEnum CArrayName
+hlPrimArray = fromEnum CPrimArray
+hlFunctionName = fromEnum CFunctionName
+hlPrimFunction = fromEnum CPrimFunction
+hlAdverbName = fromEnum CAdverbName
+hlPrimAdverb = fromEnum CPrimAdverb
+hlConjunctionName = fromEnum CConjunctionName
+hlPrimConjunction = fromEnum CPrimConjunction
+hlComment = fromEnum CComment

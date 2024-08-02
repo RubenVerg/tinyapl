@@ -45,14 +45,42 @@ export async function runCode(context, code) {
 }
 
 /**
+ * Higlight a piece of code
+ * @param {string} code
+ * @returns {Promise<number[]>} Colors of each character
+ */
+export async function highlight(code) {
+	return await instance.exports.tinyapl_highlight(code);
+}
+
+/**
+ * Split a string into UTF32 codepoints
+ * @param {string} str
+ * @returns {Promise<string[]>}
+ */
+export async function splitString(str) {
+	return await instance.exports.tinyapl_splitString(str);
+}
+
+/**
  * @type {Record<string, string[]>}
  */
 export const glyphs = {
 	syntax: await instance.exports.tinyapl_glyphsSyntax(),
-	identifiers: /** @type {string} */ await instance.exports.tinyapl_glyphsIdentifiers(),
-	arrays: /** @type {string} */ await instance.exports.tinyapl_glyphsArrays(),
-	functions: /** @type {string} */ await instance.exports.tinyapl_glyphsFunctions(),
-	adverbs: /** @type {string} */ await instance.exports.tinyapl_glyphsAdverbs(),
-	conjunctions: /** @type {string} */ await instance.exports.tinyapl_glyphsConjunctions(),
+	identifiers: await instance.exports.tinyapl_glyphsIdentifiers(),
+	arrays: await instance.exports.tinyapl_glyphsArrays(),
+	functions: await instance.exports.tinyapl_glyphsFunctions(),
+	adverbs: await instance.exports.tinyapl_glyphsAdverbs(),
+	conjunctions: await instance.exports.tinyapl_glyphsConjunctions(),
 };
+
+/**
+ * @type {Record<string, number>}
+ */
+export const colors = Object.fromEntries(await Promise.all(Object.entries(instance.exports).filter(([k]) => k.startsWith('tinyapl_hl')).map(async ([k, v]) => [k['tinyapl_hl'.length].toLowerCase() + k.slice('tinyapl_hl'.length + 1), await v()])));
+
+/**
+ * @type {Record<number, string>}
+ */
+export const colorsInv = Object.fromEntries(Object.entries(colors).map(([k, v]) => [v, k]));
 

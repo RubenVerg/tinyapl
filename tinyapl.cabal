@@ -29,6 +29,7 @@ library
                     , TinyAPL.CoreQuads
                     , TinyAPL.Error
                     , TinyAPL.Functions
+                    , TinyAPL.Highlighter
                     , TinyAPL.Interpreter
                     , TinyAPL.Parser
                     , TinyAPL.Primitives
