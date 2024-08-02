@@ -109,8 +109,8 @@ nand = '⍲'
 nor = '⍱'
 cartesian = '⊕'
 polar = '⊗'
-match = '≡'
-notMatch = '≢'
+identical = '≡'
+notIdentical = '≢'
 rho = '⍴'
 ravel = ','
 reverse = '⊖'
@@ -161,8 +161,8 @@ functions =
   , TinyAPL.Glyphs.nor
   , TinyAPL.Glyphs.cartesian
   , TinyAPL.Glyphs.polar
-  , TinyAPL.Glyphs.match
-  , TinyAPL.Glyphs.notMatch
+  , TinyAPL.Glyphs.identical
+  , TinyAPL.Glyphs.notIdentical
   , TinyAPL.Glyphs.rho
   , TinyAPL.Glyphs.ravel
   , TinyAPL.Glyphs.reverse
