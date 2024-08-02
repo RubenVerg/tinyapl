@@ -103,11 +103,15 @@ async function run() {
 	if (success) output.appendChild(clickableDiv('result', result));
 	else output.appendChild(div('error', result));
 	input.value = '';
+	highlight();
 }
 
 button.addEventListener('click', () => run());
-input.addEventListener('keyup', evt => {
-	if (evt.key == 'Enter') return run();
+input.addEventListener('keydown', evt => {
+	if (evt.key == 'Enter') {
+		evt.preventDefault();
+		return run();
+	}
 });
 input.addEventListener('input', () => highlight());
 input.addEventListener('scroll', () => highlight());
