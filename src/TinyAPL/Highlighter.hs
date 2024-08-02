@@ -102,6 +102,8 @@ highlight str = reverse $ hColors $ execState hl (HState Default [] str) where
     whileM_ (andNotAtEnd $ (/= (snd G.inlineComment)) <$> peek) $ do
       advance
       push CComment
+    advance
+    push CComment
 
   identifierChars = G.underscore : ['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ G.identifiers
 

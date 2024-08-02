@@ -14,14 +14,39 @@
 			font-family: var(--font-mono);
 		}
 		
-		#input {
-			width: 90%;
+		#input, #highlighted {
+			width: 97.5%;
 			font-family: var(--font-mono);
+			margin: 2.5px;
+			padding: 2.5px;
+			height: 1.25em;
+			grid-row: 1;
+			grid-column: 1;
+			overflow-x: auto;
+			white-space: nowrap;
+			font-size: 1rem;
+		}
+
+		#input {
+			z-index: 1;
+			color: transparent;
+			background-color: transparent;
+			caret-color: black;
+			resize: none;
+		}
+
+		#highlighted {
+			z-index: 0;
 		}
 		
 		#button {
 			width: auto;
 			font-family: var(--font-mono);
+		}
+		
+		#input-wrapper {
+			display: inline-grid;
+			width: 90%;
 		}
 		
 		.code {
@@ -45,7 +70,11 @@
 <body>
 	<div id="buttons"></div>
 	<pre id="output"></pre>
-	<input id="input" type="text">
+	<div id="input-wrapper">
+		<textarea id="input" spellcheck="false" cols="1"></textarea>
+		<pre id="highlighted" aria-hidden="true"></pre>
+	</div>
 	<button id="button" type="button">Run</button>
+	<pre id="test"></pre>
 	<script type="module" src="./index.js"></script>
 </body>

@@ -56,7 +56,7 @@ export async function highlight(code) {
 /**
  * Split a string into UTF32 codepoints
  * @param {string} str
- * @returns {string[]}
+ * @returns {Promise<string[]>}
  */
 export async function splitString(str) {
 	return await instance.exports.tinyapl_splitString(str);
