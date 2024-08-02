@@ -423,6 +423,15 @@ data Quads = Quads
   , quadConjunctions :: [(String, Conjunction)] }
   deriving (Show)
 
+instance Semigroup Quads where
+  (Quads aAr aFn aAd aCn) <> (Quads bAr bFn bAd bCn) = Quads (aAr ++ bAr) (aFn ++ bFn) (aAd ++ bAd) (aCn ++ bCn)
+
+instance Monoid Quads where
+  mempty = Quads [] [] [] []
+  
+quadsFromReprs :: [Nilad] -> [Function] -> [Adverb] -> [Conjunction] -> Quads
+quadsFromReprs ns fs as cs = Quads ((\x -> (niladRepr x, x)) <$> ns) ((\x -> (functionRepr x, x)) <$> fs) ((\x -> (adverbRepr x, x)) <$> as) ((\x -> (conjRepr x, x)) <$> cs)
+
 -- * State
 
 data Scope = Scope
