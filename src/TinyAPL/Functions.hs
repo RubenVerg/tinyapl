@@ -352,17 +352,17 @@ greater x y = pure $ x > y
 greater' :: MonadError Error m => Array -> Array -> m Array
 greater' = scalarDyad (fmap boolToScalar .: greater)
 
-match :: MonadError Error m => Array -> Array -> m Bool
-match x y = pure $ x == y
+identical :: MonadError Error m => Array -> Array -> m Bool
+identical x y = pure $ x == y
 
-match' :: MonadError Error m => Array -> Array -> m Array
-match' x y = scalar . boolToScalar <$> match x y
+identical' :: MonadError Error m => Array -> Array -> m Array
+identical' x y = scalar . boolToScalar <$> identical x y
 
-notMatch :: MonadError Error m => Array -> Array -> m Bool
-notMatch x y = pure $ x /= y
+notIdentical :: MonadError Error m => Array -> Array -> m Bool
+notIdentical x y = pure $ x /= y
 
-notMatch' :: MonadError Error m => Array -> Array -> m Array
-notMatch' x y = scalar . boolToScalar <$> notMatch x y
+notIdentical' :: MonadError Error m => Array -> Array -> m Array
+notIdentical' x y = scalar . boolToScalar <$> notIdentical x y
 
 tally :: MonadError Error m => Array -> m Natural
 tally y = pure $ genericLength $ majorCells y

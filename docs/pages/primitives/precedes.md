@@ -1,0 +1,7 @@
+---
+glyph: '⊲'
+pattern: 'r←x⊲y'
+name: Precedes
+---
+
+`r` is whether `x` is less than `y` according to [total array ordering](/info/ordering).

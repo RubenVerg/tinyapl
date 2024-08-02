@@ -37,8 +37,8 @@ nand = Function Nothing (Just F.nand') [G.nand]
 nor = Function Nothing (Just F.nor') [G.nor]
 cartesian = Function (Just F.imaginary') (Just F.cartesian') [G.cartesian]
 polar = Function (Just F.unitPolar') (Just F.polar') [G.polar]
-match = Function Nothing (Just F.match') [G.match]
-notMatch = Function (Just F.tally') (Just F.notMatch') [G.notMatch]
+identical = Function Nothing (Just F.identical') [G.identical]
+notIdentical = Function (Just F.tally') (Just F.notIdentical') [G.notIdentical]
 rho = Function (Just F.shape') (Just F.reshape') [G.rho]
 ravel = Function (Just F.ravel') Nothing [G.ravel]
 reverse = Function (Just F.reverse') (Just F.rotate') [G.reverse]
@@ -89,8 +89,8 @@ functions = (\x -> (head $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.nor
   , TinyAPL.Primitives.cartesian
   , TinyAPL.Primitives.polar
-  , TinyAPL.Primitives.match
-  , TinyAPL.Primitives.notMatch
+  , TinyAPL.Primitives.identical
+  , TinyAPL.Primitives.notIdentical
   , TinyAPL.Primitives.rho
   , TinyAPL.Primitives.ravel
   , TinyAPL.Primitives.reverse
