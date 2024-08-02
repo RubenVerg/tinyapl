@@ -145,6 +145,10 @@ Marked features are supported, unmarked features are planned
 		* [x] `>` greater
 		* [x] `≡` identical
 		* [x] `≢` not identical
+		* [ ] `⊲` precedes (TAO less)
+		* [ ] `⊴` precedes or identical (TAO less or equal)
+		* [ ] `⊵` succeeds or identical (TAO greater or equal)
+		* [ ] `⊳` succeeds (TAO greater)
 		* [x] `∧` and
 		* [x] `∨` or
 		* [x] `⍲` nand
@@ -221,6 +225,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍎` execute
 		* [ ] `⍕` format
 		* [ ] `↗` raise?
+		* [ ] `⇂` minimal (TAO minimum)
+		* [ ] `↾` maximal (TAO maximum)
 	* operators
 		* [x] `⍆` reduce left-to-right
 		* [ ] `⍆` windowed reduce left-to-right
