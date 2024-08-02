@@ -139,3 +139,19 @@ setAt 0 r [] = [r]
 setAt _ _ [] = error "setAt: out of bounds"
 setAt 0 r (_:xs) = r : xs
 setAt n r (x:xs) = x : setAt (n - 1) r xs
+
+whileM :: Monad m => m Bool -> m a -> m [a]
+whileM p f = go where
+  go = do
+    x <- p
+    if x then do
+      r <- f
+      rs <- go
+      pure $ r : rs
+    else pure []
+
+whileM_ :: Monad m => m Bool -> m a -> m ()
+whileM_ p f = go where
+  go = do
+    x <- p
+    if x then f >> go else pure ()
