@@ -41,7 +41,7 @@ const keyboard = [
 	['BracketRight', ']', '}', undefined, '⟩', undefined, undefined],
 	['KeyA', 'a', 'A', '⍺', '⍶', undefined, undefined],
 	['KeyS', 's', 'S', '⌈', '§', '↾', undefined],
-	['KeyD', 'd', 'D', '⌊', undefined, '⇂', undefined],
+	['KeyD', 'd', 'D', '⌊', '⸠', '⇂', undefined],
 	['KeyF', 'f', 'F', '⍛', '∡', '∠', undefined],
 	['KeyG', 'g', 'G', '∇', '⍢', undefined, undefined],
 	['KeyH', 'h', 'H', '∆', '⍙', '⊸', '⟜'],
