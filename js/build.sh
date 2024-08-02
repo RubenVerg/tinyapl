@@ -14,7 +14,7 @@ echo "Compiling library"
 
 wasm32-wasi-cabal build tinyapl-js
 
-out_path=$(find . -name "*-js.wasm")
+out_path=$(find dist-newstyle -name "*-js.wasm")
 
 echo "Compiled, found $out_path"
 

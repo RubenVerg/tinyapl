@@ -1,38 +1,31 @@
 <!doctype html>
 <head>
 	<meta charset="utf-8">
-	<title>TinyAPL</title>
+	<title>TinyAPL Interpreter</title>
+	<link rel="icon" type="img/svg+xml" href="/logo.svg">
+	<link rel="stylesheet" href="/style.css">
 	<style>
-		@font-face {
-			font-family: APL386;
-			src: url('https://abrudz.github.io/APL386/APL386.ttf');
-		}
-		
-		:root {
-			--font: APL386, 'APL386 Unicode', 'BQN386 Unicode', 'APL333', monospace;
-		}
-		
 		#buttons button {
-			font-family: var(--font);
+			font-family: var(--font-mono);
 		}
 	
 		#output {
 			height: 90%;
-			font-family: var(--font);
+			font-family: var(--font-mono);
 		}
 		
 		#input {
 			width: 90%;
-			font-family: var(--font);
+			font-family: var(--font-mono);
 		}
 		
 		#button {
 			width: auto;
-			font-family: var(--font);
+			font-family: var(--font-mono);
 		}
 		
 		.code {
-			color: darkgray;
+			color: grey;
 		}
 		
 		.error {
