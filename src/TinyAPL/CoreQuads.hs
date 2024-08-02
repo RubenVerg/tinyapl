@@ -20,9 +20,7 @@ seed = Nilad Nothing (Just $ \x -> do
   let e = DomainError "Seed must be a scalar integer"
   s <- liftEither (asScalar e x) >>= liftEither . asNumber e >>= liftEither . asInt e
   setSeed s) (G.quad : "seed")
-ts = Nilad (Just $ do
-  scalar . Number . realToFrac <$> liftIO getPOSIXTime
-  ) Nothing (G.quad : "ts")
+ts = Nilad (Just $ scalar . Number . realToFrac <$> liftIO getPOSIXTime) Nothing (G.quad : "ts")
 
 exists = Function (Just $ \x -> do
   let var = show x

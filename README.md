@@ -271,7 +271,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⎕u` (constant) the uppercase alphabet
 		* [x] `⎕l` (constant) the lowercase alphabet
 		* [x] `⎕d` (constant) the digits
-		* [ ] `⎕ts` current Unix timestamp
+		* [x] `⎕ts` current Unix timestamp
 		* [x] `⎕io` (constant) `1`
 		* [x] `⎕ct` (constant) `1⏨¯14`
 		* [x] `⎕seed` (set only) seed the random number generator
