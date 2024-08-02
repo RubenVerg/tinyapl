@@ -318,22 +318,22 @@ spec = do
         it "returns the complex number specified by the phase and radius" $ do
           d P.polar (vector [Number 3, Number 1, Number -1, Number (3 :+ 2)]) (vector [Number 0, Number $ pi / 2, Number pi, Number $ pi / 2]) `shouldReturn` pure (vector [Number 3, Number (0 :+ 1), Number 1, Number (-2 :+ 3)])
 
-    describe [G.match, G.notMatch] $ do
+    describe [G.identical, G.notIdentical] $ do
       describe "comparisons" $ do
         it "compares arrays" $ do
-          d P.match (vector [Number 1, Number 2]) (vector [Number 1, Number 2]) `shouldReturn` pure (scalar $ Number 1)
-          d P.match (vector [Number 1, Number 2]) (vector [Number 1, Number 3]) `shouldReturn` pure (scalar $ Number 0)
-          d P.notMatch (vector [Number 1, Number 2]) (vector [Number 1, Number 2]) `shouldReturn` pure (scalar $ Number 0)
-          d P.notMatch (vector [Number 1, Number 2]) (vector [Number 1, Number 3]) `shouldReturn` pure (scalar $ Number 1)
+          d P.identical (vector [Number 1, Number 2]) (vector [Number 1, Number 2]) `shouldReturn` pure (scalar $ Number 1)
+          d P.identical (vector [Number 1, Number 2]) (vector [Number 1, Number 3]) `shouldReturn` pure (scalar $ Number 0)
+          d P.notIdentical (vector [Number 1, Number 2]) (vector [Number 1, Number 2]) `shouldReturn` pure (scalar $ Number 0)
+          d P.notIdentical (vector [Number 1, Number 2]) (vector [Number 1, Number 3]) `shouldReturn` pure (scalar $ Number 1)
 
-    describe [G.notMatch] $ do
+    describe [G.notIdentical] $ do
       describe "tally" $ do
         it "returns the length of a vector" $ do
-          m P.notMatch (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (scalar $ Number 3)
+          m P.notIdentical (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (scalar $ Number 3)
         it "returns the count of major cells for a higher-rank vector" $ do
-          m P.notMatch (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (scalar $ Number 2)
+          m P.notIdentical (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (scalar $ Number 2)
         it "returns 1 for a scalar" $ do
-          m P.notMatch (scalar $ Number 10) `shouldReturn` pure (scalar $ Number 1)
+          m P.notIdentical (scalar $ Number 10) `shouldReturn` pure (scalar $ Number 1)
 
     describe [G.rho] $ do
       describe "shape" $ do

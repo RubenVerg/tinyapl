@@ -143,8 +143,8 @@ Marked features are supported, unmarked features are planned
 		* [x] `≤` less or equal
 		* [x] `≥` greater or equal
 		* [x] `>` greater
-		* [x] `≡` match
-		* [x] `≢` not match
+		* [x] `≡` identical
+		* [x] `≢` not identical
 		* [x] `∧` and
 		* [x] `∨` or
 		* [x] `⍲` nand
