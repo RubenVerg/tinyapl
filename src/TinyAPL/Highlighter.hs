@@ -23,20 +23,14 @@ data Color
   | CComment
   deriving (Enum, Show)
 
-data In
-  = Default
-  | String
-  | Comment
-
 data HState = HState
-  { hIn :: In
-  , hColors :: [Color]
+  { hColors :: [Color]
   , hStr :: String }
 
 type HSt = State HState
 
 highlight :: String -> [Color]
-highlight str = reverse $ hColors $ execState hl (HState Default [] str) where
+highlight str = reverse $ hColors $ execState hl (HState [] str) where
   atEnd :: HSt Bool
   atEnd = do
     str <- gets hStr
