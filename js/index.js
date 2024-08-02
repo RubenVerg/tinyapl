@@ -143,13 +143,13 @@ function clickableDiv(cls, contents, clickedContents = contents) {
 		if (input.value.trim() == '') {
 			input.value = clickedContents;
 			input.focus();
+			highlight();
 		}
 	});
 	return d;
 }
 
-async function run() {
-	const code = input.value;
+async function runCode(code) {
 	output.appendChild(clickableDiv('code', ' '.repeat(6) + code, code));
 	const d = div('quad', '');
 	output.appendChild(d);
@@ -162,6 +162,10 @@ async function run() {
 	if (d.textContent.at(-1) === '\n') d.textContent = d.textContent.slice(0, -1);
 	if (success) output.appendChild(clickableDiv('result', result));
 	else output.appendChild(div('error', result));
+}
+
+async function run() {
+	await runCode(input.value);
 	input.value = '';
 	highlight();
 }
@@ -188,3 +192,8 @@ input.addEventListener('keydown', evt => {
 });
 input.addEventListener('input', () => highlight());
 input.addEventListener('scroll', () => highlight());
+
+const search = new URLSearchParams(window.location.search);
+
+for (const line of search.getAll('run')) await runCode(decodeURIComponent(line));
+
