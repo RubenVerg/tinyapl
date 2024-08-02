@@ -5,8 +5,10 @@ import PrimitivePage from './components/PrimitivePage.tsx';
 import QuadPage from './components/QuadPage.tsx';
 import FullPage from './components/FullPage.tsx';
 import Index from './components/Index.tsx';
+import RunInterpreter from './components/RunInterpreter.tsx';
 import { Info, Primitive, Quad, Pages } from './types.d.ts';
 import pages, { loadPages } from './pages.ts';
+import interpreters from './interpreters.ts';
 
 import { serveDir } from './deps/std/http.ts';
 import html, { h, HtmlOptions } from './deps/x/htm.ts';
@@ -58,6 +60,10 @@ const quadPage = (quad: Quad) => render(<FullPage pages={pages}><QuadPage quad={
 	title: `${quad.name} - TinyAPL`,
 });
 
+const runInterpreter = await render(<RunInterpreter pages={pages} interpreters={interpreters} />, {
+	title: 'Run Interpreter - TinyAPL',
+});
+
 const directories: Record<string, keyof typeof pages> = {
 	info: 'info',
 	primitive: 'primitives',
@@ -90,10 +96,29 @@ async function handler(req: Request) {
 		return index;
 	}
 
+	if (pathname === '/run' || pathname === '/run/') {
+		return runInterpreter;
+	}
+
+	if (pathname.startsWith('/run')) {
+		const v = pathname.split('/')[2];
+		if (interpreters.includes(v)) {
+			return serveDir(req, {
+				urlRoot: `run/${v}`,
+				fsRoot: `interpreters/${v}`,
+			});
+		}
+	}
+
 	for (const [dir, typ] of Object.entries(directories)) {
 		if (typ === 'index') continue;
 		if (pathname.startsWith(`/${dir}`)) {
-			const path = pathname.replace(`/${dir}`, '').replaceAll('/', '');
+			const u = new URL(req.url);
+			u.pathname = `/docs${pathname}`;
+			return Response.redirect(u);
+		}
+		if (pathname.startsWith(`/docs/${dir}`)) {
+			const path = pathname.replace(`/docs/${dir}`, '').replaceAll('/', '');
 			return (renderers[typ] as (p: unknown) => Promise<Response>)((pages as Pick<Pages, Exclude<keyof Pages, 'index'>>)[typ][path]);
 		}
 	}

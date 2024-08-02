@@ -29,3 +29,5 @@ export interface Pages {
 	primitives: Record<string, Primitive>;
 	quads: Record<string, Quad>;
 }
+
+export type Interpreters = string[];

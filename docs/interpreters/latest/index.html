@@ -1,0 +1,47 @@
+<!doctype html>
+<head>
+	<meta charset="utf-8">
+	<title>TinyAPL Interpreter</title>
+	<link rel="icon" type="img/svg+xml" href="/logo.svg">
+	<link rel="stylesheet" href="/style.css">
+	<style>
+		#buttons button {
+			font-family: var(--font-mono);
+		}
+	
+		#output {
+			height: 90%;
+			font-family: var(--font-mono);
+		}
+		
+		#input {
+			width: 90%;
+			font-family: var(--font-mono);
+		}
+		
+		#button {
+			width: auto;
+			font-family: var(--font-mono);
+		}
+		
+		.code {
+			color: grey;
+		}
+		
+		.error {
+			background: #ffcccc;
+			color: red;
+		}
+		
+		.result {
+			color: black;
+		}
+	</style>
+</head>
+<body>
+	<div id="buttons"></div>
+	<pre id="output"></pre>
+	<input id="input" type="text">
+	<button id="button" type="button">Run</button>
+	<script type="module" src="./index.js"></script>
+</body>

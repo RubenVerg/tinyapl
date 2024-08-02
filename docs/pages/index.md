@@ -6,7 +6,9 @@ It is being implemented in a [series of posts](https://blog.rubenverg.com/?tag=t
 
 Source code is available [<i class='bi bi-github'></i> on GitHub](https://github.com/RubenVerg/tinyapl).
 
-<a class='btn btn-primary me-1' href='https://github.com/RubenVerg/tinyapl/releases/'><i class='bi bi-download'></i> Download</a> (requires [Wasmtime](https://wasmtime.dev/) or another WASM runtime).
+<a class='btn btn-primary me-1' href='/run/latest'><i class='bi bi-play'></i>Run Latest</a> or <a href='/run'>run a specific version</a>
+
+<a class='btn btn-secondary me-1' href='https://github.com/RubenVerg/tinyapl/releases/'><i class='bi bi-download'></i> Download</a> (requires [Wasmtime](https://wasmtime.dev/) or another WASM runtime).
 
 This documentation is split in three parts: information, which contains useful info; primitives, which describe each primitive (including planned ones); quad names, which describe each quad name and list its category (Core, for quad names that are always available; I/O, for quad names that are only available in contexts where IO can be performed).
 
