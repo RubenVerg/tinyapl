@@ -430,8 +430,7 @@ data Scope = Scope
   , scopeFunctions :: [(String, Function)]
   , scopeAdverbs :: [(String, Adverb)]
   , scopeConjunctions :: [(String, Conjunction)]
-  , scopeParent :: Maybe Scope
-  , scopeQuads :: Quads }
+  , scopeParent :: Maybe Scope }
   deriving (Show)
 
 specialNames :: [String]
@@ -465,7 +464,22 @@ scopeUpdateAdverb name val sc = sc{ scopeAdverbs = update name val (scopeAdverbs
 scopeUpdateConjunction :: String -> Conjunction -> Scope -> Scope
 scopeUpdateConjunction name val sc = sc{ scopeConjunctions = update name val (scopeConjunctions sc) }
 
-type St = StateT Scope (ExceptT Error IO)
+data Context = Context
+  { contextScope :: Scope
+  , contextQuads :: Quads
+  , contextIn :: St String
+  , contextOut :: String -> St ()
+  , contextErr :: String -> St () }
 
-runSt :: St a -> Scope -> ResultIO (a, Scope)
+type St = StateT Context (ExceptT Error IO)
+
+runSt :: St a -> Context -> ResultIO (a, Context)
 runSt = runStateT
+
+liftToSt :: IO a -> St a
+liftToSt = liftIO
+
+putScope :: Scope -> St ()
+putScope sc = do
+  context <- get
+  put $ context{ contextScope = sc }

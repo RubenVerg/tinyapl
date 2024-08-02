@@ -18,34 +18,43 @@ main = do
   hSetEncoding stdout utf8
   hSetEncoding stderr utf8
 
-  let scope = Scope [] [] [] [] Nothing core
+  let context = Context {
+      contextScope = Scope [] [] [] [] Nothing
+    , contextQuads = core
+    , contextIn = liftToSt getLine
+    , contextOut = \str -> do
+      liftToSt $ putStr str
+      liftToSt $ hFlush stdout
+    , contextErr = \str -> do
+      liftToSt $ hPutStr stderr str
+      liftToSt $ hFlush stderr }
 
   args <- getArgs
   case args of
-    []     -> repl scope
+    []     -> repl context
     [path] -> do
       code <- readFile path
-      void $ runCode False path code scope
+      void $ runCode False path code context
     _      -> do
       hPutStrLn stderr "Usage:"
       hPutStrLn stderr "tinyapl         Start a REPL"
       hPutStrLn stderr "tinyapl path    Run a file"
 
-runCode :: Bool -> String -> String -> Scope -> IO Scope
-runCode output file code scope = do
-  result <- runResult $ run file code scope
+runCode :: Bool -> String -> String -> Context -> IO Context
+runCode output file code context = do
+  result <- runResult $ run file code context
   case result of
-    Left err -> hPrint stderr err $> scope
-    Right (res, scope) -> if output then print res $> scope else return scope
+    Left err -> hPrint stderr err $> context
+    Right (res, context') -> if output then print res $> context' else return context'
 
-repl :: Scope -> IO ()
+repl :: Context -> IO ()
 repl scope = let
-  go :: Scope -> IO Scope
-  go scope = do
+  go :: Context -> IO Context
+  go context = do
     putStr "> "
     hFlush stdout
     line <- getLine
-    if line == "" then return scope
+    if line == "" then return context
     else runCode True "<repl>" line scope >>= go
   in do
     putStrLn "TinyAPL REPL, empty line to exit"

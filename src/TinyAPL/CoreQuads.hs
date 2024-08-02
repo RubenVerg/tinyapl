@@ -26,7 +26,7 @@ ts = Nilad (Just $ do
 
 exists = Function (Just $ \x -> do
   let var = show x
-  scope <- get
+  scope <- gets contextScope
   case scopeLookup var scope of
     Just _ -> return $ scalar $ Number 1
     Nothing -> return $ scalar $ Number 0

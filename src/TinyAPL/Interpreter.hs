@@ -9,7 +9,6 @@ import qualified TinyAPL.Primitives as P
 import TinyAPL.Util
 
 import Control.Applicative ((<|>))
-import System.IO (hPutStr, stderr, hFlush, stdout)
 import Control.Monad.State
 import Data.Foldable (foldlM)
 import Control.Monad
@@ -54,15 +53,15 @@ scopeUpdate name (VFunction val) sc    = scopeUpdateFunction name val sc
 scopeUpdate name (VAdverb val) sc      = scopeUpdateAdverb name val sc
 scopeUpdate name (VConjunction val) sc = scopeUpdateConjunction name val sc
 
-inChildScope :: Monad m => [(String, Value)] -> StateT Scope m a -> Scope -> m a
+inChildScope :: Monad m => [(String, Value)] -> StateT Context m a -> Context -> m a
 inChildScope vals x parent = let
-  child = foldr (\(name, val) sc -> scopeUpdate name val sc) (Scope [] [] [] [] (Just parent) (scopeQuads parent)) vals
+  child = parent{ contextScope = foldr (\(name, val) sc -> scopeUpdate name val sc) (Scope [] [] [] [] (Just $ contextScope parent)) vals }
   in evalStateT x child
 
-interpret :: Tree -> Scope -> ResultIO (Value, Scope)
+interpret :: Tree -> Context -> ResultIO (Value, Context)
 interpret tree = runSt (eval tree)
 
-run :: String -> String -> Scope -> ResultIO (Value, Scope)
+run :: String -> String -> Context -> ResultIO (Value, Context)
 run file src scope = do
   trees <- except (parse file src)
   join $ foldlM (\last next -> interpret next . snd <$> last) (return (undefined, scope)) trees
@@ -110,18 +109,20 @@ evalLeaf (TokenPrimConjunction n _)    =
   lift $ except $ maybeToEither (SyntaxError $ "Unknown primitive conjunction " ++ [n]) $ VConjunction <$> lookup n P.conjunctions
 evalLeaf (TokenArrayName name _)
   | name == [G.quad]                   = do
-    liftIO $ putStr $ G.quad : ": "
-    liftIO $ hFlush stdout
-    code <- liftIO getLine
-    scope <- get
-    (res, scope') <- lift $ run [G.quad] code scope
-    put scope'
+    out <- gets contextOut
+    input <- gets contextIn
+    out $ G.quad : ": "
+    code <- input
+    context <- get
+    (res, context') <- lift $ run [G.quad] code context
+    put $ context'
     return res
   | name == [G.quadQuote]              = do
-    str <- liftIO getLine
+    input <- gets contextIn
+    str <- input
     return $ VArray $ vector $ Character <$> str
   | head name == G.quad                = do
-    quads <- gets scopeQuads
+    quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads
     case nilad of
       Just x -> case niladGet x of
@@ -129,34 +130,34 @@ evalLeaf (TokenArrayName name _)
         Nothing -> throwError $ SyntaxError $ "Quad name " ++ name ++ " cannot be accessed"
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                          =
-    get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray . scopeLookupArray name)
+    gets contextScope >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray . scopeLookupArray name)
 evalLeaf (TokenFunctionName name _)
   | head name == G.quad                = do
-    quads <- gets scopeQuads
+    quads <- gets contextQuads
     let fn = lookup name $ quadFunctions quads
     case fn of
       Just x -> return $ VFunction x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                          =
-    get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VFunction . scopeLookupFunction name)
+    gets contextScope >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VFunction . scopeLookupFunction name)
 evalLeaf (TokenAdverbName name _)
   | head name == G.quad                = do
-    quads <- gets scopeQuads
+    quads <- gets contextQuads
     let adv = lookup name $ quadAdverbs quads
     case adv of
       Just x -> return $ VAdverb x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                          =
-    get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VAdverb . scopeLookupAdverb name)
+    gets contextScope >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VAdverb . scopeLookupAdverb name)
 evalLeaf (TokenConjunctionName name _)
   | head name == G.quad                = do
-    quads <- gets scopeQuads
+    quads <- gets contextQuads
     let conj = lookup name $ quadConjunctions quads
     case conj of
       Just x -> return $ VConjunction x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                          =
-    get >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VConjunction . scopeLookupConjunction name)
+    gets contextScope >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VConjunction . scopeLookupConjunction name)
 evalLeaf _                             = throwError $ DomainError "Invalid leaf type in evaluation"
 
 evalMonadCall :: Value -> Value -> St Value
@@ -184,16 +185,17 @@ evalAssign :: String -> Value -> St Value
 evalAssign name val
   | name == [G.quad]      = do
     arr <- unwrapArray (DomainError "Cannot print non-array") val
-    liftIO $ print arr
+    out <- gets contextOut
+    out $ show arr ++ "\n"
     return val
   | name == [G.quadQuote] = do
     arr <- unwrapArray (DomainError "Cannot print non-array") val
-    liftIO $ hPutStr stderr $ show arr
-    liftIO $ hFlush stderr
+    err <- gets contextErr
+    err $ show arr
     return val
   | head name == G.quad   = do
     arr <- unwrapArray (DomainError "Cannot set quad name to non-array") val
-    quads <- gets scopeQuads
+    quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads
     case nilad of
       Just x -> case niladSet x of
@@ -203,8 +205,8 @@ evalAssign name val
         Nothing -> throwError $ SyntaxError $ "Quad name " ++ name ++ " cannot be set"
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise = do
-    sc <- get
-    put $ scopeUpdate name val sc
+    sc <- gets contextScope
+    putScope $ scopeUpdate name val sc
     return val
 
 evalDefined :: [Tree] -> Category -> St Value

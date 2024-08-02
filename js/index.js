@@ -1,4 +1,4 @@
-import { newScope, runCode, glyphs } from './tinyapl.js';
+import { newContext, runCode, glyphs } from './tinyapl.js';
 
 const buttons = document.querySelector('#buttons');
 const output = document.querySelector('#output');
@@ -19,7 +19,7 @@ for (const k of ['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'con
 	buttons.appendChild(document.createElement('br'));
 }
 
-const scope = await newScope();
+const context = await newContext();
 
 function div(cls, contents) {
 	const div = document.createElement('div');
@@ -42,7 +42,7 @@ function clickableDiv(cls, contents, clickedContents = contents) {
 async function run() {
 	const code = input.value;
 	output.appendChild(clickableDiv('code', ' '.repeat(6) + code, code));
-	const [result, success] = await runCode(scope, code);
+	const [result, success] = await runCode(context, code);
 	if (success) output.appendChild(clickableDiv('result', result));
 	else output.appendChild(div('error', result));
 	input.value = '';

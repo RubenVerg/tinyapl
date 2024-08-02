@@ -23,21 +23,21 @@ wasi.initialize(instance);
 await instance.exports.hs_start();
 
 /**
- * Create a new scope for TinyAPL code
+ * Create a new context for TinyAPL code
  * @returns {Promise<number>} Scope ID
  */
-export async function newScope() {
-	return await instance.exports.tinyapl_newScope();
+export async function newContext() {
+	return await instance.exports.tinyapl_newContext();
 }
 
 /**
- * Run code in a scope
- * @param {number} scope Scope ID
+ * Run code in a context
+ * @param {number} context Context ID
  * @param {string} code
  * @returns {Promise<[string, boolean]>} A pair containing the result of the code or the error and whether running succeeded
  */
-export async function runCode(scope, code) {
-	const [result, success] = await instance.exports.tinyapl_runCode(scope, code);
+export async function runCode(context, code) {
+	const [result, success] = await instance.exports.tinyapl_runCode(context, code);
 	return [result, Boolean(success)];
 }
 

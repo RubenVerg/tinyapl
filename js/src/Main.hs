@@ -28,26 +28,39 @@ foreign export javascript "hs_start" main :: IO ()
 main :: IO ()
 main = return ()
 
-scopes :: IORef [Scope]
-scopes = unsafePerformIO $ newIORef []
+{-# NOINLINE contexts #-}
+contexts :: IORef [Context]
+contexts = unsafePerformIO $ newIORef []
 
-foreign export javascript "tinyapl_newScope" newScope :: IO Int
+foreign import javascript unsafe "prompt($1)" jsPrompt :: JSString -> IO JSString
+foreign import javascript unsafe "alert($1)" jsAlert :: JSString -> IO ()
+  
+emptyContext :: Context
+emptyContext = Context
+  { contextScope = Scope [] [] [] [] Nothing
+  , contextQuads = core
+  , contextIn = fromJSString <$> (liftToSt $ jsPrompt $ toJSString "")
+  , contextOut = liftToSt . jsAlert . toJSString
+  , contextErr = liftToSt . jsAlert . toJSString }
 
-newScope :: IO Int
-newScope = do
-  l <- length <$> readIORef scopes
-  modifyIORef scopes (++ [Scope [] [] [] [] Nothing core])
+
+foreign export javascript "tinyapl_newContext" newContext :: IO Int
+
+newContext :: IO Int
+newContext = do
+  l <- length <$> readIORef contexts
+  modifyIORef contexts (++ [emptyContext])
   return l
 
 runCode :: Int -> String -> IO (String, Bool)
-runCode scopeId code = do
-  scope <- (!! scopeId) <$> readIORef scopes
+runCode contextId code = do
+  context <- (!! contextId) <$> readIORef contexts
   let file = "<tinyapl js>"
-  result <- runResult $ run file code scope
+  result <- runResult $ run file code context
   case result of
     Left err -> return (show err, False)
-    Right (res, scope') -> do
-      modifyIORef scopes (setAt scopeId scope')
+    Right (res, context') -> do
+      modifyIORef contexts (setAt contextId context')
       return (show res, True)
 
 foreign import javascript unsafe "return [$1, $2];" jsResultPair :: JSString -> Bool -> JSVal
@@ -55,8 +68,8 @@ foreign import javascript unsafe "return [$1, $2];" jsResultPair :: JSString -> 
 foreign export javascript "tinyapl_runCode" runCodeJS :: Int -> JSString -> IO JSVal
 
 runCodeJS :: Int -> JSString -> IO JSVal
-runCodeJS scopeId code = do
-  (r, s) <- runCode scopeId $ fromJSString code
+runCodeJS contextId code = do
+  (r, s) <- runCode contextId $ fromJSString code
   return $ jsResultPair (toJSString r) s
   
 foreign export javascript "tinyapl_glyphsSyntax" glyphsSyntaxJS :: JSVal
