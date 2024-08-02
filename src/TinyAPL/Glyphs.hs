@@ -136,6 +136,7 @@ symdiff = '§'
 element = '∊'
 roll = '?'
 squad = '⌷'
+rank = 'ϼ'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -187,7 +188,8 @@ functions =
   , TinyAPL.Glyphs.symdiff
   , TinyAPL.Glyphs.element
   , TinyAPL.Glyphs.roll
-  , TinyAPL.Glyphs.squad ]
+  , TinyAPL.Glyphs.squad
+  , TinyAPL.Glyphs.rank ]
 
 -- * Adverbs
 

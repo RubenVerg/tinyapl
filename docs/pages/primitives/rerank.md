@@ -2,7 +2,6 @@
 glyph: 'ϼ'
 pattern: 'r←xϼy'
 name: Rerank
-planned: true
 ---
 
 `x` must be a natural. `r` is the result of changing the rank of `y` to be `x`:

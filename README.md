@@ -173,7 +173,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `≡` depth
 		* [x] `⍴` shape
 		* [x] `≢` tally
-		* [ ] `ϼ` rank
+		* [x] `ϼ` rank
 	* array creation functions
 		* [x] `⍳` index generator
 		* [x] `?` roll
@@ -204,13 +204,13 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍪` table
 		* [ ] `⍪` catenate
 		* [x] `⍴` reshape
-		* [ ] `ϼ` rerank (generalized version of promote/demote: introduce leading length-1 axes or combine leading axes)
+		* [x] `ϼ` rerank (generalized version of promote/demote: introduce leading length-1 axes or combine leading axes)
 		* [x] `⊖` reverse
 		* [x] `⊖` rotate
 		* [ ] `⍉` transpose
 		* [ ] `⍉` reorder axes
-		* [ ] `∧` promote (introduce leading axis)
-		* [ ] `∨` demote (combine two leading axes)
+		* [x] `∧` promote (introduce leading axis)
+		* [x] `∨` demote (combine two leading axes)
 		* [ ] `,` laminate
 	* array lookup functions
 		* [x] `⊃` first

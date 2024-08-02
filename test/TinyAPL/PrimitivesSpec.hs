@@ -13,49 +13,49 @@ import Data.Complex
 
 spec :: Spec
 spec = do
-  let scope = Scope [("l", vector $ Character <$> ['a'..'z'])] [] [] [] Nothing core
+  let context = Context (Scope [("l", vector $ Character <$> ['a'..'z'])] [] [] [] Nothing) core undefined undefined undefined
 
   let m :: Function -> Array -> IO (Result Array)
-      m fn y = runResult $ fst <$> runSt (callMonad fn y) scope
+      m fn y = runResult $ fst <$> runSt (callMonad fn y) context
 
       d :: Function -> Array -> Array -> IO (Result Array)
-      d fn x y = runResult $ fst <$> runSt (callDyad fn x y) scope
+      d fn x y = runResult $ fst <$> runSt (callDyad fn x y) context
 
       aam :: Adverb -> Array -> Array -> IO (Result Array)
-      aam adv u x = runResult $ fst <$> runSt (callOnArray adv u >>= (`callMonad` x)) scope
+      aam adv u x = runResult $ fst <$> runSt (callOnArray adv u >>= (`callMonad` x)) context
 
       aad :: Adverb -> Array -> Array -> Array -> IO (Result Array)
-      aad adv u x y = runResult $ fst <$> runSt (callOnArray adv u >>= (\d -> callDyad d x y)) scope
+      aad adv u x y = runResult $ fst <$> runSt (callOnArray adv u >>= (\d -> callDyad d x y)) context
 
       afm :: Adverb -> Function -> Array -> IO (Result Array)
-      afm adv f x = runResult $ fst <$> runSt (callOnFunction adv f >>= (`callMonad` x)) scope
+      afm adv f x = runResult $ fst <$> runSt (callOnFunction adv f >>= (`callMonad` x)) context
 
       afd :: Adverb -> Function -> Array -> Array -> IO (Result Array)
-      afd adv f x y = runResult $ fst <$> runSt (callOnFunction adv f >>= (\d -> callDyad d x y)) scope
+      afd adv f x y = runResult $ fst <$> runSt (callOnFunction adv f >>= (\d -> callDyad d x y)) context
 
       caam :: Conjunction -> Array -> Array -> Array -> IO (Result Array)
-      caam conj u v x = runResult $ fst <$> runSt (callOnArrayAndArray conj u v >>= (`callMonad` x)) scope
+      caam conj u v x = runResult $ fst <$> runSt (callOnArrayAndArray conj u v >>= (`callMonad` x)) context
 
       caad :: Conjunction -> Array -> Array -> Array -> Array -> IO (Result Array)
-      caad conj u v x y = runResult $ fst <$> runSt (callOnArrayAndArray conj u v >>= (\d -> callDyad d x y)) scope
+      caad conj u v x y = runResult $ fst <$> runSt (callOnArrayAndArray conj u v >>= (\d -> callDyad d x y)) context
 
       cafm :: Conjunction -> Array -> Function -> Array -> IO (Result Array)
-      cafm conj u g x = runResult $ fst <$> runSt (callOnArrayAndFunction conj u g >>= (`callMonad` x)) scope
+      cafm conj u g x = runResult $ fst <$> runSt (callOnArrayAndFunction conj u g >>= (`callMonad` x)) context
 
       cafd :: Conjunction -> Array -> Function -> Array -> Array -> IO (Result Array)
-      cafd conj u g x y = runResult $ fst <$> runSt (callOnArrayAndFunction conj u g >>= (\d -> callDyad d x y)) scope
+      cafd conj u g x y = runResult $ fst <$> runSt (callOnArrayAndFunction conj u g >>= (\d -> callDyad d x y)) context
 
       cfam :: Conjunction -> Function -> Array -> Array -> IO (Result Array)
-      cfam conj f v x = runResult $ fst <$> runSt (callOnFunctionAndArray conj f v >>= (`callMonad` x)) scope
+      cfam conj f v x = runResult $ fst <$> runSt (callOnFunctionAndArray conj f v >>= (`callMonad` x)) context
 
       cfad :: Conjunction -> Function -> Array -> Array -> Array -> IO (Result Array)
-      cfad conj f v x y = runResult $ fst <$> runSt (callOnFunctionAndArray conj f v >>= (\d -> callDyad d x y)) scope
+      cfad conj f v x y = runResult $ fst <$> runSt (callOnFunctionAndArray conj f v >>= (\d -> callDyad d x y)) context
 
       cffm :: Conjunction -> Function -> Function -> Array -> IO (Result Array)
-      cffm conj f g x = runResult $ fst <$> runSt (callOnFunctionAndFunction conj f g >>= (`callMonad` x)) scope
+      cffm conj f g x = runResult $ fst <$> runSt (callOnFunctionAndFunction conj f g >>= (`callMonad` x)) context
 
       cffd :: Conjunction -> Function -> Function -> Array -> Array -> IO (Result Array)
-      cffd conj f g x y = runResult $ fst <$> runSt (callOnFunctionAndFunction conj f g >>= (\d -> callDyad d x y)) scope
+      cffd conj f g x y = runResult $ fst <$> runSt (callOnFunctionAndFunction conj f g >>= (\d -> callDyad d x y)) context
 
       e2m :: Either e a -> Maybe a
       e2m (Right x) = Just x
@@ -277,6 +277,10 @@ spec = do
           m P.notEqual (vector [Number 1, Number 2, Number 1, Number 3, Number 3]) `shouldReturn` pure (vector [Number 1, Number 1, Number 0, Number 1, Number 0])
 
     describe [G.and] $ do
+      describe "promote" $ do
+        it "adds a unit leading axis to arrays" $ do
+          m P.and (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 2, Number 3]])
+          m P.and (scalar $ Number 1) `shouldReturn` pure (vector [Number 1])
       describe "and" $ do
         it "combines boolean values with the and logical operation" $ do
           d P.and (vector [Number 0, Number 0, Number 1, Number 1]) (vector [Number 0, Number 1, Number 0, Number 1]) `shouldReturn` pure (vector [Number 0, Number 0, Number 0, Number 1])
@@ -285,6 +289,13 @@ spec = do
           d P.and (vector [Number 2, Number 0.5]) (vector [Number 3, Number 4.5]) `shouldReturn` pure (vector [Number 6, Number 4.5])
     
     describe [G.or] $ do
+      describe "demote" $ do
+        it "combines two leading axes" $ do
+          m P.or (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 1, Number 2, Number 3, Number 4, Number 5, Number 6])
+        it "extracts the first element of vectors" $ do
+          m P.or (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (scalar $ Number 1)
+        it "leaves scalars unchanged" $ do
+          m P.or (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 1)
       describe "or" $ do
         it "combines boolean values with the or logical operation" $ do
           d P.or (vector [Number 0, Number 0, Number 1, Number 1]) (vector [Number 0, Number 1, Number 0, Number 1]) `shouldReturn` pure (vector [Number 0, Number 1, Number 1, Number 1])
@@ -552,6 +563,22 @@ spec = do
       describe "index" $ do
         it "indexes cells of an array" $ do
           d P.squad (vector [Number 1, box $ vector [Number 1, Number -2]]) (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 1, Number 2])
+
+    describe [G.rank] $ do
+      describe "rank" $ do
+        it "returns the rank of an array" $ do
+          m P.rank (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 0)
+          m P.rank (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (scalar $ Number 1)
+          m P.rank (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (scalar $ Number 2)
+      describe "rerank" $ do
+        it "leaves arrays unchanged if argument is equal to the rank" $ do
+          d P.rank (scalar $ Number 1) (vector [Number 1, Number 2]) `shouldReturn` pure (vector [Number 1, Number 2])
+        it "promotes arrays if argument is greater than the rank" $ do
+          d P.rank (scalar $ Number 2) (vector [Number 1, Number 2]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 2]])
+          d P.rank (scalar $ Number 2) (scalar $ Number 1) `shouldReturn` pure (fromMajorCells [vector [Number 1]])
+        it "demotes arrays if argument is less than the rank" $ do
+          d P.rank (scalar $ Number 1) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [Number 1, Number 2, Number 3, Number 4])
+          d P.rank (scalar $ Number 0) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (scalar $ Number 1)
   
   describe "adverbs" $ do
     describe [G.selfie] $ do

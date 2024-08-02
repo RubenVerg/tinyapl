@@ -406,6 +406,33 @@ reshape' sh arr = do
   shape <- asVector err sh >>= mapM (asNumber err >=> asInt err)
   reshape shape arr
 
+rank :: MonadError Error m => Array -> m Natural
+rank = pure . arrayRank
+
+rank' :: MonadError Error m => Array -> m Array
+rank' arr = scalar . Number . fromInteger . toInteger <$> rank arr
+
+promote :: MonadError Error m => Array -> m Array
+promote arr = reshape (1 : map toInteger (arrayShape arr)) arr
+
+demote :: MonadError Error m => Array -> m Array
+demote arr = case toInteger <$> arrayShape arr of
+  [] -> pure arr
+  [_] -> pure $ scalar $ head $ arrayContents arr
+  (a:b:ss) -> reshape (a * b : ss) arr
+
+rerank :: MonadError Error m => Natural -> Array -> m Array
+rerank n arr =
+  if arrayRank arr == n then pure arr
+  else if arrayRank arr > n then demote arr >>= rerank n
+  else promote arr >>= rerank n
+
+rerank' :: MonadError Error m => Array -> Array -> m Array
+rerank' narr arr = do
+  let err = DomainError "Rerank left argument must be a scalar natural"
+  n <- asScalar err narr >>= asNumber err >>= asNat err
+  rerank n arr
+
 ravel :: MonadError Error m => Array -> m [ScalarValue]
 ravel arr = pure $ arrayContents arr
 
