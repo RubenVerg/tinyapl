@@ -31,8 +31,8 @@ equal = Function Nothing (Just F.equal') [G.equal]
 greaterEqual = Function Nothing (Just F.greaterEqual') [G.greaterEqual]
 greater = Function Nothing (Just F.greater') [G.greater]
 notEqual = Function (Just F.nubSieve') (Just F.notEqual') [G.notEqual]
-and = Function Nothing (Just F.lcm') [G.and]
-or = Function Nothing (Just F.gcd') [G.or]
+and = Function (Just F.promote) (Just F.lcm') [G.and]
+or = Function (Just F.demote) (Just F.gcd') [G.or]
 nand = Function Nothing (Just F.nand') [G.nand]
 nor = Function Nothing (Just F.nor') [G.nor]
 cartesian = Function (Just F.imaginary') (Just F.cartesian') [G.cartesian]
@@ -64,6 +64,7 @@ symdiff = Function Nothing (Just F.symmetricDifference') [G.symdiff]
 element = Function (Just F.enlist') Nothing [G.element]
 roll = Function (Just F.roll') Nothing [G.roll]
 squad = Function Nothing (Just $ F.squad) [G.squad]
+rank = Function (Just F.rank') (Just F.rerank') [G.rank]
 
 functions = (\x -> (head $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -115,7 +116,8 @@ functions = (\x -> (head $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.symdiff
   , TinyAPL.Primitives.element
   , TinyAPL.Primitives.roll
-  , TinyAPL.Primitives.squad ]
+  , TinyAPL.Primitives.squad
+  , TinyAPL.Primitives.rank ]
 
 -- * Primitive adverbs
 
