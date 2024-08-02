@@ -31,12 +31,4 @@ exists = Function (Just $ \x -> do
   ) Nothing (G.quad : "Exists")
 repr = Function (Just $ \x -> return $ vector $ Character <$> arrayRepr x) Nothing (G.quad : "Repr")
 
-core = Quads
-  ((\x -> (niladRepr x, x)) <$>
-  [ io, ct, u, l, d, seed, ts ])
-  ((\x -> (functionRepr x, x)) <$>
-  [ exists, repr ])
-  ((\x -> (adverbRepr x, x)) <$>
-  [])
-  ((\x -> (conjRepr x, x)) <$>
-  [])
+core = quadsFromReprs [ io, ct, u, l, d, seed, ts ] [ exists, repr ] [] []

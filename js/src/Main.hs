@@ -3,7 +3,7 @@ module Main (main) where
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.CoreQuads
 import TinyAPL.Error
-import TinyAPL.Glyphs (syntax, identifiers, arrays, functions, adverbs, conjunctions)
+import TinyAPL.Glyphs (syntax, identifiers, arrays, functions, adverbs, conjunctions, quad)
 import TinyAPL.Highlighter
 import TinyAPL.Interpreter
 import TinyAPL.Util
@@ -34,6 +34,13 @@ main = return ()
 contexts :: IORef [Context]
 contexts = unsafePerformIO $ newIORef []
 
+{-# NOINLINE lasts #-}
+lasts :: IORef [Maybe Value]
+lasts = unsafePerformIO $ newIORef []
+
+noLast :: Error
+noLast = DomainError "Last not found or has wrong type"
+
 foreign import javascript safe "return await $1();" callInput :: JSVal -> IO JSString
 foreign import javascript safe "await $1($2);" callOutput :: JSVal -> JSString -> IO ()
 
@@ -42,12 +49,59 @@ foreign export javascript "tinyapl_newContext" newContext :: JSVal -> JSVal -> J
 newContext :: JSVal -> JSVal -> JSVal -> IO Int
 newContext input output error = do
   l <- length <$> readIORef contexts
+  let readLast = (!! l) <$> (liftToSt $ readIORef lasts)
   modifyIORef contexts (++ [Context
     { contextScope = Scope [] [] [] [] Nothing
-    , contextQuads = core
+    , contextQuads = core <> quadsFromReprs [Nilad (Just $ do
+      l <- readLast
+      case l of
+        Just (VArray arr) -> return arr
+        _ -> throwError noLast
+    ) Nothing (quad : "last")] [Function (Just $ \y -> do
+      l <- readLast
+      case l of
+        Just (VFunction f) -> callMonad f y
+        _ -> throwError noLast
+    ) (Just $ \x y -> do
+      l <- readLast
+      case l of
+        Just (VFunction f) -> callDyad f x y
+        _ -> throwError noLast
+    ) (quad : "Last")] [Adverb (Just $ \u -> do
+      l <- readLast
+      case l of
+        Just (VAdverb adv) -> callOnArray adv u
+        _ -> throwError noLast
+    ) (Just $ \f -> do
+      l <- readLast
+      case l of
+        Just (VAdverb adv) -> callOnFunction adv f
+        _ -> throwError noLast
+    ) (quad : "_Last")] [Conjunction (Just $ \u v -> do
+      l <- readLast
+      case l of
+        Just (VConjunction conj) -> callOnArrayAndArray conj u v
+        _ -> throwError noLast
+    ) (Just $ \u g -> do
+      l <- readLast
+      case l of
+        Just (VConjunction conj) -> callOnArrayAndFunction conj u g
+        _ -> throwError noLast
+    ) (Just $ \f v -> do
+      l <- readLast
+      case l of
+        Just (VConjunction conj) -> callOnFunctionAndArray conj f v
+        _ -> throwError noLast
+    ) (Just $ \f g -> do
+      l <- readLast
+      case l of
+        Just (VConjunction conj) -> callOnFunctionAndFunction conj f g
+        _ -> throwError noLast
+    ) (quad : "_Last_")]
     , contextIn = liftToSt $ fromJSString <$> callInput input
     , contextOut = \str -> liftToSt $ callOutput output $ toJSString str
     , contextErr = \str -> liftToSt $ callOutput error $ toJSString str }])
+  modifyIORef lasts (++ [Nothing])
   return l
 
 runCode :: Int -> String -> IO (String, Bool)
@@ -59,6 +113,7 @@ runCode contextId code = do
     Left err -> return (show err, False)
     Right (res, context') -> do
       modifyIORef contexts (setAt contextId context')
+      modifyIORef lasts (setAt contextId $ Just res)
       return (show res, True)
 
 foreign import javascript unsafe "return [$1, $2];" jsResultPair :: JSString -> Bool -> JSVal
