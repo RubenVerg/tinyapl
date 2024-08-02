@@ -24,10 +24,13 @@ await instance.exports.hs_start();
 
 /**
  * Create a new context for TinyAPL code
+ * @param {() => string | Promise<string>} input Function providing standard input
+ * @param {(what: string) => void | Promise<void>} output Function providing standard output
+ * @param {(what: string) => void | Promise<void>} error Function providing standard error
  * @returns {Promise<number>} Scope ID
  */
-export async function newContext() {
-	return await instance.exports.tinyapl_newContext();
+export async function newContext(input, output, error) {
+	return await instance.exports.tinyapl_newContext(input, output, error);
 }
 
 /**

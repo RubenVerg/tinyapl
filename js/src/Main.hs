@@ -32,24 +32,20 @@ main = return ()
 contexts :: IORef [Context]
 contexts = unsafePerformIO $ newIORef []
 
-foreign import javascript unsafe "prompt($1)" jsPrompt :: JSString -> IO JSString
-foreign import javascript unsafe "alert($1)" jsAlert :: JSString -> IO ()
-  
-emptyContext :: Context
-emptyContext = Context
-  { contextScope = Scope [] [] [] [] Nothing
-  , contextQuads = core
-  , contextIn = fromJSString <$> (liftToSt $ jsPrompt $ toJSString "")
-  , contextOut = liftToSt . jsAlert . toJSString
-  , contextErr = liftToSt . jsAlert . toJSString }
+foreign import javascript safe "return await $1();" callInput :: JSVal -> IO JSString
+foreign import javascript safe "await $1($2);" callOutput :: JSVal -> JSString -> IO ()
 
+foreign export javascript "tinyapl_newContext" newContext :: JSVal -> JSVal -> JSVal -> IO Int
 
-foreign export javascript "tinyapl_newContext" newContext :: IO Int
-
-newContext :: IO Int
-newContext = do
+newContext :: JSVal -> JSVal -> JSVal -> IO Int
+newContext input output error = do
   l <- length <$> readIORef contexts
-  modifyIORef contexts (++ [emptyContext])
+  modifyIORef contexts (++ [Context
+    { contextScope = Scope [] [] [] [] Nothing
+    , contextQuads = core
+    , contextIn = liftToSt $ fromJSString <$> callInput input
+    , contextOut = \str -> liftToSt $ callOutput output $ toJSString str
+    , contextErr = \str -> liftToSt $ callOutput error $ toJSString str }])
   return l
 
 runCode :: Int -> String -> IO (String, Bool)
