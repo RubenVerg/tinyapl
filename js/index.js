@@ -11,6 +11,58 @@ function zip(as, bs) {
 	return [...as, ...bs].slice(0, Math.min(as.length, bs.length)).map((_, idx) => [as[idx], bs[idx]]);
 }
 
+const prefix = { code: 'Backquote', sym: '`' };
+
+const keyboard = [
+	['Backquote', '`', '~', undefined, '⍨', '⋄', '⌺'],
+	['Digit1', '1', '!', '¨', undefined, undefined, undefined],
+	['Digit2', '2', '@', '¯', undefined, undefined, undefined],
+	['Digit3', '3', '#', undefined, '⍒', undefined, undefined],
+	['Digit4', '4', '$', '≤', '⍋', '⊴', undefined],
+	['Digit5', '5', '%', undefined, undefined, undefined, undefined],
+	['Digit6', '6', '^', '≥', '⍉', '⊵', undefined],
+	['Digit7', '7', '&', undefined, '⊖', undefined, undefined],
+	['Digit8', '8', '*', '≠', '⍣', '⍟', '∞'],
+	['Digit9', '9', '(', '∨', '⍱', undefined, undefined],
+	['Digit0', '0', ')', '∧', '⍲', '⍬', undefined],
+	['Minus', '-', '_', '×', '⊗', '⸚', undefined],
+	['Equal', '=', '+', '÷', '⊕', '⌹', undefined],
+	['KeyQ', 'q', 'Q', undefined, undefined, undefined, undefined],
+	['KeyW', 'w', 'W', '⍵', '⍹', undefined, undefined],
+	['KeyE', 'e', 'E', '∊', '⍷', '⏨', '⋷'],
+	['KeyR', 'r', 'R', '⍴', '√', 'ϼ', 'ℜ'],
+	['KeyT', 't', 'T', '⊞', '⍨', undefined, undefined],
+	['KeyY', 'y', 'Y', '↑', '↟', undefined, undefined],
+	['KeyU', 'u', 'U', '↓', '↡', undefined, undefined],
+	['KeyI', 'i', 'I', '⍳', '⍸', '…', 'ℑ'],
+	['KeyO', 'o', 'O', '○', '⍥', undefined, undefined],
+	['KeyP', 'p', 'P', undefined, undefined, undefined, undefined],
+	['BracketLeft', '[', '{', '←', '⟨', undefined, undefined],
+	['BracketRight', ']', '}', undefined, '⟩', undefined, undefined],
+	['KeyA', 'a', 'A', '⍺', '⍶', undefined, undefined],
+	['KeyS', 's', 'S', '⌈', '§', '↾', undefined],
+	['KeyD', 'd', 'D', '⌊', undefined, '⇂', undefined],
+	['KeyF', 'f', 'F', '⍛', '∡', '∠', undefined],
+	['KeyG', 'g', 'G', '∇', '⍢', undefined, undefined],
+	['KeyH', 'h', 'H', '∆', '⍙', '⊸', '⟜'],
+	['KeyJ', 'j', 'J', '∘', '⍤', 'ᴊ', undefined],
+	['KeyK', 'k', 'K', '⍆', '⌸', '⍅', undefined],
+	['KeyL', 'l', 'L', '⎕', '⌷', undefined, undefined],
+	['Semicolon', ';', ':', '⍎', '≡', '⍮', '■'],
+	['Quote', '\'', '"', '⍕', '≢', '⍘', '⍞'],
+	['Backslash', '\\', '|', '⊢', '⊣', undefined, undefined],
+	['KeyZ', 'z', 'Z', '⊂', '⊆', undefined, undefined],
+	['KeyX', 'x', 'X', '⊃', '⊇', '↗', undefined],
+	['KeyC', 'c', 'C', '∩', '⍝', '⟃', '⟄'],
+	['KeyV', 'v', 'V', '∪', '⁖', undefined, undefined],
+	['KeyB', 'b', 'B', '⊥', undefined, undefined, undefined],
+	['KeyN', 'n', 'N', '⊤', undefined, undefined, undefined],
+	['KeyM', 'm', 'M', '«', '»', undefined, undefined],
+	['Comma', ',', '<', '⍪', 'ᑈ', '⊲', undefined],
+	['Period', '.', '>', '∙', 'ᐵ', '⊳', undefined],
+	['Slash', '/', '?', '⌿', undefined, undefined, undefined],
+].map(([code, sym, symS, symP, symPS, symPP, symPPS]) => ({ code, sym, symS, symP, symPS, symPP, symPPS }));
+
 const colors = {
 	other: 'unset',
 	syntax: 'unset',
@@ -41,6 +93,12 @@ async function highlight() {
 	highlighted.scrollLeft = input.scrollLeft;
 }
 
+function insertText(str) {
+	input.setRangeText(str, input.selectionStart, input.selectionEnd, "end");
+	input.focus();
+	highlight();
+}
+
 const io = new class IO {
 	#input = [];
 	#output = [];
@@ -56,13 +114,15 @@ const io = new class IO {
 
 for (const k of ['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'conjunctions']) {
 	for (const i of tinyapl.glyphs[k]) {
+		let v, p;
+		if (v = keyboard.find(k => k.symP === i)) p = `${prefix.sym}${v.sym}`;
+		else if (v = keyboard.find(k => k.symPS === i)) p = `${prefix.sym}${v.symS}`;
+		else if (v = keyboard.find(k => k.symPP === i)) p = `${prefix.sym}${prefix.sym}${v.sym}`;
+		else if (v = keyboard.find(k => k.symPPS === i)) p = `${prefix.sym}${prefix.sym}${v.symS}`;
 		const b = document.createElement('button');
 		b.textContent = i;
-		b.addEventListener('click', () => {
-			input.setRangeText(i, input.selectionStart, input.selectionEnd, "end");
-			input.focus();
-			highlight();
-		});
+		if (p !== undefined) b.title = `Input: ${p}`;
+		b.addEventListener('click', () => { insertText(i); });
 		buttons.appendChild(b);
 	}
 	buttons.appendChild(document.createElement('br'));
@@ -106,9 +166,22 @@ async function run() {
 	highlight();
 }
 
+let keyboardState = 0;
+
 button.addEventListener('click', () => run());
 input.addEventListener('keydown', evt => {
-	if (evt.key == 'Enter') {
+	if (keyboardState < 2 && evt.code == prefix.code && !evt.shiftKey) {
+		keyboardState++
+		evt.preventDefault();
+	} else if (keyboardState !== 0 && !evt.altKey && !evt.ctrlKey && !evt.metaKey) {
+		const v = keyboard.find(k => k.code == evt.code);
+		if (v) {
+			const t = keyboardState == 2 ? (evt.shiftKey ? v.symPPS : v.symPP) : (evt.shiftKey ? v.symPS : v.symP);
+			insertText(t ?? evt.key);
+			keyboardState = 0;
+			evt.preventDefault();
+		}
+	} else if (evt.key == 'Enter') {
 		evt.preventDefault();
 		return run();
 	}
