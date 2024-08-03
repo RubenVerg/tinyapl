@@ -171,7 +171,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍷` type? depends on if prototypes are added or not
 		* [ ] `⋷` histogram (inverse of where)
 		* [ ] `⋷` count
-		* [ ] `≡` depth
+		* [x] `≡` depth
 		* [x] `⍴` shape
 		* [x] `≢` tally
 		* [x] `ϼ` rank

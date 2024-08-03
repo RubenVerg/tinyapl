@@ -329,13 +329,22 @@ spec = do
         it "returns the complex number specified by the phase and radius" $ do
           d P.polar (vector [Number 3, Number 1, Number -1, Number (3 :+ 2)]) (vector [Number 0, Number $ pi / 2, Number pi, Number $ pi / 2]) `shouldReturn` pure (vector [Number 3, Number (0 :+ 1), Number 1, Number (-2 :+ 3)])
 
-    describe [G.identical, G.notIdentical] $ do
-      describe "comparisons" $ do
-        it "compares arrays" $ do
+    describe [G.identical] $ do
+      describe "depth" $ do
+        it "returns 0 for simple scalars" $ do
+          m P.identical (scalar $ Number 7) `shouldReturn` pure (scalar $ Number 0)
+        it "returns one more than the depth of the contents for scalar boxes" $ do
+          m P.identical (scalar $ box $ vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (scalar $ Number 2)
+        it "returns 1 for simple arrays" $ do
+          m P.identical (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (scalar $ Number 1)
+          m P.identical (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (scalar $ Number 1)
+        it "returns the correct depth for complex arrays" $ do
+          m P.identical (vector [box $ vector [Number 1, box $ vector [Number 2, Number 3]], box $ vector [Number 4, Number 5, box $ vector [Number 6, box $ vector [Number 7, Number 8], box $ scalar $ box $ scalar $ box $ vector [Number 9]]]]) `shouldReturn` pure (scalar $ Number 6)
+      describe "identical" $ do
+        it "returns true for equal arrays" $ do
           d P.identical (vector [Number 1, Number 2]) (vector [Number 1, Number 2]) `shouldReturn` pure (scalar $ Number 1)
+        it "returns false for different arrays" $ do
           d P.identical (vector [Number 1, Number 2]) (vector [Number 1, Number 3]) `shouldReturn` pure (scalar $ Number 0)
-          d P.notIdentical (vector [Number 1, Number 2]) (vector [Number 1, Number 2]) `shouldReturn` pure (scalar $ Number 0)
-          d P.notIdentical (vector [Number 1, Number 2]) (vector [Number 1, Number 3]) `shouldReturn` pure (scalar $ Number 1)
 
     describe [G.notIdentical] $ do
       describe "tally" $ do
@@ -345,6 +354,11 @@ spec = do
           m P.notIdentical (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (scalar $ Number 2)
         it "returns 1 for a scalar" $ do
           m P.notIdentical (scalar $ Number 10) `shouldReturn` pure (scalar $ Number 1)
+      describe "not identical" $ do
+        it "returns true for different arrays" $ do
+          d P.notIdentical (vector [Number 1, Number 2]) (vector [Number 1, Number 3]) `shouldReturn` pure (scalar $ Number 1)
+        it "return false for equal arrays" $ do
+          d P.notIdentical (vector [Number 1, Number 2]) (vector [Number 1, Number 2]) `shouldReturn` pure (scalar $ Number 0)
 
     describe [G.rho] $ do
       describe "shape" $ do
