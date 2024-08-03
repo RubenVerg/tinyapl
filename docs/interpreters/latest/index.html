@@ -6,6 +6,13 @@
 	<link rel="icon" type="img/svg+xml" href="/logo.svg">
 	<link rel="stylesheet" href="/style.css">
 	<style>
+		#buttons {
+			position: sticky;
+			top: 0;
+			background: white;
+			margin-bottom: 5px;
+		}
+	
 		#buttons button {
 			font-family: var(--font-mono);
 		}
@@ -70,8 +77,8 @@
 	</style>
 </head>
 <body>
-	<img src="./kbd.svg" alt="TinyAPL keyboard layout" />
 	<div id="buttons"></div>
+	<img src="./kbd.svg" alt="TinyAPL keyboard layout" />
 	<pre id="output"></pre>
 	<div id="input-wrapper">
 		<textarea id="input" spellcheck="false" cols="1"></textarea>
