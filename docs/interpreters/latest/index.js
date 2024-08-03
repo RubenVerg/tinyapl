@@ -128,7 +128,10 @@ for (const k of ['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'con
 	buttons.appendChild(document.createElement('br'));
 }
 
-const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), io.error.bind(io));
+const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), io.error.bind(io), {
+	debug: a => { if (a) { console.log('set nilad', a); } else { console.log('get nilad'); return { shape: [0], contents: [] }; }},
+	Debug: (a, b) => { if (b === undefined) { console.log('monad call', a); } else { console.log('dyad call', a, b); } return { shape: [0], contents: [] }; },
+}, {});
 
 function div(cls, contents) {
 	const div = document.createElement('div');

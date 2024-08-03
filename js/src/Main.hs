@@ -1,5 +1,7 @@
 module Main (main) where
 
+import JSBridge
+
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.CoreQuads
 import TinyAPL.Error
@@ -12,12 +14,8 @@ import Data.IORef
 import GHC.Wasm.Prim
 import System.IO.Unsafe
 import Data.List
-
-foreign import javascript unsafe "return [];" jsNil :: JSVal
-foreign import javascript unsafe "const a = $2.slice(); a.unshift($1); return a;" jsCons :: JSVal -> JSVal -> JSVal
-
-toJSArray :: [JSVal] -> JSVal
-toJSArray = foldr jsCons jsNil
+import Data.Function
+import Data.Char
 
 toJSChar :: Char -> JSVal
 toJSChar = strToVal . toJSString . singleton
@@ -43,61 +41,75 @@ noLast = DomainError "Last not found or has wrong type"
 
 foreign import javascript safe "return await $1();" callInput :: JSVal -> IO JSString
 foreign import javascript safe "await $1($2);" callOutput :: JSVal -> JSString -> IO ()
+foreign import javascript safe "return await $1();" jsGetNilad :: JSVal -> IO JSVal
+foreign import javascript safe "await $1($2);" jsSetNilad :: JSVal -> JSVal -> IO ()
+foreign import javascript safe "return await $1($2);" jsCallMonad :: JSVal -> JSVal -> IO JSVal
+foreign import javascript safe "return await $1($2, $3)" jsCallDyad :: JSVal -> JSVal -> JSVal -> IO JSVal
 
-foreign export javascript "tinyapl_newContext" newContext :: JSVal -> JSVal -> JSVal -> IO Int
+foreign export javascript "tinyapl_newContext" newContext :: JSVal -> JSVal -> JSVal ->  JSVal -> IO Int
 
-newContext :: JSVal -> JSVal -> JSVal -> IO Int
-newContext input output error = do
+lastQuads :: Int -> Quads
+lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
+  quadsFromReprs [Nilad (Just $ do
+    l <- readLast
+    case l of
+      Just (VArray arr) -> return arr
+      _ -> throwError noLast
+  ) Nothing (quad : "last")] [Function (Just $ \y -> do
+    l <- readLast
+    case l of
+      Just (VFunction f) -> callMonad f y
+      _ -> throwError noLast
+  ) (Just $ \x y -> do
+    l <- readLast
+    case l of
+      Just (VFunction f) -> callDyad f x y
+      _ -> throwError noLast
+  ) (quad : "Last")] [Adverb (Just $ \u -> do
+    l <- readLast
+    case l of
+      Just (VAdverb adv) -> callOnArray adv u
+      _ -> throwError noLast
+  ) (Just $ \f -> do
+    l <- readLast
+    case l of
+      Just (VAdverb adv) -> callOnFunction adv f
+      _ -> throwError noLast
+  ) (quad : "_Last")] [Conjunction (Just $ \u v -> do
+    l <- readLast
+    case l of
+      Just (VConjunction conj) -> callOnArrayAndArray conj u v
+      _ -> throwError noLast
+  ) (Just $ \u g -> do
+    l <- readLast
+    case l of
+      Just (VConjunction conj) -> callOnArrayAndFunction conj u g
+      _ -> throwError noLast
+  ) (Just $ \f v -> do
+    l <- readLast
+    case l of
+      Just (VConjunction conj) -> callOnFunctionAndArray conj f v
+      _ -> throwError noLast
+  ) (Just $ \f g -> do
+    l <- readLast
+    case l of
+      Just (VConjunction conj) -> callOnFunctionAndFunction conj f g
+      _ -> throwError noLast
+  ) (quad : "_Last_")]
+
+newContext :: JSVal -> JSVal -> JSVal -> JSVal -> IO Int
+newContext input output error quads = do
   l <- length <$> readIORef contexts
-  let readLast = (!! l) <$> (liftToSt $ readIORef lasts)
+  let qs = valToObject quads
+  let nilads = filter (isLower . head . fst) qs
+  let functions = filter (isUpper . head . fst) qs
   modifyIORef contexts (++ [Context
     { contextScope = Scope [] [] [] [] Nothing
-    , contextQuads = core <> quadsFromReprs [Nilad (Just $ do
-      l <- readLast
-      case l of
-        Just (VArray arr) -> return arr
-        _ -> throwError noLast
-    ) Nothing (quad : "last")] [Function (Just $ \y -> do
-      l <- readLast
-      case l of
-        Just (VFunction f) -> callMonad f y
-        _ -> throwError noLast
-    ) (Just $ \x y -> do
-      l <- readLast
-      case l of
-        Just (VFunction f) -> callDyad f x y
-        _ -> throwError noLast
-    ) (quad : "Last")] [Adverb (Just $ \u -> do
-      l <- readLast
-      case l of
-        Just (VAdverb adv) -> callOnArray adv u
-        _ -> throwError noLast
-    ) (Just $ \f -> do
-      l <- readLast
-      case l of
-        Just (VAdverb adv) -> callOnFunction adv f
-        _ -> throwError noLast
-    ) (quad : "_Last")] [Conjunction (Just $ \u v -> do
-      l <- readLast
-      case l of
-        Just (VConjunction conj) -> callOnArrayAndArray conj u v
-        _ -> throwError noLast
-    ) (Just $ \u g -> do
-      l <- readLast
-      case l of
-        Just (VConjunction conj) -> callOnArrayAndFunction conj u g
-        _ -> throwError noLast
-    ) (Just $ \f v -> do
-      l <- readLast
-      case l of
-        Just (VConjunction conj) -> callOnFunctionAndArray conj f v
-        _ -> throwError noLast
-    ) (Just $ \f g -> do
-      l <- readLast
-      case l of
-        Just (VConjunction conj) -> callOnFunctionAndFunction conj f g
-        _ -> throwError noLast
-    ) (quad : "_Last_")]
+    , contextQuads = core <> lastQuads l <>
+      quadsFromReprs
+        ((\(n, f) -> Nilad (Just $ liftToSt $ fromJSVal <$> jsGetNilad f) (Just $ liftToSt . jsSetNilad f . toJSVal) (quad : n)) <$> nilads)
+        ((\(n, f) -> Function (Just $ liftToSt . fmap fromJSVal . jsCallMonad f . toJSVal) (Just $ liftToSt .: fmap fromJSVal .: (jsCallDyad f `on` toJSVal)) (quad : n)) <$> functions)
+        [] []
     , contextIn = liftToSt $ fromJSString <$> callInput input
     , contextOut = \str -> liftToSt $ callOutput output $ toJSString str
     , contextErr = \str -> liftToSt $ callOutput error $ toJSString str }])
@@ -116,38 +128,41 @@ runCode contextId code = do
       modifyIORef lasts (setAt contextId $ Just res)
       return (show res, True)
 
-foreign import javascript unsafe "return [$1, $2];" jsResultPair :: JSString -> Bool -> JSVal
-
 foreign export javascript "tinyapl_runCode" runCodeJS :: Int -> JSString -> IO JSVal
 
 runCodeJS :: Int -> JSString -> IO JSVal
 runCodeJS contextId code = do
   (r, s) <- runCode contextId $ fromJSString code
-  return $ jsResultPair (toJSString r) s
+  return $ toJSVal (r, s)
   
-foreign export javascript "tinyapl_glyphsSyntax" glyphsSyntaxJS :: JSVal
-foreign export javascript "tinyapl_glyphsIdentifiers" glyphsIdentifiersJS :: JSVal
-foreign export javascript "tinyapl_glyphsArrays" glyphsArraysJS :: JSVal
-foreign export javascript "tinyapl_glyphsFunctions" glyphsFunctionsJS :: JSVal
-foreign export javascript "tinyapl_glyphsAdverbs" glyphsAdverbsJS :: JSVal
-foreign export javascript "tinyapl_glyphsConjunctions" glyphsConjunctionsJS :: JSVal
+foreign export javascript "tinyapl_glyphsSyntax" glyphsSyntaxJS :: JSArray
+foreign export javascript "tinyapl_glyphsIdentifiers" glyphsIdentifiersJS :: JSArray
+foreign export javascript "tinyapl_glyphsArrays" glyphsArraysJS :: JSArray
+foreign export javascript "tinyapl_glyphsFunctions" glyphsFunctionsJS :: JSArray
+foreign export javascript "tinyapl_glyphsAdverbs" glyphsAdverbsJS :: JSArray
+foreign export javascript "tinyapl_glyphsConjunctions" glyphsConjunctionsJS :: JSArray
 
-glyphsSyntaxJS = toJSArray $ toJSChar <$> syntax
-glyphsIdentifiersJS = toJSArray $ toJSChar <$> identifiers
-glyphsArraysJS = toJSArray $ toJSChar <$> arrays
-glyphsFunctionsJS = toJSArray $ toJSChar <$> functions
-glyphsAdverbsJS = toJSArray $ toJSChar <$> adverbs
-glyphsConjunctionsJS = toJSArray $ toJSChar <$> conjunctions
+glyphsSyntaxJS = fromJSVal . toJSVal $ toJSChar <$> syntax
+glyphsIdentifiersJS = fromJSVal . toJSVal $ toJSChar <$> identifiers
+glyphsArraysJS = fromJSVal . toJSVal $ toJSChar <$> arrays
+glyphsFunctionsJS = fromJSVal . toJSVal $ toJSChar <$> functions
+glyphsAdverbsJS = fromJSVal . toJSVal $ toJSChar <$> adverbs
+glyphsConjunctionsJS = fromJSVal . toJSVal $ toJSChar <$> conjunctions
 
-foreign export javascript "tinyapl_highlight" jsHighlight :: JSString -> JSVal
+foreign export javascript "tinyapl_highlight" jsHighlight :: JSString -> JSArray
 
-jsHighlight :: JSString -> JSVal
-jsHighlight = toJSArray . map (intToVal . fromEnum). highlight . fromJSString
+jsHighlight :: JSString -> JSArray
+jsHighlight = fromJSVal . toJSVal . map (intToVal . fromEnum). highlight . fromJSString
 
-foreign export javascript "tinyapl_splitString" splitString :: JSString -> JSVal
+foreign export javascript "tinyapl_splitString" splitString :: JSString -> JSArray
 
-splitString :: JSString -> JSVal
-splitString = toJSArray . map toJSChar . fromJSString
+splitString :: JSString -> JSArray
+splitString = fromJSVal . toJSVal . fromJSString
+
+foreign export javascript "tinyapl_joinString" joinString :: JSArray -> JSString
+
+joinString :: JSArray -> JSString
+joinString = toJSString . fromJSVal . toJSVal
 
 foreign export javascript "tinyapl_hlOther" hlOther :: Int
 foreign export javascript "tinyapl_hlSyntax" hlSyntax :: Int
