@@ -2,7 +2,6 @@
 glyph: '≡'
 pattern: 'r←≡y'
 name: Depth
-planned: true
 ---
 
 `r` is a natural describing the *depth* of `y`:

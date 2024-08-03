@@ -447,6 +447,15 @@ enlist (Array _ cs) = concat <$> mapM (enlist . fromScalar) cs
 enlist' :: MonadError Error m => Array -> m Array
 enlist' y = vector <$> enlist y
 
+depth :: MonadError Error m => Array -> m Natural
+depth (Array [] [Box xs]) = (1+) <$> depth xs
+depth (Array [] _) = pure 0
+depth (Array _ []) = pure 1
+depth (Array _ xs) = (1+) . maximum <$> mapM (depth . fromScalar) xs
+
+depth' :: MonadError Error m => Array -> m Array
+depth' = fmap (scalar . Number . fromInteger . toInteger) . depth
+
 reverse :: MonadError Error m => [a] -> m [a]
 reverse = pure . Prelude.reverse
 
