@@ -42,7 +42,7 @@ noLast = DomainError "Last not found or has wrong type"
 foreign import javascript safe "return await $1();" callInput :: JSVal -> IO JSString
 foreign import javascript safe "await $1($2);" callOutput :: JSVal -> JSString -> IO ()
 foreign import javascript safe "return await $1();" jsGetNilad :: JSVal -> IO JSVal
-foreign import javascript safe "await $1($2);" jsSetNilad :: JSVal -> JSVal -> IO ()
+foreign import javascript safe "await $1($2);" jsSetNilad :: JSVal -> JSVal -> IO JSVal
 foreign import javascript safe "return await $1($2);" jsCallMonad :: JSVal -> JSVal -> IO JSVal
 foreign import javascript safe "return await $1($2, $3)" jsCallDyad :: JSVal -> JSVal -> JSVal -> IO JSVal
 
@@ -107,8 +107,24 @@ newContext input output error quads = do
     { contextScope = Scope [] [] [] [] Nothing
     , contextQuads = core <> lastQuads l <>
       quadsFromReprs
-        ((\(n, f) -> Nilad (Just $ liftToSt $ fromJSVal <$> jsGetNilad f) (Just $ liftToSt . jsSetNilad f . toJSVal) (quad : n)) <$> nilads)
-        ((\(n, f) -> Function (Just $ liftToSt . fmap fromJSVal . jsCallMonad f . toJSVal) (Just $ liftToSt .: fmap fromJSVal .: (jsCallDyad f `on` toJSVal)) (quad : n)) <$> functions)
+        ((\(n, f) -> Nilad (Just $ do
+          r <- liftToSt $ fromJSVal <$> jsGetNilad f
+          case r of
+            Left err -> throwError err
+            Right res -> pure res) (Just $ \y -> do
+          r <- liftToSt $ fmap fromJSVal $ jsSetNilad f $ toJSVal y
+          case r of
+            Just err -> throwError err
+            Nothing -> pure ()) (quad : n)) <$> nilads)
+        ((\(n, f) -> Function (Just $ \y -> do
+          r <- liftToSt $ fmap fromJSVal $ jsCallMonad f $ toJSVal y
+          case r of
+            Left err -> throwError err
+            Right res -> pure res) (Just $ \x y -> do
+          r <- liftToSt $ fmap fromJSVal $ (jsCallDyad f `on` toJSVal) x y
+          case r of
+            Left err -> throwError err
+            Right res -> pure res) (quad : n)) <$> functions)
         [] []
     , contextIn = liftToSt $ fromJSString <$> callInput input
     , contextOut = \str -> liftToSt $ callOutput output $ toJSString str
@@ -193,3 +209,19 @@ hlPrimAdverb = fromEnum CPrimAdverb
 hlConjunctionName = fromEnum CConjunctionName
 hlPrimConjunction = fromEnum CPrimConjunction
 hlComment = fromEnum CComment
+
+foreign export javascript "tinyapl_errUser" errUser :: Int
+foreign export javascript "tinyapl_errDomain" errDomain :: Int
+foreign export javascript "tinyapl_errLength" errLength :: Int
+foreign export javascript "tinyapl_errRank" errRank :: Int
+foreign export javascript "tinyapl_errNYI" errNYI :: Int
+foreign export javascript "tinyapl_errSyntax" errSyntax :: Int
+foreign export javascript "tinyapl_errAssertion" errAssertion :: Int
+
+errUser = errorCode $ UserError ""
+errDomain = errorCode $ DomainError ""
+errLength = errorCode $ LengthError ""
+errRank = errorCode $ RankError ""
+errNYI = errorCode $ NYIError ""
+errSyntax = errorCode $ SyntaxError ""
+errAssertion = errorCode $ AssertionError ""

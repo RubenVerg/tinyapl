@@ -3,6 +3,7 @@ import ghc_wasm_jsffi from './ghc_wasm_jsffi.js';
 
 /** @typedef {[number, number] | string | Arr} ScalarValue */
 /** @typedef {{ shape: number[], contents: ScalarValue[] }} Arr */
+/** @typedef {{ code: number, message: string }} Err */
 
 const args = [];
 const env = [];
@@ -31,8 +32,8 @@ await instance.exports.hs_start();
  * @param {(what: string) => void | Promise<void>} output Function providing standard output
  * @param {(what: string) => void | Promise<void>} error Function providing standard error
  * @param {Record<string, 
- *   ((() => Arr | Promise<Arr>) & ((set: Arr) => void | Promise<void>))
- * | (((y: Arr) => Arr | Promise<Arr>) & ((x: Arr, y: Arr) => Arr | Promise<Arr>))} quads Quad names available to the interpreter
+ *   ((() => Arr | Err | Promise<Arr | Err>) & ((set: Arr) => void | Err | Promise<void | Err>))
+ * | (((y: Arr) => Arr | Err | Promise<Arr | Err>) & ((x: Arr, y: Arr) => Arr | Err | Promise<Arr | Err>))} quads Quad names available to the interpreter
  */
 export async function newContext(input, output, error, quads) {
 	return await instance.exports.tinyapl_newContext(input, output, error, quads);
@@ -97,3 +98,8 @@ export const colors = Object.fromEntries(await Promise.all(Object.entries(instan
  * @type {Record<number, string>}
  */
 export const colorsInv = Object.fromEntries(Object.entries(colors).map(([k, v]) => [v, k]));
+
+/**
+ * @type {Record<string, number>}
+ */
+export const errors = Object.fromEntries(await Promise.all(Object.entries(instance.exports).filter(([k]) => k.startsWith('tinyapl_err')).map(async ([k, v]) => [k['tinyapl_err'.length].toLowerCase() + k.slice('tinyapl_err'.length + 1), await v()])));

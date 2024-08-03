@@ -3,6 +3,7 @@
 module JSBridge(IsJS(..), JSArray(..), jsNil, (++#), jsHead, jsTail, jsLength, jsUndefined, valToObject, objectToVal) where
 
 import TinyAPL.ArrayFunctionOperator
+import TinyAPL.Error
 
 import GHC.Wasm.Prim
 import Numeric.Natural
@@ -131,4 +132,18 @@ instance IsJS Array where
     shape = arrayToList $ fromJSVal $ jsLookup v $ toJSString "shape"
     contents = arrayToList $ fromJSVal $ jsLookup v $ toJSString "contents"
     in Array shape contents
-  toJSVal (Array shape contents) = jsFromEntries $ listToArray [[toJSVal $ toJSString "shape", toJSVal shape], [toJSVal $ toJSString "contents", toJSVal contents]]
+  toJSVal (Array shape contents) = objectToVal [("shape", toJSVal shape), ("contents", toJSVal contents)]
+
+instance IsJS Error where
+  fromJSVal v = let
+    typ = fromJSVal $ jsLookup v $ toJSString "code"
+    message = fromJSString $ fromJSVal $ jsLookup v $ toJSString "message"
+    in fromErrorCode typ message
+  toJSVal err = objectToVal [("code", toJSVal $ errorCode err), ("message", toJSVal $ toJSString $ errorMessage err)]
+
+foreign import javascript unsafe "return $1 in $2;" jsIn :: JSString -> JSVal -> Bool
+
+instance IsJS (Either Error Array) where
+  fromJSVal v = if jsIn (toJSString "code") v then Left $ fromJSVal v else Right $ fromJSVal v
+  toJSVal (Left err) = toJSVal err
+  toJSVal (Right x) = toJSVal x
