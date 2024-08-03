@@ -1,4 +1,5 @@
 import * as tinyapl from './tinyapl.js';
+import * as quads from './quads.js'
 
 const buttons = document.querySelector('#buttons');
 const output = document.querySelector('#output');
@@ -131,7 +132,8 @@ for (const k of ['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'con
 const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), io.error.bind(io), {
 	debug: a => { if (a) { console.log('set nilad', a); } else { console.log('get nilad'); return { shape: [0], contents: [] }; }},
 	Debug: (a, b) => { if (b === undefined) { console.log('monad call', a); } else { console.log('dyad call', a, b); } return { shape: [0], contents: [] }; },
-	Fail: (a, b) => { console.log('fail', a, b); return { code: tinyapl.errors.assertion, message: 'Fail!' }; }
+	Fail: (a, b) => { console.log('fail', a, b); return { code: tinyapl.errors.assertion, message: 'Fail!' }; },
+	DislayImage: quads.qDisplayImage,
 }, {});
 
 function div(cls, contents) {
@@ -155,11 +157,22 @@ function clickableDiv(cls, contents, clickedContents = contents) {
 
 async function runCode(code) {
 	output.appendChild(clickableDiv('code', ' '.repeat(6) + code, code));
-	const d = div('quad', '');
+	let d = div('quad', '');
 	output.appendChild(d);
 	io.rInput(what => { d.innerText += what + '\n'; });
 	io.rOutput(what => { d.innerText += what; });
 	io.rError(what => { d.innerText += what; });
+	quads.rDisplayImage((/** @type {ImageData} */ data) => {
+		if (d.textContent.trim() === '') output.removeChild(d);
+		if (d.textContent.at(-1) === '\n') d.textContent = d.textContent.slice(0, -1);
+		const canvas = document.createElement('canvas');
+		canvas.width = data.width;
+		canvas.height = data.height;
+		const ctx = canvas.getContext('2d');
+		ctx.putImageData(data);
+		output.appendChild(canvas);
+		d = div('quad', '');
+	});
 	const [result, success] = await tinyapl.runCode(context, code);
 	io.done();
 	if (d.textContent.trim() === '') output.removeChild(d);
