@@ -26,3 +26,4 @@ cp $out_path js/dist/tinyapl-js.wasm
 
 cp js/*.js js/dist
 cp js/*.html js/dist
+cp js/*.svg js/dist
