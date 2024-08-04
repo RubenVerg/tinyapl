@@ -138,6 +138,7 @@ const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), 
 	CreateImage: quads.qCreateImage,
 	DisplayImage: quads.qDisplayImage,
 	ScatterPlot: quads.qScatterPlot,
+	Fetch: quads.qFetch,
 }, {});
 
 function div(cls, contents) {

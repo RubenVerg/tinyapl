@@ -111,3 +111,75 @@ export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = 
 	return { shape: [0], contents: [] };
 });
 
+export async function qFetch(x, y) {
+	let u, m;
+	if (y) {
+		u = y;
+		m = x;
+	} else {
+		u = x;
+		m = undefined;
+	}
+	if (u.shape.length > 1) return { code: tinyapl.errors.rank, message: '⎕Fetch expects character vectors' };
+	const url = await tinyapl.joinString(u.contents);
+	let response;
+	try {
+		response = await fetch(url);
+	} catch (ex) {
+		console.error(ex);
+		return { code: tinyapl.errors.user, message: ex.message };
+	}
+	if (m) {
+		if (m.shape.length !== 0) return { code: tinyapl.errors.domain, message: '⎕Fetch left argument must be one of ⟨1⋄¯1⋄0ᴊ1⋄0ᴊ¯1⟩⊞⟨8⋄16⋄32⟩ or 1' };
+		const mode = m.contents[0].join(';');
+		const buf = await response.arrayBuffer();
+		const view = new DataView(buf);
+		const result = [];
+		switch (mode) {
+			case '1:0':
+				for (let i = 0; i < view.byteLength; i += 1) {
+					const u = view.getUint8(i);
+					for (const bi = 0; bi < 8; bi++) {
+						result.push(Number((u & (1 << bi)) !== 0));
+					}
+				}
+				break;
+			case '8;0':
+			case '0;8':
+				for (let i = 0; i < view.byteLength; i += 1) result.push(view.getUint8(i));
+				break;
+			case '-8;0':
+			case '0;-8':
+				for (let i = 0; i < view.byteLength; i += 1) result.push(view.getInt8(i));
+				break;
+			case '16;0':
+				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint16(i, true));
+				break;
+			case '-16:0':
+				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt16(i, true));
+				break;
+			case '0;16':
+				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint16(i, false));
+				break;
+			case '0:-16':
+				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt16(i, false));
+				break;
+			case '32;0':
+				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint32(i, true));
+				break;
+			case '-32:0':
+				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt32(i, true));
+				break;
+			case '0;32':
+				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint32(i, false));
+				break;
+			case '0:-32':
+				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt32(i, false));
+				break;
+		}
+		return { shape: [result.length], contents: result };
+	} else {
+		const text = await response.text();
+		return { shape: [text.length], contents: await tinyapl.splitString(text) };
+	}
+}
