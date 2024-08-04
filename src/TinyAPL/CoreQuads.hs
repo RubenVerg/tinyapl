@@ -8,7 +8,6 @@ import TinyAPL.Random
 
 import Data.Complex
 import Control.Monad.State
-import Control.Monad.Error.Class ( liftEither )
 import Data.Time.Clock.POSIX
 import Control.Concurrent
 
@@ -19,7 +18,7 @@ l = Nilad (Just $ pure $ vector $ Character <$> ['a'..'z']) Nothing (G.quad : "l
 d = Nilad (Just $ pure $ vector $ Character <$> ['0'..'9']) Nothing (G.quad : "d")
 seed = Nilad Nothing (Just $ \x -> do
   let e = DomainError "Seed must be a scalar integer"
-  s <- liftEither (asScalar e x) >>= liftEither . asNumber e >>= liftEither . asInt e
+  s <- asScalar e x >>= asNumber e >>= asInt e
   setSeed s) (G.quad : "seed")
 ts = Nilad (Just $ scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "ts")
 
