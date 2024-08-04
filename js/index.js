@@ -208,9 +208,9 @@ async function runCode(code) {
 	quads.rScatterPlot(async (xs, ys, mode) => {
 		endDiv();
 		const traces = xs.map((x, i) => ({ x, y: ys[i], mode, type: 'scatter', line: { shape: 'spline' } }));
-		const d = div('');
+		const d = div('plot');
 		output.appendChild(d);
-		Plotly.newPlot(d, traces);
+		Plotly.newPlot(d, traces, { showlegend: false }, { responsive: true });
 		newDiv();
 	});
 	const [result, success] = await tinyapl.runCode(context, code);
