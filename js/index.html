@@ -16,6 +16,11 @@
 		#buttons button {
 			font-family: var(--font-mono);
 		}
+
+		#keyboard {
+			width: auto;
+			max-width: 100%;
+		}
 	
 		#output {
 			height: 90%;
@@ -83,7 +88,7 @@
 </head>
 <body>
 	<div id="buttons"></div>
-	<img src="./kbd.svg" alt="TinyAPL keyboard layout" />
+	<img id="keyboard" src="./kbd.svg" alt="TinyAPL keyboard layout" />
 	<pre id="output"></pre>
 	<div id="input-wrapper">
 		<textarea id="input" spellcheck="false" cols="1"></textarea>
