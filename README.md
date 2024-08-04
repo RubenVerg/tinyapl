@@ -288,6 +288,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⎕Partition` convert Partition representation to Group representation (so that Partition is `⎕Partition⍛⊆`)
 		* [x] `⎕Repr` convert an array to a representation that can be read with Execute
 		* [ ] `⎕Assert` assertions
+		* [x] `⎕Delay` sleep for n seconds
 	* system adverbs
 		* [ ] `⎕_BinFile` read/write binary files, with format chosen from the operand
 	* system conjunctions
