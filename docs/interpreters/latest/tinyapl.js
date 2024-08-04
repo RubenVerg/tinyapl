@@ -103,3 +103,4 @@ export const colorsInv = Object.fromEntries(Object.entries(colors).map(([k, v]) 
  * @type {Record<string, number>}
  */
 export const errors = Object.fromEntries(await Promise.all(Object.entries(instance.exports).filter(([k]) => k.startsWith('tinyapl_err')).map(async ([k, v]) => [k['tinyapl_err'.length].toLowerCase() + k.slice('tinyapl_err'.length + 1), await v()])));
+
