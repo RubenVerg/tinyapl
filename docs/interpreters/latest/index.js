@@ -134,6 +134,9 @@ const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), 
 	Debug: (a, b) => { if (b === undefined) { console.log('monad call', a); } else { console.log('dyad call', a, b); } return { shape: [0], contents: [] }; },
 	Fail: (a, b) => { console.log('fail', a, b); return { code: tinyapl.errors.assertion, message: 'Fail!' }; },
 	DisplayImage: quads.qDisplayImage,
+	CreateWindow: quads.qCreateWindow,
+	UpdateWindow: quads.qUpdateWindow,
+	DeleteWindow: quads.qDeleteWindow,
 }, {});
 
 function div(cls, contents) {
