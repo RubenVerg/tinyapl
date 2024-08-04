@@ -1,16 +1,14 @@
 import * as tinyapl from './tinyapl.js';
 
-let lDisplayImage = [];
-
-export function rDisplayImage(listener) {
-	lDisplayImage.push(listener);
+function makeFunction(fn) {
+	let listeners = [];
+	const register = l => { listeners.push(l); };
+	const done = () => { listeners = []; };
+	const runListeners = async (...args) => { for (const l of listeners) await l(...args); }
+	return { register, done, fn: (...args) => fn(runListeners, ...args) };
 }
 
-export function dDisplayImage() {
-	lDisplayImage = [];
-}
-
-export async function qDisplayImage(/** @type {import('./tinyapl.js').Arr} */ a, y) {
+export const { register: rDisplayImage, done: dDisplayImage, fn: qDisplayImage } = makeFunction(async (runListeners, a, y) => {
 	if (y) return { code: tinyapl.errors.domain, message: '⎕DisplayImage must be called monadically' };
 	if (a.shape.length !== 2 && a.shape.length !== 3) return { code: tinyapl.errors.rank, message: '⎕DisplayImage expects arrays of rank 2 or 3' };
 	const els = a.shape.length === 2 ? 1 : a.shape.at(-1);
@@ -38,12 +36,13 @@ export async function qDisplayImage(/** @type {import('./tinyapl.js').Arr} */ a,
 				data.data[dIdx + 3] = a.contents[uIdx + 3][0];
 			}
 		}
-	for (const listener of lDisplayImage)
-		try {
-			await listener(data);
-		} catch (ex) {
-			console.error(ex);
-			return { code: tinyapl.errors.user, message: ex.message };
-		}
+	try {
+		await runListeners(data);
+	} catch (ex) {
+		console.error(ex);
+		return { code: tinyapl.errors.user, message: ex.message };
+	}
 	return { shape: [0], contents: [] };
-}
+});
+
+
