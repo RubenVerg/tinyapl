@@ -1,6 +1,8 @@
 import * as tinyapl from './tinyapl.js';
 import * as quads from './quads.js'
 
+import 'https://cdn.plot.ly/plotly-2.34.0.min.js';
+
 const buttons = document.querySelector('#buttons');
 const output = document.querySelector('#output');
 /** @type {HTMLInputElement} */
@@ -135,6 +137,7 @@ const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), 
 	Fail: (a, b) => { console.log('fail', a, b); return { code: tinyapl.errors.assertion, message: 'Fail!' }; },
 	CreateImage: quads.qCreateImage,
 	DisplayImage: quads.qDisplayImage,
+	ScatterPlot: quads.qScatterPlot,
 }, {});
 
 function div(cls, contents) {
@@ -202,10 +205,19 @@ async function runCode(code) {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		ctx.putImageData(data, 0, 0);
 	});
+	quads.rScatterPlot(async (xs, ys, mode) => {
+		endDiv();
+		const traces = xs.map((x, i) => ({ x, y: ys[i], mode, type: 'scatter', line: { shape: 'spline' } }));
+		const d = div('');
+		output.appendChild(d);
+		Plotly.newPlot(d, traces);
+		newDiv();
+	});
 	const [result, success] = await tinyapl.runCode(context, code);
 	io.done();
 	quads.dCreateImage();
 	quads.dDisplayImage();
+	quads.dScatterPlot();
 	endDiv();
 	if (success) output.appendChild(clickableDiv('result', result));
 	else output.appendChild(div('error', result));

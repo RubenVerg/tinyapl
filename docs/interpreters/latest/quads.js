@@ -74,3 +74,40 @@ export const { register: rDisplayImage, done: dDisplayImage, fn: qDisplayImage }
 	return { shape: [0], contents: [] };
 });
 
+export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = makeFunction(async (runListeners, x, y) => {
+	let mode = 'markers', arr;
+	if (y) {
+		mode = await tinyapl.joinString(x.contents);
+		arr = y;
+	} else arr = x;
+	if (arr.shape.length !== 2 && arr.shape.length !== 3) return { code: tinyapl.errors.rank, message: '⎕ScatterPlot expects arrays of rank 2 or 3' };
+	if (arr.shape.at(-1) !== 2) return { code: tinyapl.errors.length, message: '⎕ScatterPlot argument last axis must be of length 2' };
+	const xs = [], ys = [];
+	if (arr.shape.length === 2) {
+		const x1 = [], y1 = [];
+		for (let i = 0; i < 2 * arr.shape[0]; i += 2) {
+			x1.push(arr.contents[i][0]);
+			y1.push(arr.contents[i + 1][0]);
+		}
+		xs.push(x1);
+		ys.push(y1);
+	} else {
+		for (let j = 0; j < 2 * arr.shape[1] * arr.shape[0]; j += 2 * arr.shape[1]) {
+			const x1 = [], y1 = [];
+			for (let i = 0; i < 2 * arr.shape[1]; i += 2) {
+				x1.push(arr.contents[j + i][0]);
+				y1.push(arr.contents[j + i + 1][0]);
+			}
+			xs.push(x1);
+			ys.push(y1);
+		}
+	}
+	try {
+		await runListeners(xs, ys, mode);
+	} catch (ex) {
+		console.error(ex);
+		return { code: tinyapl.errors.user, message: ex.message };
+	}
+	return { shape: [0], contents: [] };
+});
+
