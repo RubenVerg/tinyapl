@@ -36,21 +36,31 @@ instance IsJS JSArray where
   fromJSVal = JSArray
   toJSVal = unJSArray
 
-foreign import javascript unsafe "return [];" jsNil :: JSArray
+foreign import javascript unsafe "return [];" jsNil_ :: Bool -> JSArray
 foreign import javascript unsafe "return [$1, ...$2];" jsCons :: JSVal -> JSArray -> JSArray
 foreign import javascript unsafe "return $1[0];" jsHead :: JSArray -> JSVal
 foreign import javascript unsafe "return $1.slice(1);" jsTail :: JSArray -> JSArray
 foreign import javascript unsafe "return $1.length;" jsLength :: JSArray -> Int
+foreign import javascript unsafe "return $1[$2];" jsAt :: JSArray -> Int -> JSVal
+foreign import javascript unsafe "$1.push($2); return $1;" jsPush :: JSArray -> JSVal -> JSArray
+
+bamboozle :: [a] -> Bool
+bamboozle [] = False
+bamboozle _ = True
+{-# NOINLINE bamboozle #-}
+
+jsNil :: JSArray
+jsNil = jsNil_ False
 
 infixr 5 ++#
 (++#) :: IsJS a => a -> JSArray -> JSArray
 (++#) x = jsCons $ toJSVal x
 
 listToArray :: IsJS a => [a] -> JSArray
-listToArray = foldr (++#) jsNil
+listToArray xs = foldl' (\arr x -> jsPush arr $ toJSVal x) (jsNil_ $ bamboozle xs) xs
 
 arrayToList :: IsJS a => JSArray -> [a]
-arrayToList arr = if jsLength arr == 0 then [] else fromJSVal (jsHead arr) : arrayToList (jsTail arr)
+arrayToList arr = fromJSVal . jsAt arr <$> [0..jsLength arr-1]
 
 instance IsJS a => IsJS [a] where
   fromJSVal = arrayToList . fromJSVal
