@@ -66,6 +66,8 @@ executable tinyapl-js
     import:           warnings
     main-is:          Main.hs
 
+    other-modules:    JSBridge
+
     build-depends:    base ^>=4.20.0.0
                     , ghc-experimental ^>=0.1.0.0
                     , tinyapl
