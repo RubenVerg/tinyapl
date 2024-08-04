@@ -8,7 +8,6 @@ import TinyAPL.Random
 
 import Data.Complex
 import Control.Monad.State
-import Control.Monad.Error.Class ( liftEither )
 import Data.Time.Clock.POSIX
 import Control.Concurrent
 
@@ -19,9 +18,13 @@ l = Nilad (Just $ pure $ vector $ Character <$> ['a'..'z']) Nothing (G.quad : "l
 d = Nilad (Just $ pure $ vector $ Character <$> ['0'..'9']) Nothing (G.quad : "d")
 seed = Nilad Nothing (Just $ \x -> do
   let e = DomainError "Seed must be a scalar integer"
-  s <- liftEither (asScalar e x) >>= liftEither . asNumber e >>= liftEither . asInt e
+  s <- asScalar e x >>= asNumber e >>= asInt e
   setSeed s) (G.quad : "seed")
-ts = Nilad (Just $ scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "ts")
+unix = Nilad (Just $ scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "unix")
+ts = Nilad (Just $ do
+  err <- gets contextErr
+  err "Deprecation warning: ⎕ts has been replaced by ⎕unix and will be used for something else in a future version\n"
+  scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "ts")
 
 exists = Function (Just $ \x -> do
   let var = show x
@@ -41,4 +44,4 @@ delay = Function (Just $ \x -> do
     pure $ scalar $ Number $ (end - start) :+ 0
   ) Nothing (G.quad : "Delay")
 
-core = quadsFromReprs [ io, ct, u, l, d, seed, ts ] [ exists, repr, delay ] [] []
+core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts ] [ exists, repr, delay ] [] []
