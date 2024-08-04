@@ -125,7 +125,7 @@ makeSyntaxError :: SourcePos -> String -> String -> Error
 makeSyntaxError pos source msg = let
   line = sourceLine pos
   column = sourceColumn pos
-  theLine = if null $ lines source then "" else lines source !! (line - 1)
+  theLine = if length (lines source) <= line - 1 then "" else lines source !! (line - 1)
   in SyntaxError $ theLine ++ "\n" ++ replicate (column - 1) ' ' ++ "^\n" ++ msg
 
 makeParseError :: String -> ParseError -> Error
