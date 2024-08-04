@@ -133,10 +133,8 @@ const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), 
 	debug: a => { if (a) { console.log('set nilad', a); } else { console.log('get nilad'); return { shape: [0], contents: [] }; }},
 	Debug: (a, b) => { if (b === undefined) { console.log('monad call', a); } else { console.log('dyad call', a, b); } return { shape: [0], contents: [] }; },
 	Fail: (a, b) => { console.log('fail', a, b); return { code: tinyapl.errors.assertion, message: 'Fail!' }; },
+	CreateImage: quads.qCreateImage,
 	DisplayImage: quads.qDisplayImage,
-	CreateWindow: quads.qCreateWindow,
-	UpdateWindow: quads.qUpdateWindow,
-	DeleteWindow: quads.qDeleteWindow,
 }, {});
 
 function div(cls, contents) {
@@ -158,29 +156,57 @@ function clickableDiv(cls, contents, clickedContents = contents) {
 	return d;
 }
 
+const images = {};
+
 async function runCode(code) {
+	let d;
+	
+	const endDiv = () => {
+		if (d.textContent.trim() === '') try { output.removeChild(d); } catch (_) {};
+		if (d.textContent.at(-1) === '\n') d.textContent = d.textContent.slice(0, -1);
+	};
+	
+	const newDiv = () => {
+		d = div('quad', '');
+		output.appendChild(d);
+	};
+	
+	const createImage = (id, width, height) => {
+		endDiv();
+		const canvas = document.createElement('canvas');
+		canvas.className = 'image';
+		canvas.width = width;
+		canvas.height = height;
+		if (id !== undefined) {
+			canvas.dataset.tinyaplId = id;
+			images[id] = canvas;
+		}
+		output.appendChild(canvas);
+		newDiv();
+		return canvas;
+	};
+	
 	output.appendChild(clickableDiv('code', ' '.repeat(6) + code, code));
-	let d = div('quad', '');
-	output.appendChild(d);
+	newDiv();
 	io.rInput(what => { d.innerText += what + '\n'; });
 	io.rOutput(what => { d.innerText += what; });
 	io.rError(what => { d.innerText += what; });
-	quads.rDisplayImage(async (/** @type {ImageData} */ data) => {
-		if (d.textContent.trim() === '') try { output.removeChild(d); } catch (_) {};
-		if (d.textContent.at(-1) === '\n') d.textContent = d.textContent.slice(0, -1);
-		const canvas = document.createElement('canvas');
-		canvas.width = data.width;
-		canvas.height = data.height;
+	quads.rCreateImage(async (id, width, height) => { createImage(id, width, height); });
+	quads.rDisplayImage(async (id, /** @type {ImageData} */ data) => {
+		let canvas;
+		if (id !== undefined)
+			canvas = images[id];
+		else
+			canvas = createImage(id, data.width, data.height);
 		const ctx = canvas.getContext('2d');
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		ctx.putImageData(data, 0, 0);
-		output.appendChild(canvas);
-		d = div('quad', '');
 	});
 	const [result, success] = await tinyapl.runCode(context, code);
 	io.done();
+	quads.dCreateImage();
 	quads.dDisplayImage();
-	if (d.textContent.trim() === '') try { output.removeChild(d); } catch (_) {};
-	if (d.textContent.at(-1) === '\n') d.textContent = d.textContent.slice(0, -1);
+	endDiv();
 	if (success) output.appendChild(clickableDiv('result', result));
 	else output.appendChild(div('error', result));
 }
