@@ -5,7 +5,7 @@ import TinyAPL.Error
 
 import Test.Hspec
 import Data.List.NonEmpty
-import Data.Complex
+import TinyAPL.Complex
 import Numeric.Natural
 
 spec :: Spec

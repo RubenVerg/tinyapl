@@ -6,7 +6,7 @@ import qualified TinyAPL.Glyphs as G
 import TinyAPL.Interpreter
 import TinyAPL.Random
 
-import Data.Complex
+import TinyAPL.Complex
 import Control.Monad.State
 import Data.Time.Clock.POSIX
 import Control.Concurrent

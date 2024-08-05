@@ -6,7 +6,7 @@ import TinyAPL.Util
 
 import Text.Parsec
 import Text.Parsec.String
-import Data.Complex
+import TinyAPL.Complex
 import Data.Functor (($>), void)
 import Data.Maybe (fromJust, fromMaybe, mapMaybe)
 import Data.List (elemIndex, intercalate)

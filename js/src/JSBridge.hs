@@ -7,7 +7,7 @@ import TinyAPL.Error
 
 import GHC.Wasm.Prim
 import Numeric.Natural
-import Data.Complex
+import TinyAPL.Complex
 import Data.List
 import Data.Bifunctor
 

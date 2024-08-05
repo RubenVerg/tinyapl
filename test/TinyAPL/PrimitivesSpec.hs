@@ -9,7 +9,7 @@ import qualified TinyAPL.Glyphs as G
 import qualified TinyAPL.Primitives as P
 
 import Test.Hspec
-import Data.Complex
+import TinyAPL.Complex
 
 spec :: Spec
 spec = do
