@@ -102,7 +102,9 @@ ePow' :: MonadError Error m => Array -> m Array
 ePow' = scalarMonad ePow
 
 pow :: MonadError Error m => ScalarValue -> ScalarValue -> m ScalarValue
-pow (Number x) (Number y) = pure $ Number $ x ** y
+pow (Number x) (Number y) = case asInt (DomainError "") y of
+  Left _ -> pure $ Number $ x ** y
+  Right y' -> pure $ Number $ x ^ y'
 pow _ _ = throwError expectedNumber
 
 pow' :: MonadError Error m => Array -> Array -> m Array
