@@ -137,6 +137,7 @@ const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), 
     CreateImage: quads.qCreateImage,
     DisplayImage: quads.qDisplayImage,
     ScatterPlot: quads.qScatterPlot,
+    PlayAudio: quads.qPlayAudio,
     Fetch: quads.qFetch,
 });
 function div(cls, contents) {
@@ -193,7 +194,7 @@ async function runCode(code) {
     io.rOutput(async (what) => { d.innerText += what; });
     io.rError(async (what) => { d.innerText += what; });
     quads.rCreateImage(async (id, width, height) => { createImage(id, width, height); });
-    quads.rDisplayImage(async (id, /** @type {ImageData} */ data) => {
+    quads.rDisplayImage(async (id, data) => {
         let canvas;
         if (id !== undefined)
             canvas = images[id];
@@ -212,10 +213,22 @@ async function runCode(code) {
         Plotly.newPlot(d, traces, { showlegend: false }, { responsive: true });
         newDiv();
     });
+    quads.rPlayAudio(async (buf) => {
+        endDiv();
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.autoplay = true;
+        const blob = new Blob([buf], { type: 'audio/wav' });
+        const url = URL.createObjectURL(blob);
+        audio.src = url;
+        output.appendChild(audio);
+        newDiv();
+    });
     const [result, success] = await tinyapl.runCode(context, code);
     io.done();
     quads.dCreateImage();
     quads.dDisplayImage();
+    quads.dPlayAudio();
     quads.dScatterPlot();
     endDiv();
     if (success)

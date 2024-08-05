@@ -1,4 +1,5 @@
 import * as tinyapl from './tinyapl.js';
+import * as wav from './wav.js';
 
 function makeFunction<Args extends unknown[], Ret, ListenerArgs extends unknown[]>(fn: (runListeners: (...args: ListenerArgs) => Promise<void>, ...args: Args) => Ret) {
 	let listeners: ((...args: ListenerArgs) => Promise<void>)[] = [];
@@ -104,6 +105,32 @@ export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = 
 	}
 	try {
 		await runListeners(xs, ys, mode);
+	} catch (ex) {
+		console.error(ex);
+		return { code: tinyapl.errors.user, message: (ex as Error).message };
+	}
+	return { shape: [0], contents: [] };
+});
+
+export const { register: rPlayAudio, done: dPlayAudio, fn: qPlayAudio } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr, tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [ArrayBuffer]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
+	let sampleRate, arr;
+	if (y) {
+		if (x.shape.length !== 0) return { code: tinyapl.errors.rank, message: '⎕PlayAudio left argument must be scalar' };
+		sampleRate = Math.floor((x.contents[0] as tinyapl.Complex)[0]);
+		arr = y;
+	} else {
+		arr = x;
+		sampleRate = 44100;
+	}
+	if (arr.shape.length !== 1 && arr.shape.length !== 2) return { code: tinyapl.errors.rank, message: '⎕PlayAudio expects arrays of rank 1 or 2' };
+	const channels = arr.shape.length === 1 ? 1 : arr.shape[0];
+	const length = arr.shape.at(-1)!;
+	const bufs = new Array(channels).fill(0).map(_ => new Float32Array(length));
+	for (let ch = 0; ch < channels; ch++)
+		for (let b = 0; b < length; b++)
+			bufs[ch][b] = (arr.contents[ch * length + b] as tinyapl.Complex)[0];
+	try {
+		await runListeners(wav.encode({ sampleRate, channelData: bufs }));
 	} catch (ex) {
 		console.error(ex);
 		return { code: tinyapl.errors.user, message: (ex as Error).message };
