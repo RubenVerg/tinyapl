@@ -20,10 +20,15 @@ echo "Compiled, found $out_path"
 
 "$(wasm32-wasi-ghc --print-libdir)"/post-link.mjs --input "$out_path" --output js/ghc_wasm_jsffi.js
 
-echo "Post-linked, copying files"
+echo "Post-linked, compiling TypeScript"
+
+cd js
+tsc
+cd ..
+
+echo "Compiled, copying files"
 
 cp $out_path js/dist/tinyapl-js.wasm
 
-cp js/*.js js/dist
 cp js/*.html js/dist
 cp js/*.svg js/dist

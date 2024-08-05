@@ -1,16 +1,15 @@
 import * as tinyapl from './tinyapl.js';
-import * as quads from './quads.js'
+import * as quads from './quads.js';
 
 import 'https://cdn.plot.ly/plotly-2.34.0.min.js';
 
-const buttons = document.querySelector('#buttons');
-const output = document.querySelector('#output');
-/** @type {HTMLInputElement} */
-const input = document.querySelector('#input');
-const highlighted = document.querySelector('#highlighted');
-const button = document.querySelector('#button');
+const buttons = document.querySelector<HTMLDivElement>('#buttons')!;
+const output = document.querySelector<HTMLPreElement>('#output')!;
+const input = document.querySelector<HTMLInputElement>('#input')!;
+const highlighted = document.querySelector<HTMLPreElement>('#highlighted')!;
+const button = document.querySelector<HTMLButtonElement>('#button')!;
 
-function zip(as, bs) {
+function zip<A, B>(as: A[], bs: B[]): [A, B][] {
 	return [...as, ...bs].slice(0, Math.min(as.length, bs.length)).map((_, idx) => [as[idx], bs[idx]]);
 }
 
@@ -89,33 +88,33 @@ async function highlight() {
 	highlighted.innerHTML = '';
 	for (const [t, c] of pairs) {
 		const span = document.createElement('span');
-		span.style.color = colors[tinyapl.colorsInv[c]];
+		span.style.color = colors[tinyapl.colorsInv[c] as keyof typeof colors];
 		span.innerText = t;
 		highlighted.appendChild(span);
 	}
 	highlighted.scrollLeft = input.scrollLeft;
 }
 
-function insertText(str) {
-	input.setRangeText(str, input.selectionStart, input.selectionEnd, "end");
+function insertText(str: string) {
+	input.setRangeText(str, input.selectionStart ?? input.value.length - 1, input.selectionEnd ?? input.value.length - 1, "end");
 	input.focus();
 	highlight();
 }
 
 const io = new class IO {
-	#input = [];
-	#output = [];
-	#error = [];
-	rInput(l) { this.#input.push(l); }
-	rOutput(l) { this.#output.push(l); }
-	rError(l) { this.#error.push(l); }
+	#input: ((i: string) => PromiseLike<void>)[] = [];
+	#output: ((o: string) => PromiseLike<void>)[] = [];
+	#error: ((e: string) => PromiseLike<void>)[] = [];
+	rInput(l: (i: string) => PromiseLike<void>) { this.#input.push(l); }
+	rOutput(l: (o: string) => PromiseLike<void>) { this.#output.push(l); }
+	rError(l: (e: string) => PromiseLike<void>) { this.#error.push(l); }
 	done() { this.#input = []; this.#output = []; this.#error = []; }
-	async input() { const i = window.prompt('Input'); for (const l of this.#input) await l(i); return i; }
-	async output(what) { for (const l of this.#output) await l(what); }
-	async error(what) { for (const l of this.#error) await l(what); }
+	async input() { const i = window.prompt('Input') ?? ''; for (const l of this.#input) await l(i); return i; }
+	async output(what: string) { for (const l of this.#output) await l(what); }
+	async error(what: string) { for (const l of this.#error) await l(what); }
 };
 
-for (const k of ['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'conjunctions']) {
+for (const k of (['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'conjunctions'] as const as readonly (keyof typeof tinyapl.glyphs)[])) {
 	for (const i of tinyapl.glyphs[k]) {
 		let v, p;
 		if (v = keyboard.find(k => k.symP === i)) p = `${prefix.sym}${v.sym}`;
@@ -132,23 +131,21 @@ for (const k of ['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'con
 }
 
 const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), io.error.bind(io), {
-	debug: a => { if (a) { console.log('set nilad', a); } else { console.log('get nilad'); return { shape: [0], contents: [] }; }},
-	Debug: (a, b) => { if (b === undefined) { console.log('monad call', a); } else { console.log('dyad call', a, b); } return { shape: [0], contents: [] }; },
-	Fail: (a, b) => { console.log('fail', a, b); return { code: tinyapl.errors.assertion, message: 'Fail!' }; },
-	CreateImage: quads.qCreateImage,
+	Debug: async (a: tinyapl.Arr, b?: tinyapl.Arr) => { if (b === undefined) { console.log('monad call', a); } else { console.log('dyad call', a, b); } return b ?? a; },
+	CreateImage: quads.qCreateImage as (tinyapl.Monad & tinyapl.Dyad),
 	DisplayImage: quads.qDisplayImage,
 	ScatterPlot: quads.qScatterPlot,
 	Fetch: quads.qFetch,
-}, {});
+});
 
-function div(cls, contents) {
+function div(cls: string, contents: string) {
 	const div = document.createElement('div');
 	div.className = cls;
 	div.textContent = contents;
 	return div;
 }
 
-function clickableDiv(cls, contents, clickedContents = contents) {
+function clickableDiv(cls: string, contents: string, clickedContents = contents) {
 	const d = div(cls, contents);
 	d.addEventListener('click', () => {
 		if (input.value.trim() == '') {
@@ -160,14 +157,14 @@ function clickableDiv(cls, contents, clickedContents = contents) {
 	return d;
 }
 
-const images = {};
+const images: Record<number, HTMLCanvasElement> = {};
 
-async function runCode(code) {
-	let d;
+async function runCode(code: string) {
+	let d: HTMLDivElement;
 	
 	const endDiv = () => {
-		if (d.textContent.trim() === '') try { output.removeChild(d); } catch (_) {};
-		if (d.textContent.at(-1) === '\n') d.textContent = d.textContent.slice(0, -1);
+		if (d.textContent!.trim() === '') try { output.removeChild(d); } catch (_) {};
+		if (d.textContent!.at(-1) === '\n') d.textContent = d.textContent!.slice(0, -1);
 	};
 	
 	const newDiv = () => {
@@ -175,14 +172,14 @@ async function runCode(code) {
 		output.appendChild(d);
 	};
 	
-	const createImage = (id, width, height) => {
+	const createImage = (id: number | undefined, width: number, height: number) => {
 		endDiv();
 		const canvas = document.createElement('canvas');
 		canvas.className = 'image';
 		canvas.width = width;
 		canvas.height = height;
 		if (id !== undefined) {
-			canvas.dataset.tinyaplId = id;
+			canvas.dataset.tinyaplId = id.toString();
 			images[id] = canvas;
 		}
 		output.appendChild(canvas);
@@ -192,25 +189,26 @@ async function runCode(code) {
 	
 	output.appendChild(clickableDiv('code', ' '.repeat(6) + code, code));
 	newDiv();
-	io.rInput(what => { d.innerText += what + '\n'; });
-	io.rOutput(what => { d.innerText += what; });
-	io.rError(what => { d.innerText += what; });
-	quads.rCreateImage(async (id, width, height) => { createImage(id, width, height); });
+	io.rInput(async what => { d.innerText += what + '\n'; });
+	io.rOutput(async what => { d.innerText += what; });
+	io.rError(async what => { d.innerText += what; });
+	quads.rCreateImage(async (id: number, width: number, height: number) => { createImage(id, width, height); });
 	quads.rDisplayImage(async (id, /** @type {ImageData} */ data) => {
 		let canvas;
 		if (id !== undefined)
 			canvas = images[id];
 		else
 			canvas = createImage(id, data.width, data.height);
-		const ctx = canvas.getContext('2d');
+		const ctx = canvas.getContext('2d')!;
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		ctx.putImageData(data, 0, 0);
 	});
 	quads.rScatterPlot(async (xs, ys, mode) => {
 		endDiv();
 		const traces = xs.map((x, i) => ({ x, y: ys[i], mode, type: 'scatter', line: { shape: 'spline' } }));
-		const d = div('plot');
+		const d = div('plot', '');
 		output.appendChild(d);
+		// @ts-expect-error Plotly global not typed
 		Plotly.newPlot(d, traces, { showlegend: false }, { responsive: true });
 		newDiv();
 	});
