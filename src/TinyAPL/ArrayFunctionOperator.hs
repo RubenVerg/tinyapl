@@ -90,9 +90,12 @@ comparisonTolerance :: Double
 comparisonTolerance = 1e-14
 
 realEqual :: Double -> Double -> Bool
-realEqual a b = abs (a - b) <= comparisonTolerance * (abs a `max` abs b)
+realEqual a b = if isInfinite a || isInfinite b then a == b else abs (a - b) <= comparisonTolerance * (abs a `max` abs b)
 complexEqual :: Complex Double -> Complex Double -> Bool
-complexEqual a b = magnitude (a - b) <= comparisonTolerance * (magnitude a `max` magnitude b)
+complexEqual a@(ar :+ ai) b@(br :+ bi) =
+  if isInfinite ar || isInfinite ai || isInfinite br || isInfinite bi
+  then a == b
+  else magnitude (a - b) <= comparisonTolerance * (magnitude a `max` magnitude b)
 
 isReal :: Complex Double -> Bool
 isReal (_ :+ b) = 0 `realEqual` b -- A number is real if its imaginary part compares equal to zero.
