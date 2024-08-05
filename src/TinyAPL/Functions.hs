@@ -8,8 +8,8 @@ import TinyAPL.Random
 import TinyAPL.Util
 
 import Control.Monad.Except (MonadError)
-import qualified Data.Complex as Cx
-import Data.Complex ( Complex((:+)) )
+import qualified TinyAPL.Complex as Cx
+import TinyAPL.Complex ( Complex((:+)) )
 import Data.Char (ord, chr)
 import Data.Maybe (fromJust)
 import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericReplicate, nub, genericIndex, singleton)

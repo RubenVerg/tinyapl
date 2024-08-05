@@ -7,7 +7,7 @@ import TinyAPL.Parser
 
 import Test.Hspec
 
-import Data.Complex
+import TinyAPL.Complex
 
 spec :: Spec
 spec = do

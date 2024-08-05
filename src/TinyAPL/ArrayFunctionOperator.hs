@@ -4,7 +4,7 @@ module TinyAPL.ArrayFunctionOperator where
 import TinyAPL.Error
 import TinyAPL.Util
 import qualified TinyAPL.Glyphs as G
-import Data.Complex ( magnitude, realPart, Complex(..) )
+import TinyAPL.Complex ( magnitude, realPart, Complex(..) )
 import Numeric.Natural
 import Data.List
 import Control.Monad
