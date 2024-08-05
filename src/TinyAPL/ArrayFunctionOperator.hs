@@ -134,7 +134,7 @@ instance Ord Array where
   (Array ash as) `compare` (Array bsh bs) = (ash `compare` bsh) <> (as `compare` bs)
 
 isInt :: Double -> Bool
-isInt = realEqual <*> (fromInteger . floor)
+isInt = realEqual <*> (fromInteger . round)
 
 -- * @Show@ for scalars and arrays
 
