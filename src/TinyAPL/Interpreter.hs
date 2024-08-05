@@ -91,7 +91,12 @@ eval (VectorBranch es)              = do
   return $ VArray $ vector $ box <$> entries
 eval (HighRankBranch es)            = do
   entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) es
-  return $ VArray $ fromMajorCells entries
+  case entries of
+    [] -> return $ VArray $ fromMajorCells entries
+    (e:es) ->
+      if all ((== arrayShape e) . arrayShape) es
+      then return $ VArray $ fromMajorCells entries
+      else throwError $ DomainError "High rank notation entries must be of the same shape"
 eval _                              = throwError $ DomainError "Invalid branch in evaluation"
 
 evalLeaf :: Token -> St Value

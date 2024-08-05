@@ -80,7 +80,9 @@ majorCells (Array (_:sh) cs) = mapMaybe (arrayOf sh) $ chunk (product sh) cs whe
 
 fromMajorCells :: [Array] -> Array
 fromMajorCells [] = Array [0] []
-fromMajorCells (c:cs) = fromJust $ arrayReshaped (1 + genericLength cs : arrayShape c) $ concatMap arrayContents $ c : cs
+fromMajorCells (c:cs) = let
+  impl = fromJust $ arrayReshaped (1 + genericLength cs : arrayShape c) $ concatMap arrayContents $ c : cs
+  in if all ((== arrayShape c) . arrayShape) cs then impl else error "fromMajorCells: mismatched shapes"
 
 -- * Number comparison functions
 
