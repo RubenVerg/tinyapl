@@ -1,112 +1,43 @@
-export const encode = (audioData: { sampleRate: number, channelData: Float32Array[] }, float32: boolean = true, symmetric: boolean = false) => {
-	const createWriter = (view: DataView) => {
-		let pos = 0;
-		return {
-			int16(value: number) { view.setInt16(pos, value, true); pos += 2; },
-			uint16(value: number) { view.setUint16(pos, value, true); pos += 2; },
-			uint32(value: number) { view.setUint32(pos, value, true); pos += 4; },
-			string(value: string) {
-				for (const ch of value) view.setUint8(pos++, ch.charCodeAt(0));
-			},
-			pcm8(value: number) {
-				value = Math.max(-1, Math.min(value, 1));
-				value = (value * 0.5 + 0.5) * 255;
-				value = Math.round(value) | 0;
-				view.setUint8(pos++, value);
-			},
-			pcm8s(value: number) {
-				value = Math.round(value * 128) + 128;
-				value = Math.max(0, Math.min(value, 255));
-				view.setUint8(pos++, value);
-			},
-			pcm16(value: number) {
-				value = Math.max(-1, Math.min(value, 1));
-				value = value < 0 ? value * 32768 : value * 32767;
-				value = Math.round(value) | 0;
-				view.setInt16(pos, value, true);
-				pos += 2;
-			},
-			pcm16s(value: number) {
-				value = Math.round(value * 32768);
-				value = Math.max(-32768, Math.min(value, 32767));
-				view.setInt16(pos, value, true);
-				pos += 2;
-			},
-			pcm24(value: number) {
-				value = Math.max(-1, Math.min(value, 1));
-				value = value < 0 ? 0x1000000 + value * 8388608 : value * 8388607;
-				value = Math.round(value) | 0;
+export const encode = (sampleRate: number, channelData: Float32Array[]) => {
+	// adapted from https://www.npmjs.com/package/wav-encoder by @mohayonao
 
-				const x0 = (value >> 0) & 0xff;
-				const x1 = (value >> 8) & 0xff;
-				const x2 = (value >> 16) & 0xff;
-
-				view.setUint8(pos++, x0);
-				view.setUint8(pos++, x1);
-				view.setUint8(pos++, x2);
-			},
-			pcm24s(value: number) {
-				value = Math.round(value * 8388608);
-				value = Math.max(-8388608, Math.min(value, 8388607));
-
-				const x0 = (value >> 0) & 0xff;
-				const x1 = (value >> 8) & 0xff;
-				const x2 = (value >> 16) & 0xff;
-
-				view.setUint8(pos++, x0);
-				view.setUint8(pos++, x1);
-				view.setUint8(pos++, x2);
-			},
-			pcm32(value: number) {
-				value = Math.max(-1, Math.min(value));
-				value = value < 0 ? value * 2147483648 : value * 2147483647;
-				value = Math.round(value) | 0;
-				view.setInt32(pos, value, true);
-				pos += 4;
-			},
-			pcm32s(value: number) {
-				value = Math.round(value * 2147483648);
-				value = Math.max(-2147483648, Math.min(value, +2147483647));
-				view.setInt32(pos, value, true);
-				pos += 4;
-			},
-			pcm32f(value: number) {
-				view.setFloat32(pos, value, true);
-				pos += 4;
-			},
-		} as const;
-	};
-
-	const channelLength = audioData.channelData[0].length;
-	const channels = audioData.channelData.length;
-	const bitDepth = float32 ? 32 : 16;
+	const channelLength = channelData[0].length;
+	const channels = channelData.length;
+	const bitDepth = 16;
 	const bytes = bitDepth >> 3;
 	const length = channelLength * channels * bytes;
 	const view = new DataView(new Uint8Array(44 + length).buffer);
-	const writer = createWriter(view);
+	let pos = 0;
+	
+	const string = (s: string) => { for (const ch of s) view.setUint8(pos++, ch.charCodeAt(0)); };
+	const uint16 = (value: number) => { view.setUint16(pos, value, true); pos += 2; };
+	const uint32 = (value: number) => { view.setUint32(pos, value, true); pos += 4; };
+	const pcm16 = (value: number) => {
+		value = Math.max(-1, Math.min(value, 1));
+		value = value < 0 ? value * 32768 : value * 32767;
+		value = Math.round(value) | 0;
+		view.setInt16(pos, value, true);
+		pos += 2;
+	}
 		
-	writer.string('RIFF');
-	writer.uint32(view.buffer.byteLength - 8);
-	writer.string('WAVE');
-	writer.string('fmt ');
-	writer.uint32(16);
-	writer.uint16(float32 ? 3 : 1);
-	writer.uint16(channels);
-	writer.uint32(audioData.sampleRate);
-	writer.uint32(audioData.sampleRate * channels * bytes);
-	writer.uint16(channels * bytes);
-	writer.uint16(bitDepth);
+	string('RIFF');
+	uint32(view.buffer.byteLength - 8);
+	string('WAVE');
+	string('fmt ');
+	uint32(16);
+	uint16(1);
+	uint16(channels);
+	uint32(sampleRate);
+	uint32(sampleRate * channels * bytes);
+	uint16(channels * bytes);
+	uint16(bitDepth);
 
-	const encoderOption = float32 ? 'f' : symmetric ? 's' : '';
-	const methodName = 'pcm' + bitDepth + encoderOption;
-	if (!(methodName in writer)) throw TypeError(`Unsupported bit depth ${bitDepth}`);
-	const write = (writer[methodName as keyof typeof writer] as (value: number) => void).bind(writer);
-	writer.string('data');
-	writer.uint32(length);
+	string('data');
+	uint32(length);
 
 	for (let i = 0; i < channelLength; i++)
 		for (let ch = 0; ch < channels; ch++)
-			write(audioData.channelData[ch][i]);
+			pcm16(channelData[ch][i]);
 
 	return view.buffer;
 };
