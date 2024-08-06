@@ -6,8 +6,8 @@ import qualified TinyAPL.Glyphs as G
 import TinyAPL.Util
 
 import Text.Megaparsec hiding (Token)
-import Text.Megaparsec.Error
 import Text.Megaparsec.Char
+import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Functor (($>), void)
 import Data.Maybe (fromJust, fromMaybe, mapMaybe)
 import Data.List (elemIndex, intercalate)
@@ -148,6 +148,18 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
   withPos :: Parser (SourcePos -> a) -> Parser a
   withPos = (<**>) getSourcePos
 
+  spaceConsumer :: Parser ()
+  spaceConsumer = L.space
+    (void (satisfy (\x -> isSpace x && x /= '\n')))
+    empty
+    (char (fst G.inlineComment) *> void (many (noneOf [snd G.inlineComment])) <* char (snd G.inlineComment))
+
+  lexeme :: Parser a -> Parser a
+  lexeme = L.lexeme spaceConsumer
+
+  commitOn :: Parser a -> Parser b -> Parser a
+  commitOn p q = try (p <* lookAhead q) <* q
+
   arrayStart :: String
   arrayStart = G.delta : ['a'..'z']
   functionStart :: String
@@ -155,14 +167,11 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
   identifierRest :: String
   identifierRest = arrayStart ++ functionStart ++ ['0'..'9']
 
-  whitespace :: Parser ()
-  whitespace = do
-    let comm :: Parser ()
-        comm = char (fst G.inlineComment) *> void (many $ noneOf [snd G.inlineComment]) <* char (snd G.inlineComment)
-    void $ many $ try comm <|> void (satisfy (\x -> isSpace x && x /= '\n'))
+  assign :: (a -> [Token] -> SourcePos -> b) -> Parser a -> Parser b
+  assign con name = withPos $ liftA2 con (lexeme name `commitOn` char G.assign) bits
 
   array :: Parser Token
-  array = between whitespace whitespace (try number <|> try charVec <|> try str <|> try arrayAssign <|> try (withPos $ TokenArrayName <$> arrayName) <|> try vectorNotation <|> try highRankNotation <|> primArray) where
+  array = number <|> charVec <|> str <|> arrayAssign <|> try (withPos $ TokenArrayName <$> arrayName) <|> vectorNotation <|> highRankNotation <|> primArray where
     number :: Parser Token
     number = withPos $ TokenNumber <$> complex where
       sign :: Parser Double
@@ -218,10 +227,10 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
     arrayName = try (liftA3 (\x y z -> x : y : z) (char G.quad) (oneOf arrayStart) (many $ oneOf identifierRest)) <|> try (string [G.alpha, G.alpha]) <|> try (string [G.omega, G.omega]) <|> try (string [G.alpha]) <|> try (string [G.omega]) <|> try (string [G.quad]) <|> try (string [G.quadQuote]) <|> liftA2 (:) (oneOf arrayStart) (many $ oneOf identifierRest)
 
     arrayAssign :: Parser Token
-    arrayAssign = withPos $ liftA2 TokenArrayAssign arrayName (between whitespace whitespace (char G.assign) *> bits)
+    arrayAssign = assign TokenArrayAssign arrayName
 
   function :: Parser Token
-  function = between whitespace whitespace (try dfn <|> try functionAssign <|> try (withPos $ TokenFunctionName <$> functionName) <|> primFunction) where
+  function = dfn <|> functionAssign <|> try (withPos $ TokenFunctionName <$> functionName) <|> primFunction where
     dfn :: Parser Token
     dfn = withPos $ TokenDfn <$> (string [fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces])
 
@@ -232,12 +241,12 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
     functionName = try (liftA3 (\x y z -> x : y : z) (char G.quad) (oneOf functionStart) (many $ oneOf identifierRest)) <|> try (string [G.del]) <|> try (string [G.alphaBar, G.alphaBar]) <|> try (string [G.omegaBar, G.omegaBar]) <|> liftA2 (:) (oneOf functionStart) (many $ oneOf identifierRest)
 
     functionAssign :: Parser Token
-    functionAssign = withPos $ liftA2 TokenFunctionAssign functionName (between whitespace whitespace (char G.assign) *> bits)
+    functionAssign = assign TokenFunctionAssign functionName
 
   adverb :: Parser Token
-  adverb = between whitespace whitespace (try dadv <|> try adverbAssign <|> try (withPos $ TokenAdverbName <$> adverbName) <|> primAdverb) where
+  adverb = try dadv <|> adverbAssign <|> try (withPos $ TokenAdverbName <$> adverbName) <|> primAdverb where
     dadv :: Parser Token
-    dadv = withPos $ TokenDadv <$> (string [G.underscore, fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces])
+    dadv = withPos $ TokenDadv <$> (string [G.underscore, fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces] <* notFollowedBy (char G.underscore))
 
     primAdverb :: Parser Token
     primAdverb = withPos $ TokenPrimAdverb <$> oneOf G.adverbs
@@ -246,10 +255,10 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
     adverbName = try (liftA3 (\x y z -> x : y : z) (char G.quad) (char G.underscore) (many $ oneOf identifierRest)) <|> try (string [G.underscore, G.del]) <|> liftA2 (:) (char G.underscore) (some $ oneOf identifierRest)
 
     adverbAssign :: Parser Token
-    adverbAssign = withPos $ liftA2 TokenAdverbAssign adverbName (between whitespace whitespace (char G.assign) *> bits)
+    adverbAssign = assign TokenAdverbAssign adverbName
 
   conjunction :: Parser Token
-  conjunction = between whitespace whitespace (try dconj <|> try conjunctionAssign <|> try (withPos $ TokenConjunctionName <$> conjunctionName) <|> primConjunction) where
+  conjunction = try dconj <|> conjunctionAssign <|> try (withPos $ TokenConjunctionName <$> conjunctionName) <|> primConjunction where
     dconj :: Parser Token
     dconj = withPos $ TokenDconj <$> (string [G.underscore, fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces, G.underscore])
 
@@ -260,10 +269,10 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
     conjunctionName = try ((\x y z w -> x : y : z ++ [w]) <$> char G.quad <*> char G.underscore <*> many (oneOf identifierRest) <*> char G.underscore) <|> try (string [G.underscore, G.del, G.underscore]) <|> liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (some $ oneOf identifierRest) (char G.underscore)
 
     conjunctionAssign :: Parser Token
-    conjunctionAssign = withPos $ liftA2 TokenConjunctionAssign conjunctionName (between whitespace whitespace (char G.assign) *> bits)
+    conjunctionAssign = assign TokenConjunctionAssign conjunctionName
 
   guard :: Parser Token
-  guard = withPos $ liftA2 TokenGuard bits (char G.guard *> definedBits)
+  guard = withPos $ liftA2 TokenGuard (bits `commitOn` char G.guard) definedBits
 
   exit :: Parser Token
   exit = withPos $ TokenExit <$> (char G.exit *> bits)
@@ -275,13 +284,13 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
   separator = oneOf [G.separator, '\n'] $> ()
 
   bit :: Parser Token
-  bit = try bracketed <|> try conjunction <|> try adverb <|> try function <|> try array
+  bit = lexeme (bracketed <|> conjunction <|> adverb <|> function <|> array)
 
   bits :: Parser [Token]
-  bits = some bit
+  bits = spaceConsumer *> some bit
 
   definedBits :: Parser [Token]
-  definedBits = some (try guard <|> try exit <|> bit)
+  definedBits = some (guard <|> exit <|> bit)
 
 data Category
   = CatArray
