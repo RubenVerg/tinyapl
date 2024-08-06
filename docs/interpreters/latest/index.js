@@ -6,6 +6,8 @@ const output = document.querySelector('#output');
 const input = document.querySelector('#input');
 const highlighted = document.querySelector('#highlighted');
 const button = document.querySelector('#button');
+const infobutton = document.querySelector('#infobutton');
+const info = document.querySelector('#info');
 function zip(as, bs) {
     return [...as, ...bs].slice(0, Math.min(as.length, bs.length)).map((_, idx) => [as[idx], bs[idx]]);
 }
@@ -75,22 +77,24 @@ const colors = {
     primConjunction: '#ccac2b',
     comment: '#014980',
 };
-async function highlight() {
-    const code = input.value;
+async function highlight(code, output) {
     const pairs = zip(await tinyapl.splitString(code), await tinyapl.highlight(code));
-    highlighted.innerHTML = '';
+    output.innerHTML = '';
     for (const [t, c] of pairs) {
         const span = document.createElement('span');
         span.style.color = colors[tinyapl.colorsInv[c]];
         span.innerText = t;
-        highlighted.appendChild(span);
+        output.appendChild(span);
     }
+}
+async function highlightInput() {
+    highlight(input.value, highlighted);
     highlighted.scrollLeft = input.scrollLeft;
 }
 function insertText(str) {
     input.setRangeText(str, input.selectionStart ?? input.value.length - 1, input.selectionEnd ?? input.value.length - 1, "end");
     input.focus();
-    highlight();
+    highlightInput();
 }
 const io = new class IO {
     #input = [];
@@ -154,7 +158,7 @@ function clickableEl(tag, cls, contents, clickedContents = contents) {
         if (input.value.trim() == '') {
             input.value = clickedContents;
             input.focus();
-            highlight();
+            highlightInput();
         }
     });
     return e;
@@ -250,7 +254,7 @@ async function runCode(code) {
 async function run() {
     const v = input.value;
     input.value = '';
-    highlight();
+    highlightInput();
     await runCode(v);
 }
 let keyboardState = 0;
@@ -275,10 +279,17 @@ input.addEventListener('keydown', evt => {
             return run();
     }
 });
-input.addEventListener('input', () => highlight());
-input.addEventListener('scroll', () => highlight());
+input.addEventListener('input', () => highlightInput());
+input.addEventListener('scroll', () => highlightInput());
+infobutton.addEventListener('click', () => {
+    info.classList.toggle('shown');
+});
+document.querySelector('#prefixkey').textContent = prefix.sym;
+for (const k of document.querySelectorAll('.hl'))
+    highlight(k.textContent ?? '', k);
 document.querySelector('#loading').remove();
 button.disabled = false;
+infobutton.disabled = false;
 const search = new URLSearchParams(window.location.search);
 for (const line of search.getAll('run'))
     await runCode(decodeURIComponent(line));

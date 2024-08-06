@@ -8,6 +8,8 @@ const output = document.querySelector<HTMLPreElement>('#output')!;
 const input = document.querySelector<HTMLInputElement>('#input')!;
 const highlighted = document.querySelector<HTMLPreElement>('#highlighted')!;
 const button = document.querySelector<HTMLButtonElement>('#button')!;
+const infobutton = document.querySelector<HTMLButtonElement>('#infobutton')!;
+const info = document.querySelector<HTMLDivElement>('#info')!;
 
 function zip<A, B>(as: A[], bs: B[]): [A, B][] {
 	return [...as, ...bs].slice(0, Math.min(as.length, bs.length)).map((_, idx) => [as[idx], bs[idx]]);
@@ -82,23 +84,26 @@ const colors = {
 	comment: '#014980',
 };
 
-async function highlight() {
-	const code = input.value;
+async function highlight(code: string, output: HTMLPreElement) {
 	const pairs = zip(await tinyapl.splitString(code), await tinyapl.highlight(code));
-	highlighted.innerHTML = '';
+	output.innerHTML = '';
 	for (const [t, c] of pairs) {
 		const span = document.createElement('span');
 		span.style.color = colors[tinyapl.colorsInv[c] as keyof typeof colors];
 		span.innerText = t;
-		highlighted.appendChild(span);
+		output.appendChild(span);
 	}
+}
+
+async function highlightInput() {
+	highlight(input.value, highlighted);
 	highlighted.scrollLeft = input.scrollLeft;
 }
 
 function insertText(str: string) {
 	input.setRangeText(str, input.selectionStart ?? input.value.length - 1, input.selectionEnd ?? input.value.length - 1, "end");
 	input.focus();
-	highlight();
+	highlightInput();
 }
 
 const io = new class IO {
@@ -155,7 +160,7 @@ function clickableEl<E extends HTMLElement>(tag: string, cls: string, contents: 
 		if (input.value.trim() == '') {
 			input.value = clickedContents;
 			input.focus();
-			highlight();
+			highlightInput();
 		}
 	});
 	return e;
@@ -251,7 +256,7 @@ async function runCode(code: string) {
 async function run() {
 	const v = input.value;
 	input.value = '';
-	highlight();
+	highlightInput();
 	await runCode(v);
 }
 
@@ -275,11 +280,20 @@ input.addEventListener('keydown', evt => {
 		if (!button.disabled) return run();
 	}
 });
-input.addEventListener('input', () => highlight());
-input.addEventListener('scroll', () => highlight());
+input.addEventListener('input', () => highlightInput());
+input.addEventListener('scroll', () => highlightInput());
+
+infobutton.addEventListener('click', () => {
+	info.classList.toggle('shown');
+});
+
+document.querySelector('#prefixkey')!.textContent = prefix.sym;
+
+for (const k of document.querySelectorAll<HTMLPreElement>('.hl')) highlight(k.textContent ?? '', k);
 
 document.querySelector('#loading')!.remove();
 button.disabled = false;
+infobutton.disabled = false;
 
 const search = new URLSearchParams(window.location.search);
 for (const line of search.getAll('run')) await runCode(decodeURIComponent(line));
