@@ -1,4 +1,5 @@
 export const encode = (sampleRate, channelData) => {
+    // adapted from https://www.npmjs.com/package/wav-encoder by @mohayonao
     const channelLength = channelData[0].length;
     const channels = channelData.length;
     const bitDepth = 16;
