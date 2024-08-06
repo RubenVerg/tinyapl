@@ -171,6 +171,9 @@ const clickableSpan = (cls: string, contents: string, clickedContents = contents
 
 const images: Record<number, HTMLCanvasElement> = {};
 
+const ranCode: string[] = [];
+let lastIndex = 0;
+
 async function runCode(code: string) {
 	let d: HTMLDivElement;
 	
@@ -198,6 +201,9 @@ async function runCode(code: string) {
 		newDiv();
 		return canvas;
 	};
+
+	ranCode.push(code);
+	lastIndex = ranCode.length;
 	
 	button.disabled = true;
 	const pad = span('pad', '');
@@ -262,22 +268,36 @@ async function run() {
 
 let keyboardState = 0;
 
+function loadLast() {
+	if (lastIndex >= ranCode.length) lastIndex = ranCode.length;
+	if (lastIndex < 0) lastIndex = 0;
+	if (lastIndex === ranCode.length) input.value = '';
+	else input.value = ranCode[lastIndex];
+	highlightInput();
+}
+
 button.addEventListener('click', () => run());
 input.addEventListener('keydown', evt => {
-	if (keyboardState < 2 && evt.code == prefix.code && !evt.shiftKey) {
+	if (keyboardState < 2 && evt.code === prefix.code && !evt.shiftKey) {
 		keyboardState++
 		evt.preventDefault();
 	} else if (keyboardState !== 0 && !evt.altKey && !evt.ctrlKey && !evt.metaKey) {
 		const v = keyboard.find(k => k.code == evt.code);
 		if (v) {
-			const t = keyboardState == 2 ? (evt.shiftKey ? v.symPPS : v.symPP) : (evt.shiftKey ? v.symPS : v.symP);
+			const t = keyboardState === 2 ? (evt.shiftKey ? v.symPPS : v.symPP) : (evt.shiftKey ? v.symPS : v.symP);
 			insertText(t ?? evt.key);
 			keyboardState = 0;
 			evt.preventDefault();
 		}
-	} else if (evt.key == 'Enter') {
+	} else if (evt.key === 'Enter') {
 		evt.preventDefault();
 		if (!button.disabled) return run();
+	} else if (evt.key === 'ArrowUp' && evt.shiftKey && !evt.altKey && !evt.ctrlKey && !evt.metaKey) {
+		lastIndex--;
+		loadLast();
+	} else if (evt.key === 'ArrowDown' && evt.shiftKey && !evt.altKey && !evt.ctrlKey && !evt.metaKey) {
+		lastIndex++;
+		loadLast();
 	}
 });
 input.addEventListener('input', () => highlightInput());
