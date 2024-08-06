@@ -29,6 +29,33 @@ data HState = HState
 
 type HSt = State HState
 
+isArrayName :: String -> Bool
+isArrayName [] = False
+isArrayName [x] | x `elem` [G.quad, G.quadQuote] = True
+isArrayName (x : xs)
+  | x == G.quad = isArrayName xs
+  | otherwise = x `elem` ['a'..'z'] ++ [G.alpha, G.omega, G.delta]
+
+isFunctionName :: String -> Bool
+isFunctionName [] = False
+isFunctionName (x : xs)
+  | x == G.quad = isFunctionName xs
+  | otherwise = x `elem` ['A'..'Z'] ++ [G.alphaBar, G.omegaBar, G.deltaBar, G.del]
+
+isAdverbName :: String -> Bool
+isAdverbName [] = False
+isAdverbName [_] = False
+isAdverbName (x : xs) 
+  | x == G.quad = isAdverbName xs
+  | otherwise = x == '_' && not (last xs == '_')
+
+isConjunctionName :: String -> Bool
+isConjunctionName [] = False
+isConjunctionName [_] = False
+isConjunctionName (x : xs)
+  | x == G.quad = isConjunctionName xs
+  | otherwise = x == '_' && last xs == '_'
+
 highlight :: String -> [Color]
 highlight str = reverse $ hColors $ execState hl (HState [] str) where
   atEnd :: HSt Bool
@@ -104,10 +131,10 @@ highlight str = reverse $ hColors $ execState hl (HState [] str) where
   identifier :: HSt ()
   identifier = do
     is <- whileM (andNotAtEnd $ (`elem` identifierChars) <$> peek) advance
-    if head is `elem` ['a'..'z'] ++ [G.alpha, G.omega, G.quad, G.quadQuote, G.delta] then pushMany $ const CArrayName <$> is
-    else if head is `elem` ['A'..'Z'] ++ [G.alphaBar, G.omegaBar, G.deltaBar, G.del] then pushMany $ const CFunctionName <$> is
-    else if head is == '_' && last is == '_' then pushMany $ const CConjunctionName <$> is
-    else if head is == '_' then pushMany $ const CAdverbName <$> is
+    if isArrayName is then pushMany $ const CArrayName <$> is
+    else if isFunctionName is then pushMany $ const CFunctionName <$> is
+    else if isAdverbName is then pushMany $ const CAdverbName <$> is
+    else if isConjunctionName is then pushMany $ const CConjunctionName <$> is
     else pushMany $ const COther <$> is
 
   hl :: HSt ()
