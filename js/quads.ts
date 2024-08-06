@@ -11,14 +11,18 @@ function makeFunction<Args extends unknown[], Ret, ListenerArgs extends unknown[
 
 function toImageData(a: tinyapl.Arr, name: string): ImageData | tinyapl.Err {
 	if (a.shape.length !== 2 && a.shape.length !== 3) return { code: tinyapl.errors.rank, message: `${name} expects arrays of rank 2 or 3` };
-	const els = a.shape.length === 2 ? 1 : a.shape.at(-1)!;
+	const fuzzy = a.shape.length === 2;
+	const els = fuzzy ? 1 : a.shape.at(-1)!;
 	if (![1, 2, 3, 4].includes(els)) return { code: tinyapl.errors.length, message: `${name}: third axis must have length 1, 2, 3 or 4` };
 	const data = new ImageData(a.shape[1], a.shape[0]);
 	for (let y = 0; y < a.shape[0]; y++)
 		for (let x = 0; x < a.shape[1]; x++) {
 			const dIdx = (x * a.shape[0] + y) * 4;
 			const uIdx = (x * a.shape[0] + y) * els;
-			if (els === 1) {
+			if (fuzzy) {
+				data.data[dIdx + 0] = data.data[dIdx + 1] = data.data[dIdx + 2] = (a.contents[uIdx + 0] as tinyapl.Complex)[0] * 255;
+				data.data[dIdx + 3] = 255;
+			} else if (els === 1) {
 				data.data[dIdx + 0] = data.data[dIdx + 1] = data.data[dIdx + 2] = (a.contents[uIdx + 0] as tinyapl.Complex)[0];
 				data.data[dIdx + 3] = 255;
 			} else if (els === 2) {
