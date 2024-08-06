@@ -48,14 +48,14 @@ runCode output file code context = do
     Right (res, context') -> if output then print res $> context' else return context'
 
 repl :: Context -> IO ()
-repl scope = let
-  go :: Context -> IO Context
+repl context = let
+  go :: Context -> IO ()
   go context = do
     putStr "> "
     hFlush stdout
     line <- getLine
-    if line == "" then return context
-    else runCode True "<repl>" line scope >>= go
+    if line == "" then return ()
+    else runCode True "<repl>" line context >>= go
   in do
     putStrLn "TinyAPL REPL, empty line to exit"
     putStrLn "Supported primitives:"
@@ -83,4 +83,5 @@ repl scope = let
     putStrLn $ "* array notation: " ++ [fst G.vector, G.separator, snd G.vector] ++ " vector, " ++ [fst G.highRank, G.separator, snd G.highRank] ++ " higher rank array (combine major cells)"
     putStrLn $ "* comments: " ++ [fst G.inlineComment, snd G.inlineComment] ++ " inline"
 
-    void $ go scope 
+    go context
+
