@@ -24,7 +24,7 @@ const keyboard = [
     ['Digit0', '0', ')', '∧', '⍲', '⍬', undefined],
     ['Minus', '-', '_', '×', '⊗', '⸚', undefined],
     ['Equal', '=', '+', '÷', '⊕', '⌹', undefined],
-    ['KeyQ', 'q', 'Q', undefined, undefined, undefined, undefined],
+    ['KeyQ', 'q', 'Q', undefined, undefined, '⇾', '⇽'],
     ['KeyW', 'w', 'W', '⍵', '⍹', undefined, undefined],
     ['KeyE', 'e', 'E', '∊', '⍷', '⏨', '⋷'],
     ['KeyR', 'r', 'R', '⍴', '√', 'ϼ', 'ℜ'],
