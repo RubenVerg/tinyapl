@@ -277,8 +277,8 @@ input.addEventListener('keydown', evt => {
 });
 input.addEventListener('input', () => highlight());
 input.addEventListener('scroll', () => highlight());
+document.querySelector('#loading').remove();
+button.disabled = false;
 const search = new URLSearchParams(window.location.search);
 for (const line of search.getAll('run'))
     await runCode(decodeURIComponent(line));
-document.querySelector('#loading').remove();
-button.disabled = false;
