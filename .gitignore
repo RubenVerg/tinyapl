@@ -2,3 +2,4 @@ dist
 dist-*
 cabal-dev
 .vscode
+tsconfig.tsbuildinfo
