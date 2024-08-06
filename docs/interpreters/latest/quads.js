@@ -147,7 +147,7 @@ export const { register: rPlayAudio, done: dPlayAudio, fn: qPlayAudio } = makeFu
         for (let b = 0; b < length; b++)
             bufs[ch][b] = arr.contents[ch * length + b][0];
     try {
-        await runListeners(wav.encode({ sampleRate, channelData: bufs }));
+        await runListeners(wav.encode(sampleRate, bufs));
     }
     catch (ex) {
         console.error(ex);
