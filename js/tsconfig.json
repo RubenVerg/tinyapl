@@ -5,6 +5,7 @@
 		"outDir": "dist",
 		"strict": true,
 		"allowJs": true,
-		"incremental": true
+		"incremental": true,
+		"declaration": true
 	}
 }
