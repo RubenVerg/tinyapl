@@ -265,7 +265,9 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍤` atop
 		* [x] `⍥` over
 		* [ ] `⸚` mirror (`_{(⍵ ⍹⍹ ⍺)⍶⍶(⍺ ⍹⍹ ⍵)}_`)
-		* [ ] `«`/`»` fork?
+		* [ ] `«`/`»` fork
+		* [ ] `⇾` left fork (`_{(⍺ ⍶⍶ ⍵) ⍹⍹ ⍵}_`)
+		* [ ] `⇽` right fork (`_{⍺ ⍶⍶ (⍺ ⍹⍹ ⍵)}_`)
 * system names (quad names)
 	* [x] support for system names in parsing and interpreting
 	* system arrays (nilads, i guess)
