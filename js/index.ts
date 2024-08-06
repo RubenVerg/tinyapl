@@ -139,24 +139,30 @@ const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), 
 	Fetch: quads.qFetch,
 });
 
-function div(cls: string, contents: string) {
-	const div = document.createElement('div');
-	div.className = cls;
-	div.textContent = contents;
-	return div;
+function el<E extends HTMLElement>(tag: string, cls: string, contents: string) {
+	const el = document.createElement(tag) as E;
+	el.className = cls;
+	el.textContent = contents;
+	return el;
 }
 
-function clickableDiv(cls: string, contents: string, clickedContents = contents) {
-	const d = div(cls, contents);
-	d.addEventListener('click', () => {
+const div = (cls: string, contents: string) => el<HTMLDivElement>('div', cls, contents);
+const span = (cls: string, contents: string) => el<HTMLSpanElement>('span', cls, contents);
+
+function clickableEl<E extends HTMLElement>(tag: string, cls: string, contents: string, clickedContents = contents) {
+	const e = el<E>(tag, cls, contents);
+	e.addEventListener('click', () => {
 		if (input.value.trim() == '') {
 			input.value = clickedContents;
 			input.focus();
 			highlight();
 		}
 	});
-	return d;
+	return e;
 }
+
+const clickableDiv = (cls: string, contents: string, clickedContents = contents) => clickableEl<HTMLDivElement>('div', cls, contents, clickedContents);
+const clickableSpan = (cls: string, contents: string, clickedContents = contents) => clickableEl<HTMLSpanElement>('span', cls, contents, clickedContents);
 
 const images: Record<number, HTMLCanvasElement> = {};
 
@@ -188,7 +194,12 @@ async function runCode(code: string) {
 		return canvas;
 	};
 	
-	output.appendChild(clickableDiv('code', ' '.repeat(6) + code, code));
+	button.disabled = true;
+	const pad = span('pad', '');
+	const loader = div('loader', '');
+	pad.appendChild(loader);
+	output.appendChild(pad);
+	output.appendChild(clickableSpan('code', code));
 	newDiv();
 	io.rInput(async what => { d.innerText += what + '\n'; });
 	io.rOutput(async what => { d.innerText += what; });
@@ -233,12 +244,15 @@ async function runCode(code: string) {
 	endDiv();
 	if (success) output.appendChild(clickableDiv('result', result));
 	else output.appendChild(div('error', result));
+	loader.remove();
+	button.disabled = false;
 }
 
 async function run() {
-	await runCode(input.value);
+	const v = input.value;
 	input.value = '';
 	highlight();
+	await runCode(v);
 }
 
 let keyboardState = 0;
@@ -258,7 +272,7 @@ input.addEventListener('keydown', evt => {
 		}
 	} else if (evt.key == 'Enter') {
 		evt.preventDefault();
-		return run();
+		if (!button.disabled) return run();
 	}
 });
 input.addEventListener('input', () => highlight());
@@ -268,3 +282,5 @@ const search = new URLSearchParams(window.location.search);
 
 for (const line of search.getAll('run')) await runCode(decodeURIComponent(line));
 
+document.querySelector('#loading')!.remove();
+button.disabled = false;

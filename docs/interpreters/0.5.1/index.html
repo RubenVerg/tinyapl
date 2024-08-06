@@ -1,0 +1,81 @@
+<!doctype html>
+<head>
+	<meta charset="utf-8">
+	<title>TinyAPL Interpreter</title>
+	<link rel="icon" type="img/svg+xml" href="/logo.svg">
+	<link rel="stylesheet" href="/style.css">
+	<style>
+		#buttons button {
+			font-family: var(--font-mono);
+		}
+	
+		#output {
+			height: 90%;
+			font-family: var(--font-mono);
+		}
+		
+		#input, #highlighted {
+			width: 97.5%;
+			font-family: var(--font-mono);
+			margin: 2.5px;
+			padding: 2.5px;
+			height: 1.25em;
+			grid-row: 1;
+			grid-column: 1;
+			overflow-x: auto;
+			white-space: nowrap;
+			font-size: 1rem;
+			border: 1px solid black;
+		}
+
+		#input {
+			z-index: 1;
+			color: transparent;
+			background-color: transparent;
+			caret-color: black;
+			resize: none;
+		}
+
+		#highlighted {
+			z-index: 0;
+		}
+		
+		#button {
+			width: auto;
+			font-family: var(--font-mono);
+		}
+		
+		#input-wrapper {
+			display: inline-grid;
+			width: 90%;
+		}
+		
+		.code {
+			color: grey;
+		}
+		
+		.error {
+			background: #ffcccc;
+			color: red;
+		}
+		
+		.result {
+			color: black;
+		}
+		
+		.quad {
+			color: dimgrey;
+		}
+	</style>
+</head>
+<body>
+	<div id="buttons"></div>
+	<pre id="output"></pre>
+	<div id="input-wrapper">
+		<textarea id="input" spellcheck="false" cols="1"></textarea>
+		<pre id="highlighted" aria-hidden="true"></pre>
+	</div>
+	<button id="button" type="button">Run</button>
+	<pre id="test"></pre>
+	<script type="module" src="./index.js"></script>
+</body>

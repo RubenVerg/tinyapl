@@ -6,6 +6,10 @@
 	<link rel="icon" type="img/svg+xml" href="/logo.svg">
 	<link rel="stylesheet" href="/style.css">
 	<style>
+		#loading {
+			font-family: var(--font-mono);
+		}
+
 		#buttons {
 			position: sticky;
 			top: 0;
@@ -84,6 +88,14 @@
 		.quad {
 			color: dimgrey;
 		}
+
+		.pad {
+			display: inline-flex;
+			width: 6ch;
+			height: 1ch;
+			justify-content: end;
+			padding-inline-end: 1ch;
+		}
 		
 		.image {
 			border: 1px solid black;
@@ -94,9 +106,31 @@
 		.plot {
 			display: inline-block;
 		}
+
+		.loader {
+			width: 1ch;
+			height: 1ch;
+			border: 1px solid limegreen;
+			border-bottom-color: transparent;
+			border-radius: 50%;
+			display: inline-block;
+			box-sizing: border-box;
+			animation: loader-rotation 1s linear infinite;
+    }
+
+		@keyframes loader-rotation {
+			0% {
+				transform: rotate(0deg);
+			}
+			100% {
+				transform: rotate(360deg);
+			}
+    } 
+@keyframes l3 {to{transform: rotate(1turn)}}
 	</style>
 </head>
 <body>
+	<h1 id="loading">Loading...</h1>
 	<div id="buttons"></div>
 	<img id="keyboard" src="./kbd.svg" alt="TinyAPL keyboard layout" />
 	<pre id="output"></pre>
@@ -104,7 +138,7 @@
 		<textarea id="input" spellcheck="false" cols="1"></textarea>
 		<pre id="highlighted" aria-hidden="true"></pre>
 	</div>
-	<button id="button" type="button">Run</button>
+	<button id="button" type="button" disabled>Run</button>
 	<pre id="test"></pre>
 	<script type="module" src="./index.js"></script>
 </body>

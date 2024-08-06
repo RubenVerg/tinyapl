@@ -140,23 +140,27 @@ const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), 
     PlayAudio: quads.qPlayAudio,
     Fetch: quads.qFetch,
 });
-function div(cls, contents) {
-    const div = document.createElement('div');
-    div.className = cls;
-    div.textContent = contents;
-    return div;
+function el(tag, cls, contents) {
+    const el = document.createElement(tag);
+    el.className = cls;
+    el.textContent = contents;
+    return el;
 }
-function clickableDiv(cls, contents, clickedContents = contents) {
-    const d = div(cls, contents);
-    d.addEventListener('click', () => {
+const div = (cls, contents) => el('div', cls, contents);
+const span = (cls, contents) => el('span', cls, contents);
+function clickableEl(tag, cls, contents, clickedContents = contents) {
+    const e = el(tag, cls, contents);
+    e.addEventListener('click', () => {
         if (input.value.trim() == '') {
             input.value = clickedContents;
             input.focus();
             highlight();
         }
     });
-    return d;
+    return e;
 }
+const clickableDiv = (cls, contents, clickedContents = contents) => clickableEl('div', cls, contents, clickedContents);
+const clickableSpan = (cls, contents, clickedContents = contents) => clickableEl('span', cls, contents, clickedContents);
 const images = {};
 async function runCode(code) {
     let d;
@@ -188,7 +192,12 @@ async function runCode(code) {
         newDiv();
         return canvas;
     };
-    output.appendChild(clickableDiv('code', ' '.repeat(6) + code, code));
+    button.disabled = true;
+    const pad = span('pad', '');
+    const loader = div('loader', '');
+    pad.appendChild(loader);
+    output.appendChild(pad);
+    output.appendChild(clickableSpan('code', code));
     newDiv();
     io.rInput(async (what) => { d.innerText += what + '\n'; });
     io.rOutput(async (what) => { d.innerText += what; });
@@ -235,11 +244,14 @@ async function runCode(code) {
         output.appendChild(clickableDiv('result', result));
     else
         output.appendChild(div('error', result));
+    loader.remove();
+    button.disabled = false;
 }
 async function run() {
-    await runCode(input.value);
+    const v = input.value;
     input.value = '';
     highlight();
+    await runCode(v);
 }
 let keyboardState = 0;
 button.addEventListener('click', () => run());
@@ -259,7 +271,8 @@ input.addEventListener('keydown', evt => {
     }
     else if (evt.key == 'Enter') {
         evt.preventDefault();
-        return run();
+        if (!button.disabled)
+            return run();
     }
 });
 input.addEventListener('input', () => highlight());
@@ -267,3 +280,5 @@ input.addEventListener('scroll', () => highlight());
 const search = new URLSearchParams(window.location.search);
 for (const line of search.getAll('run'))
     await runCode(decodeURIComponent(line));
+document.querySelector('#loading').remove();
+button.disabled = false;
