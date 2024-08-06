@@ -1,12 +1,13 @@
 module TinyAPL.Parser where
 
+import TinyAPL.Complex
 import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
 import TinyAPL.Util
 
-import Text.Parsec
-import Text.Parsec.String
-import TinyAPL.Complex
+import Text.Megaparsec hiding (Token)
+import Text.Megaparsec.Error
+import Text.Megaparsec.Char
 import Data.Functor (($>), void)
 import Data.Maybe (fromJust, fromMaybe, mapMaybe)
 import Data.List (elemIndex, intercalate)
@@ -14,8 +15,11 @@ import Control.Applicative (liftA3, (<**>))
 import Data.Function (on)
 import Data.Bifunctor (Bifunctor(first))
 import Control.Monad ((>=>))
-import Text.Parsec.Error (errorMessages, showErrorMessages)
 import Data.Char (isSpace)
+import Data.Void (Void)
+import Data.List.NonEmpty (NonEmpty((:|)))
+
+type Parser = Parsec Void String
 
 data Token
   = TokenNumber (Complex Double) SourcePos
@@ -119,25 +123,30 @@ tokenPos (TokenVector _ pos) = pos
 tokenPos (TokenHighRank _ pos) = pos
 
 emptyPos :: SourcePos
-emptyPos = case Text.Parsec.parse getPosition "<empty>" "" of Right x -> x; Left err -> error $ show err
+emptyPos = SourcePos "<empty>" (mkPos 1) (mkPos 1)
+
+prettyError :: SourcePos -> String -> String
+prettyError pos source = let
+  ls = lines source
+  line = subtract 1 $ unPos $ sourceLine pos
+  column = subtract 1 $ unPos $ sourceColumn pos
+  theLine = if length ls <= line then "" else ls !! line
+  in theLine ++ "\n" ++ replicate column ' ' ++ "^\n"
+
+prettyParseError :: String -> SourcePos -> ParseError String Void -> String
+prettyParseError source pos err = prettyError pos source ++ parseErrorTextPretty err
 
 makeSyntaxError :: SourcePos -> String -> String -> Error
-makeSyntaxError pos source msg = let
-  line = sourceLine pos
-  column = sourceColumn pos
-  theLine = if length (lines source) <= line - 1 then "" else lines source !! (line - 1)
-  in SyntaxError $ theLine ++ "\n" ++ replicate (column - 1) ' ' ++ "^\n" ++ msg
+makeSyntaxError pos source msg = SyntaxError $ prettyError pos source ++ msg ++ "\n"
 
-makeParseError :: String -> ParseError -> Error
-makeParseError source err = let
-  pos = errorPos err
-  msgs = tail $ showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" $ errorMessages err
-  in makeSyntaxError pos source msgs
+makeParseErrors :: FilePath -> String -> ParseErrorBundle String Void -> Error
+makeParseErrors file source es = case attachSourcePos errorOffset (bundleErrors es) (bundlePosState es) of
+  (r :| rs, _) -> SyntaxError $ concatMap (uncurry $ flip $ prettyParseError source) $ r : rs
 
-tokenize :: SourceName -> String -> Result [[Token]]
-tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1 bits separator <* eof) file source where
+tokenize :: String -> String -> Result [[Token]]
+tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.parse (sepBy1 bits separator <* eof) file source where
   withPos :: Parser (SourcePos -> a) -> Parser a
-  withPos = (<**>) getPosition
+  withPos = (<**>) getSourcePos
 
   arrayStart :: String
   arrayStart = G.delta : ['a'..'z']
@@ -160,7 +169,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
       sign = option 1 (char G.negative $> (-1))
 
       natural :: Parser String
-      natural = many1 digit
+      natural = some digitChar
 
       integer :: Parser (Double, String)
       integer = liftA2 (,) sign natural
@@ -168,7 +177,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
       float :: Parser Double
       float = do
         (s, i) <- integer
-        d <- option "" $ liftA2 (:) (char G.decimal) (many1 digit)
+        d <- option "" $ liftA2 (:) (char G.decimal) natural
         return $ s * read (i ++ d)
 
       scientific :: Parser Double
@@ -234,7 +243,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     primAdverb = withPos $ TokenPrimAdverb <$> oneOf G.adverbs
 
     adverbName :: Parser String
-    adverbName = try (liftA3 (\x y z -> x : y : z) (char G.quad) (char G.underscore) (many $ oneOf identifierRest)) <|> try (string [G.underscore, G.del]) <|> liftA2 (:) (char G.underscore) (many1 $ oneOf identifierRest)
+    adverbName = try (liftA3 (\x y z -> x : y : z) (char G.quad) (char G.underscore) (many $ oneOf identifierRest)) <|> try (string [G.underscore, G.del]) <|> liftA2 (:) (char G.underscore) (some $ oneOf identifierRest)
 
     adverbAssign :: Parser Token
     adverbAssign = withPos $ liftA2 TokenAdverbAssign adverbName (between whitespace whitespace (char G.assign) *> bits)
@@ -248,7 +257,7 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
     primConjunction = withPos $ TokenPrimConjunction <$> oneOf G.conjunctions
 
     conjunctionName :: Parser String
-    conjunctionName = try ((\x y z w -> x : y : z ++ [w]) <$> char G.quad <*> char G.underscore <*> many (oneOf identifierRest) <*> char G.underscore) <|> try (string [G.underscore, G.del, G.underscore]) <|> liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (many1 $ oneOf identifierRest) (char G.underscore)
+    conjunctionName = try ((\x y z w -> x : y : z ++ [w]) <$> char G.quad <*> char G.underscore <*> many (oneOf identifierRest) <*> char G.underscore) <|> try (string [G.underscore, G.del, G.underscore]) <|> liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (some $ oneOf identifierRest) (char G.underscore)
 
     conjunctionAssign :: Parser Token
     conjunctionAssign = withPos $ liftA2 TokenConjunctionAssign conjunctionName (between whitespace whitespace (char G.assign) *> bits)
@@ -269,10 +278,10 @@ tokenize file source = first (makeParseError source) $ Text.Parsec.parse (sepBy1
   bit = try bracketed <|> try conjunction <|> try adverb <|> try function <|> try array
 
   bits :: Parser [Token]
-  bits = many1 bit
+  bits = some bit
 
   definedBits :: Parser [Token]
-  definedBits = many1 (try guard <|> try exit <|> bit)
+  definedBits = some (try guard <|> try exit <|> bit)
 
 data Category
   = CatArray
@@ -365,7 +374,7 @@ bindAll [] = throwError $ SyntaxError "Bind empty array"
 bindAll [x] = pure x
 bindAll xs = bindPair xs >>= bindAll
 
-categorize :: SourceName -> String -> Result [[Tree]]
+categorize :: String -> String -> Result [[Tree]]
 categorize name source = tokenize name source >>= mapM categorizeTokens where
   categorizeTokens :: [Token] -> Result [Tree]
   categorizeTokens = mapM tokenToTree
@@ -420,5 +429,5 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   tokenToTree (TokenVector es pos)                 = array VectorBranch es pos
   tokenToTree (TokenHighRank es pos)               = array HighRankBranch es pos
 
-parse :: SourceName -> String -> Result [Tree]
+parse :: String -> String -> Result [Tree]
 parse name = categorize name >=> mapM bindAll
