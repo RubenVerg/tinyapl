@@ -206,11 +206,13 @@ async function runCode(code: string) {
 	lastIndex = ranCode.length;
 	
 	button.disabled = true;
+	const in1 = div('', '');
+	output.appendChild(in1);
 	const pad = span('pad', '');
 	const loader = div('loader', '');
 	pad.appendChild(loader);
-	output.appendChild(pad);
-	output.appendChild(clickableSpan('code', code));
+	in1.appendChild(pad);
+	in1.appendChild(clickableSpan('code', code));
 	newDiv();
 	io.rInput(async what => { d.innerText += what + '\n'; });
 	io.rOutput(async what => { d.innerText += what; });
