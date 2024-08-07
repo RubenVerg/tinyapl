@@ -82,6 +82,7 @@ async function highlight(code, output) {
     output.innerHTML = '';
     for (const [t, c] of pairs) {
         const span = document.createElement('span');
+        span.className = 'char ' + tinyapl.colorsInv[c];
         span.style.color = colors[tinyapl.colorsInv[c]];
         span.innerText = t;
         output.appendChild(span);
