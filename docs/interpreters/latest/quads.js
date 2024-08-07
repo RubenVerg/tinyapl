@@ -94,7 +94,7 @@ export const { register: rPlayAnimation, done: dPlayAnimation, fn: qPlayAnimatio
     }
     else {
         arr = x;
-        delay = 1;
+        delay = 0.1;
     }
     if (arr.shape.length !== 3 && arr.shape.length !== 4)
         return { code: tinyapl.errors.rank, message: '⎕PlayAnimation expects arrays of rank 3 or 4' };

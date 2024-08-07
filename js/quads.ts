@@ -83,7 +83,7 @@ export const { register: rPlayAnimation, done: dPlayAnimation, fn: qPlayAnimatio
 		delay = (x.contents[0] as tinyapl.Complex)[0];
 	} else {
 		arr = x;
-		delay = 1;
+		delay = 0.1;
 	}
 	if (arr.shape.length !== 3 && arr.shape.length !== 4) return { code: tinyapl.errors.rank, message: '⎕PlayAnimation expects arrays of rank 3 or 4' };
 	const [frames] = arr.shape;
