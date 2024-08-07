@@ -41,8 +41,8 @@ const keyboard = [
 	['KeyI', 'i', 'I', '⍳', '⍸', '…', 'ℑ'],
 	['KeyO', 'o', 'O', '○', '⍥', undefined, undefined],
 	['KeyP', 'p', 'P', undefined, undefined, undefined, undefined],
-	['BracketLeft', '[', '{', '←', '⟨', undefined, undefined],
-	['BracketRight', ']', '}', undefined, '⟩', undefined, undefined],
+	['BracketLeft', '[', '{', '←', '⟨', '⦅', undefined],
+	['BracketRight', ']', '}', undefined, '⟩', '⦆', undefined],
 	['KeyA', 'a', 'A', '⍺', '⍶', undefined, undefined],
 	['KeyS', 's', 'S', '⌈', '§', '↾', undefined],
 	['KeyD', 'd', 'D', '⌊', '⸠', '⇂', undefined],
@@ -89,6 +89,7 @@ async function highlight(code: string, output: HTMLPreElement) {
 	output.innerHTML = '';
 	for (const [t, c] of pairs) {
 		const span = document.createElement('span');
+		span.className = 'char ' + tinyapl.colorsInv[c];
 		span.style.color = colors[tinyapl.colorsInv[c] as keyof typeof colors];
 		span.innerText = t;
 		output.appendChild(span);
