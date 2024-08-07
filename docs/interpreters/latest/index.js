@@ -1,6 +1,9 @@
 import * as tinyapl from './tinyapl.js';
 import * as quads from './quads.js';
 import 'https://cdn.plot.ly/plotly-2.34.0.min.js';
+// @ts-ignore Import from web not supported
+import { encode as _encodeGIF } from 'https://esm.run/modern-gif@2.0.3';
+const encodeGIF = _encodeGIF;
 const buttons = document.querySelector('#buttons');
 const output = document.querySelector('#output');
 const input = document.querySelector('#input');
@@ -141,6 +144,7 @@ const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), 
     } return b ?? a; },
     CreateImage: quads.qCreateImage,
     DisplayImage: quads.qDisplayImage,
+    PlayAnimation: quads.qPlayAnimation,
     ScatterPlot: quads.qScatterPlot,
     PlayAudio: quads.qPlayAudio,
     Fetch: quads.qFetch,
@@ -223,6 +227,15 @@ async function runCode(code) {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.putImageData(data, 0, 0);
+    });
+    quads.rPlayAnimation(async (delay, data) => {
+        endDiv();
+        const gif = await encodeGIF({ width: data[0].width, height: data[0].height, frames: await Promise.all(data.map(async (d) => ({ data: await createImageBitmap(d), delay: delay * 1000 }))) });
+        const img = document.createElement('img');
+        img.className = 'image';
+        img.src = URL.createObjectURL(new Blob([gif], { type: 'image/gif' }));
+        output.appendChild(img);
+        newDiv();
     });
     quads.rScatterPlot(async (xs, ys, mode) => {
         endDiv();

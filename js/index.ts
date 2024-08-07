@@ -2,6 +2,10 @@ import * as tinyapl from './tinyapl.js';
 import * as quads from './quads.js';
 
 import 'https://cdn.plot.ly/plotly-2.34.0.min.js';
+// @ts-ignore Import from web not supported
+import { encode as _encodeGIF } from 'https://esm.run/modern-gif@2.0.3';
+
+const encodeGIF = _encodeGIF as (_: { width: number, height: number, frames: { data: CanvasImageSource | BufferSource | string; delay: number; }[] }) => Promise<ArrayBuffer>;
 
 const buttons = document.querySelector<HTMLDivElement>('#buttons')!;
 const output = document.querySelector<HTMLPreElement>('#output')!;
@@ -140,6 +144,7 @@ const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), 
 	Debug: async (a: tinyapl.Arr, b?: tinyapl.Arr) => { if (b === undefined) { console.log('monad call', a); } else { console.log('dyad call', a, b); } return b ?? a; },
 	CreateImage: quads.qCreateImage as (tinyapl.Monad & tinyapl.Dyad),
 	DisplayImage: quads.qDisplayImage,
+	PlayAnimation: quads.qPlayAnimation,
 	ScatterPlot: quads.qScatterPlot,
 	PlayAudio: quads.qPlayAudio,
 	Fetch: quads.qFetch,
@@ -228,6 +233,15 @@ async function runCode(code: string) {
 		const ctx = canvas.getContext('2d')!;
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		ctx.putImageData(data, 0, 0);
+	});
+	quads.rPlayAnimation(async (delay, data) => {
+		endDiv();
+		const gif = await encodeGIF({ width: data[0].width, height: data[0].height, frames: await Promise.all(data.map(async d => ({ data: await createImageBitmap(d), delay: delay * 1000 }))) });
+		const img = document.createElement('img');
+		img.className = 'image';
+		img.src = URL.createObjectURL(new Blob([gif], { type: 'image/gif' }));
+		output.appendChild(img);
+		newDiv();
 	});
 	quads.rScatterPlot(async (xs, ys, mode) => {
 		endDiv();
