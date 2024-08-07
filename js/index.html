@@ -235,13 +235,17 @@
 					<li><pre class="hl">16</pre>: unsigned 16-bit little endian</li>
 					<li><pre class="hl">¯16</pre>: signed 16-bit little endian</li>
 					<li><pre class="hl">0ᴊ16</pre>: unsigned 16-bit big endian</li>
-					<li><pre class="hl">0ᴊ¯16</pre>: signed 16-bit big-endian</li>
+					<li><pre class="hl">0ᴊ¯16</pre>: signed 16-bit big endian</li>
 					<li><pre class="hl">32</pre>: unsigned 32-bit little endian</li>
-					<li><pre class="hl">¯32</pre>: signed #2-bit little endian</li>
+					<li><pre class="hl">¯32</pre>: signed 32-bit little endian</li>
 					<li><pre class="hl">0ᴊ32</pre>: unsigned 32-bit big endian</li>
 					<li><pre class="hl">0ᴊ¯32</pre>: signed 32-bit big-endian</li>
+					<li><pre class="hl">0.32</pre>: 32-bit float little endian</li>
+					<li><pre class="hl">0ᴊ0.32</pre>: 32-bit float big endian</li>
+					<li><pre class="hl">0.64</pre>: 64-bit float little endian</li>
+					<li><pre class="hl">0ᴊ0.64</pre>: 64-bit float big endian</li>
 				</ul>
-				64-bit data is not provided as it cannot be losslessly loaded into float64s, TinyAPL's native real number type.
+				64-bit integers are not provided as they cannot be losslessly loaded into float64s, TinyAPL's native real number type.
 			</div></li>
 			<li><div>
 				<pre class="hl">⎕last</pre>, <pre class="hl">⎕Last</pre>, <pre class="hl">⎕_Last</pre>, <pre class="hl">⎕_Last_</pre>: access the result of the last successful code ran.

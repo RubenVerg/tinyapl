@@ -157,7 +157,7 @@ export async function qFetch(x: tinyapl.Arr, y?: tinyapl.Arr): Promise<tinyapl.A
 		return { code: tinyapl.errors.user, message: (ex as Error).message };
 	}
 	if (m) {
-		if (m.shape.length !== 0) return { code: tinyapl.errors.domain, message: '⎕Fetch left argument must be one of ⟨1⋄¯1⋄0ᴊ1⋄0ᴊ¯1⟩⊞⟨8⋄16⋄32⟩ or 1' };
+		if (m.shape.length !== 0) return { code: tinyapl.errors.domain, message: '⎕Fetch left argument must be one of ⟨1⋄¯1⋄0ᴊ1⋄0ᴊ¯1⟩⊞⟨8⋄16⋄32⟩, ⟨1⋄0ᴊ1⟩⊞⟨0.32⋄0.64⟩ or 1' };
 		const mode = (m.contents[0] as tinyapl.Complex).join(';');
 		const buf = await response.arrayBuffer();
 		const view = new DataView(buf);
@@ -202,6 +202,18 @@ export async function qFetch(x: tinyapl.Arr, y?: tinyapl.Arr): Promise<tinyapl.A
 				break;
 			case '0:-32':
 				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt32(i, false));
+				break;
+			case '0.32:0':
+				for (let i = 0; i < view.byteLength; i += 4) result.push(view.getFloat32(i, true));
+				break;
+			case '0:0.32':
+				for (let i = 0; i < view.byteLength; i += 4) result.push(view.getFloat32(i, false));
+				break;
+			case '0.64:0':
+				for (let i = 0; i < view.byteLength; i += 8) result.push(view.getFloat64(i, true));
+				break;
+			case '0:0.64':
+				for (let i = 0; i < view.byteLength; i += 8) result.push(view.getFloat64(i, false));
 				break;
 		}
 		return { shape: [result.length], contents: result.map(r => [r, 0]) };
