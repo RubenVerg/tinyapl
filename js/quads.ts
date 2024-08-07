@@ -75,6 +75,34 @@ export const { register: rDisplayImage, done: dDisplayImage, fn: qDisplayImage }
 	return { shape: [0], contents: [] };
 });
 
+export const { register: rPlayAnimation, done: dPlayAnimation, fn: qPlayAnimation } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr, tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [number, ImageData[]]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
+	let delay, arr;
+	if (y) {
+		arr = y;
+		if (x.shape.length !== 0) return { code: tinyapl.errors.rank, message: '⎕PlayAnimation left argument must be a scalar' };
+		delay = (x.contents[0] as tinyapl.Complex)[0];
+	} else {
+		arr = x;
+		delay = 1;
+	}
+	if (arr.shape.length !== 3 && arr.shape.length !== 4) return { code: tinyapl.errors.rank, message: '⎕PlayAnimation expects arrays of rank 3 or 4' };
+	const [frames] = arr.shape;
+	const len = arr.shape.slice(1).reduce((a, b) => a * b, 1);
+	const datas: ImageData[] = [];
+	for (let idx = 0; idx < frames; idx++) {
+		const d = toImageData({ shape: arr.shape.slice(1), contents: arr.contents.slice(idx * len).slice(0, len) }, '⎕PlayAnimation');
+		if ('code' in d) return d;
+		datas.push(d);
+	}
+	try {
+		await runListeners(delay, datas);
+	} catch (ex) {
+		console.error(ex);
+		return { code: tinyapl.errors.user, message: (ex as Error).message };
+	}
+	return { shape: [0], contents: [] };
+});
+
 export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr, tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [number[][], number[][], string]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
 	let mode = 'markers', arr;
 	if (y) {

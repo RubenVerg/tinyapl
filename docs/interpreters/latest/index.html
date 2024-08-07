@@ -206,6 +206,12 @@
 				In all cases, <pre class="hl">0</pre> is the lowest value of the channel and <pre class="hl">1</pre> is the highest value in the channel.
 				All data outside this range is clamped.
 			</div></li>
+			<div><li>
+				<pre class="hl">[delay] ⎕PlayAnimation data</pre>: plays an animation.
+				<pre class="hl">data</pre> should be a real array of rank <pre class="hl">3</pre> or <pre class="hl">4</pre>.
+				Each major cell of <pre class="hl">data</pre> is used as a frame for the animation, in the way described for <pre class="hl">⎕DisplayImage</pre>.
+				<pre class="hl">delay</pre> is the delay between frames in seconds and defaults to <pre class="hl">1</pre>.
+			</li></div>
 			<li><div>
 				<pre class="hl">[mode] ⎕ScatterPlot data</pre>: renders a plot.
 				<pre class="hl">data</pre> should be a real array of rank <pre class="hl">2</pre> or <pre class="hl">3</pre>
