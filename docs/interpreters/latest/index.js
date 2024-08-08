@@ -262,6 +262,7 @@ async function runCode(code) {
     quads.dCreateImage();
     quads.dDisplayImage();
     quads.dPlayAudio();
+    quads.dPlayAnimation();
     quads.dScatterPlot();
     endDiv();
     if (success)

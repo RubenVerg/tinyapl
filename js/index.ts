@@ -268,6 +268,7 @@ async function runCode(code: string) {
 	quads.dCreateImage();
 	quads.dDisplayImage();
 	quads.dPlayAudio();
+	quads.dPlayAnimation();
 	quads.dScatterPlot();
 	endDiv();
 	if (success) output.appendChild(clickableDiv('result', result));
