@@ -7,7 +7,7 @@
    viewBox="0 0 189.17708 68.791666"
    version="1.1"
    id="svg1"
-   inkscape:version="1.3 (0e150ed, 2023-07-21)"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
    sodipodi:docname="kbd.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -23,9 +23,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
-     inkscape:zoom="7.6321693"
-     inkscape:cx="638.80921"
-     inkscape:cy="85.88646"
+     inkscape:zoom="6.2614518"
+     inkscape:cx="378.90573"
+     inkscape:cy="224.309"
      inkscape:window-width="1488"
      inkscape:window-height="827"
      inkscape:window-x="0"
@@ -1421,5 +1421,16 @@
        id="text2-5-7"
        style="font-size:5.95312px;font-family:'APL386 Unicode';-inkscape-font-specification:'APL386 Unicode';fill:#000000;stroke-width:2.11667"
        d="M 182.77799 21.46794 C 182.59344 21.46794 182.5041 21.545186 182.5041 21.699967 L 182.5041 26.432495 C 182.5041 26.563463 182.5816 26.629382 182.74233 26.629382 C 182.90085 26.629382 182.99324 26.580592 183.01622 26.47642 C 183.17777 26.351552 183.30957 26.206696 183.42033 26.051639 C 183.6644 25.700406 183.83101 25.283789 183.91435 24.801587 C 183.92626 24.706337 183.9381 24.59302 183.95001 24.473958 C 183.95596 24.354896 183.9619 24.224092 183.9619 24.081217 C 183.95594 23.956202 183.95003 23.83131 183.93812 23.712247 C 183.92622 23.593185 183.91464 23.474226 183.89678 23.355163 C 183.80749 22.867008 183.64038 22.43803 183.39035 22.068937 C 183.28792 21.925536 183.16219 21.787014 183.0157 21.652425 C 183.00409 21.606518 182.97805 21.567478 182.9387 21.533052 C 182.89108 21.49138 182.83752 21.46794 182.77799 21.46794 z M 183.0219 22.333003 C 183.35544 22.858608 183.52161 23.46405 183.52161 24.146846 C 183.51566 24.349252 183.4979 24.545458 183.46218 24.735958 C 183.42647 24.926457 183.37884 25.111335 183.31336 25.289929 C 183.23486 25.486157 183.13731 25.663545 183.0219 25.825813 L 183.0219 22.333003 z " />
+    <text
+       xml:space="preserve"
+       style="font-size:5.95312px;font-family:'APL386 Unicode';-inkscape-font-specification:'APL386 Unicode';fill:#000000;stroke-width:2.11667"
+       x="91.110107"
+       y="60.616898"
+       id="text2-1-62"><tspan
+         sodipodi:role="line"
+         id="tspan2-9"
+         style="font-size:5.95312px;fill:#000000;stroke-width:2.11667"
+         x="91.110107"
+         y="60.616898">‿</tspan></text>
   </g>
 </svg>
