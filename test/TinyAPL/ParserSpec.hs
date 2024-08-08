@@ -15,17 +15,21 @@ spec = do
     let tok = tokenize "<test>"
 
     it "ignores comments" $ do
-      tok "⟃abc⟄ 1" `shouldBe` pure [[TokenNumber 1 emptyPos]]
+      tok "⟃abc⟄ 1" `shouldBe` pure [[TokenNumber [1] emptyPos]]
 
     it "parses numbers" $ do
-      tok "1" `shouldBe` pure [[TokenNumber 1 emptyPos]]
-      tok "¯2" `shouldBe` pure [[TokenNumber -2 emptyPos]]
-      tok "1.5" `shouldBe` pure [[TokenNumber 1.5 emptyPos]]
-      tok "¯3.25" `shouldBe` pure [[TokenNumber -3.25 emptyPos]]
-      tok "3⏨2" `shouldBe` pure [[TokenNumber 300 emptyPos]]
-      tok "2.4⏨¯3" `shouldBe` pure [[TokenNumber 0.0024 emptyPos]]
-      tok "3ᴊ2" `shouldBe` pure [[TokenNumber (3 :+ 2) emptyPos]]
-      tok "¯2ᴊ1.5⏨2" `shouldBe` pure [[TokenNumber (-2 :+ 150) emptyPos]]
+      tok "1" `shouldBe` pure [[TokenNumber [1] emptyPos]]
+      tok "¯2" `shouldBe` pure [[TokenNumber [-2] emptyPos]]
+      tok "1.5" `shouldBe` pure [[TokenNumber [1.5] emptyPos]]
+      tok "¯3.25" `shouldBe` pure [[TokenNumber [-3.25] emptyPos]]
+      tok "3⏨2" `shouldBe` pure [[TokenNumber [300] emptyPos]]
+      tok "2.4⏨¯3" `shouldBe` pure [[TokenNumber [0.0024] emptyPos]]
+      tok "3ᴊ2" `shouldBe` pure [[TokenNumber [3 :+ 2] emptyPos]]
+      tok "¯2ᴊ1.5⏨2" `shouldBe` pure [[TokenNumber [-2 :+ 150] emptyPos]]
+
+    it "parses number ties" $ do
+      tok "1‿2" `shouldBe` pure [[TokenNumber [1, 2] emptyPos]]
+      tok "¯1‿2ᴊ3‿0" `shouldBe` pure [[TokenNumber [-1, 2 :+ 3, 0] emptyPos]]
     
     it "parses character vectors" $ do
       tok "'abc'" `shouldBe` pure [[TokenChar "abc" emptyPos]]
@@ -37,11 +41,11 @@ spec = do
       tok "\"a⍘nb⍘\"c⍘⍘d⍘re⍘tf\"" `shouldBe` pure [[TokenString "a\nb\"c⍘d\re\tf" emptyPos]]
 
     it "parses vector notation" $ do
-      tok "⟨1⋄2⟩" `shouldBe` pure [[TokenVector [[TokenNumber 1 emptyPos], [TokenNumber 2 emptyPos]] emptyPos]]
+      tok "⟨1⋄2⟩" `shouldBe` pure [[TokenVector [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos]] emptyPos]]
       tok "⟨⟩" `shouldBe` pure [[TokenVector [] emptyPos]]
 
     it "parses high rank notation" $ do
-      tok "[1⋄2]" `shouldBe` pure [[TokenHighRank [[TokenNumber 1 emptyPos], [TokenNumber 2 emptyPos]] emptyPos]]
+      tok "[1⋄2]" `shouldBe` pure [[TokenHighRank [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos]] emptyPos]]
       tok "[]" `shouldBe` pure [[TokenHighRank [] emptyPos]]
 
     it "parses primitives" $ do
@@ -71,29 +75,29 @@ spec = do
       tok "⎕_Whatever_" `shouldBe` pure [[TokenConjunctionName "⎕_Whatever_" emptyPos]]
 
     it "parses assignment" $ do
-      tok "abc←3" `shouldBe` pure [[TokenArrayAssign "abc" [TokenNumber 3 emptyPos] emptyPos]]
-      tok "Abc←3" `shouldBe` pure [[TokenFunctionAssign "Abc" [TokenNumber 3 emptyPos] emptyPos]]
-      tok "_Abc←3" `shouldBe` pure [[TokenAdverbAssign "_Abc" [TokenNumber 3 emptyPos] emptyPos]]
-      tok "_Abc_←3" `shouldBe` pure [[TokenConjunctionAssign "_Abc_" [TokenNumber 3 emptyPos] emptyPos]]
-      tok "⎕seed←3" `shouldBe` pure [[TokenArrayAssign "⎕seed" [TokenNumber 3 emptyPos] emptyPos]]
+      tok "abc←3" `shouldBe` pure [[TokenArrayAssign "abc" [TokenNumber [3] emptyPos] emptyPos]]
+      tok "Abc←3" `shouldBe` pure [[TokenFunctionAssign "Abc" [TokenNumber [3] emptyPos] emptyPos]]
+      tok "_Abc←3" `shouldBe` pure [[TokenAdverbAssign "_Abc" [TokenNumber [3] emptyPos] emptyPos]]
+      tok "_Abc_←3" `shouldBe` pure [[TokenConjunctionAssign "_Abc_" [TokenNumber [3] emptyPos] emptyPos]]
+      tok "⎕seed←3" `shouldBe` pure [[TokenArrayAssign "⎕seed" [TokenNumber [3] emptyPos] emptyPos]]
 
     it "parses dfns and dops" $ do
-      tok "{3⋄1}" `shouldBe` pure [[TokenDfn [[TokenNumber 3 emptyPos], [TokenNumber 1 emptyPos]] emptyPos]]
-      tok "_{3⋄1}" `shouldBe` pure [[TokenDadv [[TokenNumber 3 emptyPos], [TokenNumber 1 emptyPos]] emptyPos]]
-      tok "_{3⋄1}_" `shouldBe` pure [[TokenDconj [[TokenNumber 3 emptyPos], [TokenNumber 1 emptyPos]] emptyPos]]
+      tok "{3⋄1}" `shouldBe` pure [[TokenDfn [[TokenNumber [3] emptyPos], [TokenNumber [1] emptyPos]] emptyPos]]
+      tok "_{3⋄1}" `shouldBe` pure [[TokenDadv [[TokenNumber [3] emptyPos], [TokenNumber [1] emptyPos]] emptyPos]]
+      tok "_{3⋄1}_" `shouldBe` pure [[TokenDconj [[TokenNumber [3] emptyPos], [TokenNumber [1] emptyPos]] emptyPos]]
     
     it "parses guards" $ do
-      tok "{1:2}" `shouldBe` pure [[TokenDfn [[TokenGuard [TokenNumber 1 emptyPos] [TokenNumber 2 emptyPos] emptyPos]] emptyPos]]
+      tok "{1:2}" `shouldBe` pure [[TokenDfn [[TokenGuard [TokenNumber [1] emptyPos] [TokenNumber [2] emptyPos] emptyPos]] emptyPos]]
 
     it "parses exit statements" $ do
-      tok "{■5}" `shouldBe` pure [[TokenDfn [[TokenExit [TokenNumber 5 emptyPos] emptyPos]] emptyPos]]
+      tok "{■5}" `shouldBe` pure [[TokenDfn [[TokenExit [TokenNumber [5] emptyPos] emptyPos]] emptyPos]]
 
     it "parses separator-separated statements" $ do
-      tok "1⋄2" `shouldBe` pure [[TokenNumber 1 emptyPos], [TokenNumber 2 emptyPos]]
-      tok "1\n2" `shouldBe` pure [[TokenNumber 1 emptyPos], [TokenNumber 2 emptyPos]]
+      tok "1⋄2" `shouldBe` pure [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos]]
+      tok "1\n2" `shouldBe` pure [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos]]
     
     it "parses parens" $ do
-      tok "(1 2)" `shouldBe` pure [[TokenParens [TokenNumber 1 emptyPos, TokenNumber 2 emptyPos] emptyPos]]
+      tok "(1 2)" `shouldBe` pure [[TokenParens [TokenNumber [1] emptyPos, TokenNumber [2] emptyPos] emptyPos]]
 
   describe "binder" $ do
     let e2m (Right x) = Just x
@@ -101,7 +105,7 @@ spec = do
     let par = e2m . parse "<test>"
     
     it "parses leaves" $ do
-      par "1" `shouldBe` pure [Leaf CatArray (TokenNumber 1 emptyPos)]
+      par "1" `shouldBe` pure [Leaf CatArray (TokenNumber [1] emptyPos)]
       par "'abc'" `shouldBe` pure [Leaf CatArray (TokenChar "abc" emptyPos)]
       par "\"abc\"" `shouldBe` pure [Leaf CatArray (TokenString "abc" emptyPos)]
       par "⍬" `shouldBe` pure [Leaf CatArray (TokenPrimArray '⍬' emptyPos)]
@@ -114,29 +118,29 @@ spec = do
       par "_Abc_" `shouldBe` pure [Leaf CatConjunction (TokenConjunctionName "_Abc_" emptyPos)]
     
     it "parses parens" $ do
-      par "(1)" `shouldBe` pure [Leaf CatArray (TokenNumber 1 emptyPos)]
+      par "(1)" `shouldBe` pure [Leaf CatArray (TokenNumber [1] emptyPos)]
 
     describe "application" $ do
       it "parses monad application" $ do
-        par "+1" `shouldBe` pure [MonadCallBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos)) (Leaf CatArray (TokenNumber 1 emptyPos))]
+        par "+1" `shouldBe` pure [MonadCallBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos)) (Leaf CatArray (TokenNumber [1] emptyPos))]
       
       it "parses dyad application" $ do
-        par "1+" `shouldBe` pure [DyadCallBranch (Leaf CatArray (TokenNumber 1 emptyPos)) (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
-        par "1+2" `shouldBe` pure [MonadCallBranch (DyadCallBranch (Leaf CatArray (TokenNumber 1 emptyPos)) (Leaf CatFunction (TokenPrimFunction '+' emptyPos))) (Leaf CatArray (TokenNumber 2 emptyPos))]
+        par "1+" `shouldBe` pure [DyadCallBranch (Leaf CatArray (TokenNumber [1] emptyPos)) (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
+        par "1+2" `shouldBe` pure [MonadCallBranch (DyadCallBranch (Leaf CatArray (TokenNumber [1] emptyPos)) (Leaf CatFunction (TokenPrimFunction '+' emptyPos))) (Leaf CatArray (TokenNumber [2] emptyPos))]
 
       it "parses adverb application" $ do
-        par "1⍨" `shouldBe` pure [AdverbCallBranch (Leaf CatArray (TokenNumber 1 emptyPos)) (Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos))]
+        par "1⍨" `shouldBe` pure [AdverbCallBranch (Leaf CatArray (TokenNumber [1] emptyPos)) (Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos))]
         par "+⍨" `shouldBe` pure [AdverbCallBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos)) (Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos))]
 
       it "parses conjunction application" $ do
-        par "∘1" `shouldBe` pure [ConjunctionCallBranch (Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos)) (Leaf CatArray (TokenNumber 1 emptyPos))]
+        par "∘1" `shouldBe` pure [ConjunctionCallBranch (Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos)) (Leaf CatArray (TokenNumber [1] emptyPos))]
         par "∘+" `shouldBe` pure [ConjunctionCallBranch (Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos)) (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
 
     describe "dfns" $ do
       it "parses dfns and dops" $ do
-        par "{1}" `shouldBe` pure [DefinedBranch CatFunction [Leaf CatArray (TokenNumber 1 emptyPos)]]
-        par "_{1}" `shouldBe` pure [DefinedBranch CatAdverb [Leaf CatArray (TokenNumber 1 emptyPos)]]
-        par "_{1}_" `shouldBe` pure [DefinedBranch CatConjunction [Leaf CatArray (TokenNumber 1 emptyPos)]]
+        par "{1}" `shouldBe` pure [DefinedBranch CatFunction [Leaf CatArray (TokenNumber [1] emptyPos)]]
+        par "_{1}" `shouldBe` pure [DefinedBranch CatAdverb [Leaf CatArray (TokenNumber [1] emptyPos)]]
+        par "_{1}_" `shouldBe` pure [DefinedBranch CatConjunction [Leaf CatArray (TokenNumber [1] emptyPos)]]
       
       it "requires at least one statement" $ do
         par "{}" `shouldBe` Nothing
@@ -166,16 +170,16 @@ spec = do
 
     describe "exit statements" $ do
       it "parses exit statements with array results" $ do
-        par "{■3}" `shouldBe` pure [DefinedBranch CatFunction [ExitBranch (Leaf CatArray (TokenNumber 3 emptyPos))]]
+        par "{■3}" `shouldBe` pure [DefinedBranch CatFunction [ExitBranch (Leaf CatArray (TokenNumber [3] emptyPos))]]
 
       it "fails on exit statements with non-array results" $ do
         par "{■+}" `shouldBe` Nothing
 
     describe "array notation" $ do
       it "parses arrays with array contents" $ do
-        par "⟨1⋄2⟩" `shouldBe` pure [VectorBranch [Leaf CatArray (TokenNumber 1 emptyPos), Leaf CatArray (TokenNumber 2 emptyPos)]]
+        par "⟨1⋄2⟩" `shouldBe` pure [VectorBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos)]]
         par "⟨⟩" `shouldBe` pure [VectorBranch []]
-        par "[1⋄2]" `shouldBe` pure [HighRankBranch [Leaf CatArray (TokenNumber 1 emptyPos), Leaf CatArray (TokenNumber 2 emptyPos)]]
+        par "[1⋄2]" `shouldBe` pure [HighRankBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos)]]
         par "[]" `shouldBe` pure [HighRankBranch []]
       
       it "fails on arrays with non-array contents" $ do
