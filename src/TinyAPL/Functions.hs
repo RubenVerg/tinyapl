@@ -668,6 +668,18 @@ rightHook f g y = do
   y' <- g y
   f y y'
 
+fork1 :: MonadError Error m => (a -> m b) -> (b -> c -> m d) -> (a -> m c) -> a -> m d 
+fork1 f g h x = do
+  b <- h x
+  a <- f x
+  g a b
+
+fork2 :: MonadError Error m => (a -> b -> m c) -> (c -> d -> m e) -> (a -> b -> m d) -> a -> b -> m e
+fork2 f g h x y = do
+  b <- h x y
+  a <- f x y
+  g a b
+
 constant1 :: MonadError Error m => a -> b -> m a
 constant1 a _ = pure a
 
