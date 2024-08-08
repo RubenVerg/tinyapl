@@ -45,6 +45,9 @@ data Token
   | TokenExit [Token] SourcePos
   | TokenVector [[Token]] SourcePos
   | TokenHighRank [[Token]] SourcePos
+  | TokenTrain [[Token]] SourcePos
+  | TokenAdverbTrain [[Token]] SourcePos
+  | TokenConjunctionTrain [[Token]] SourcePos
 
 instance Eq Token where
   (TokenNumber x _) == (TokenNumber y _) = x == y
@@ -70,6 +73,9 @@ instance Eq Token where
   (TokenExit x _) == (TokenExit y _) = x == y
   (TokenVector x _) == (TokenVector y _) = x == y
   (TokenHighRank x _) == (TokenHighRank y _) = x == y
+  (TokenTrain x _) == (TokenTrain y _) = x == y
+  (TokenAdverbTrain x _) == (TokenAdverbTrain y _) = x == y
+  (TokenConjunctionTrain x _) == (TokenConjunctionTrain y _) = x == y
   _ == _ = False
 
 instance Show Token where
@@ -96,6 +102,9 @@ instance Show Token where
   show (TokenExit xs _) = "(exit " ++ [G.exit, ' '] ++ unwords (show <$> xs) ++ ")"
   show (TokenVector xs _) = "(vector " ++ [fst G.vector, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.vector] ++ ")"
   show (TokenHighRank xs _) = "(high rank " ++ [fst G.highRank, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.highRank] ++ ")"
+  show (TokenTrain xs _) = "(train " ++ [fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train] ++ ")"
+  show (TokenAdverbTrain xs _) = "(adverb train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train] ++ ")"
+  show (TokenConjunctionTrain xs _) = "(conjunction train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train, G.underscore] ++ ")"
 
 tokenPos :: Token -> SourcePos
 tokenPos (TokenNumber _ pos) = pos
@@ -121,6 +130,9 @@ tokenPos (TokenGuard _ _ pos) = pos
 tokenPos (TokenExit _ pos) = pos
 tokenPos (TokenVector _ pos) = pos
 tokenPos (TokenHighRank _ pos) = pos
+tokenPos (TokenTrain _ pos) = pos
+tokenPos (TokenAdverbTrain _ pos) = pos
+tokenPos (TokenConjunctionTrain _ pos) = pos
 
 emptyPos :: SourcePos
 emptyPos = SourcePos "<empty>" (mkPos 1) (mkPos 1)
@@ -139,12 +151,12 @@ prettyParseError source pos err = prettyError pos source ++ parseErrorTextPretty
 makeSyntaxError :: SourcePos -> String -> String -> Error
 makeSyntaxError pos source msg = SyntaxError $ prettyError pos source ++ msg ++ "\n"
 
-makeParseErrors :: FilePath -> String -> ParseErrorBundle String Void -> Error
-makeParseErrors file source es = case attachSourcePos errorOffset (bundleErrors es) (bundlePosState es) of
+makeParseErrors :: String -> ParseErrorBundle String Void -> Error
+makeParseErrors source es = case attachSourcePos errorOffset (bundleErrors es) (bundlePosState es) of
   (r :| rs, _) -> SyntaxError $ concatMap (uncurry $ flip $ prettyParseError source) $ r : rs
 
 tokenize :: String -> String -> Result [[Token]]
-tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.parse (sepBy1 bits separator <* eof) file source where
+tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (sepBy1 bits separator <* eof) file source where
   withPos :: Parser (SourcePos -> a) -> Parser a
   withPos = (<**>) getSourcePos
 
@@ -230,9 +242,12 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
     arrayAssign = assign TokenArrayAssign arrayName
 
   function :: Parser Token
-  function = dfn <|> functionAssign <|> try (withPos $ TokenFunctionName <$> functionName) <|> primFunction where
+  function = dfn <|> train <|>functionAssign <|> try (withPos $ TokenFunctionName <$> functionName) <|> primFunction where
     dfn :: Parser Token
     dfn = withPos $ TokenDfn <$> (string [fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces])
+
+    train :: Parser Token
+    train = withPos $ TokenTrain <$> (string [fst G.train] *> sepBy1 bits separator <* string [snd G.train])
 
     primFunction :: Parser Token
     primFunction = withPos $ TokenPrimFunction <$> oneOf G.functions
@@ -244,9 +259,12 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
     functionAssign = assign TokenFunctionAssign functionName
 
   adverb :: Parser Token
-  adverb = try dadv <|> adverbAssign <|> try (withPos $ TokenAdverbName <$> adverbName) <|> primAdverb where
+  adverb = try dadv <|> try adverbTrain <|> adverbAssign <|> try (withPos $ TokenAdverbName <$> adverbName) <|> primAdverb where
     dadv :: Parser Token
     dadv = withPos $ TokenDadv <$> (string [G.underscore, fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces] <* notFollowedBy (char G.underscore))
+
+    adverbTrain :: Parser Token
+    adverbTrain = withPos $ TokenAdverbTrain <$> (string [G.underscore, fst G.train] *> sepBy1 bits separator <* string [snd G.train] <* notFollowedBy (char G.underscore))
 
     primAdverb :: Parser Token
     primAdverb = withPos $ TokenPrimAdverb <$> oneOf G.adverbs
@@ -258,9 +276,12 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
     adverbAssign = assign TokenAdverbAssign adverbName
 
   conjunction :: Parser Token
-  conjunction = try dconj <|> conjunctionAssign <|> try (withPos $ TokenConjunctionName <$> conjunctionName) <|> primConjunction where
+  conjunction = try dconj <|> try conjunctionTrain <|> conjunctionAssign <|> try (withPos $ TokenConjunctionName <$> conjunctionName) <|> primConjunction where
     dconj :: Parser Token
     dconj = withPos $ TokenDconj <$> (string [G.underscore, fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces, G.underscore])
+
+    conjunctionTrain :: Parser Token
+    conjunctionTrain = withPos $ TokenConjunctionTrain <$> (string [G.underscore, fst G.train] *> sepBy1 bits separator <* string [snd G.train, G.underscore])
 
     primConjunction :: Parser Token
     primConjunction = withPos $ TokenPrimConjunction <$> oneOf G.conjunctions
@@ -290,7 +311,7 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
   bits = spaceConsumer *> some bit
 
   definedBits :: Parser [Token]
-  definedBits = some (guard <|> exit <|> bit)
+  definedBits = spaceConsumer *> some (lexeme guard <|> lexeme exit <|> bit)
 
 data Category
   = CatArray
@@ -319,6 +340,7 @@ data Tree
   | ExitBranch { exitBranchResult :: Tree }
   | VectorBranch { vectorEntries :: [Tree] }
   | HighRankBranch { highRankEntries :: [Tree] }
+  | TrainBranch { trainBranchCategory :: Category, trainBranchStatements :: [Tree] }
   deriving (Eq)
 
 instance Show Tree where
@@ -337,6 +359,7 @@ instance Show Tree where
       (ExitBranch res)            -> (indent ++ "■") : go (i + 1) res
       (VectorBranch es)           -> (indent ++ "⟨⟩") : concatMap (go (i + 1)) es
       (HighRankBranch es)         -> (indent ++ "[]") : concatMap (go (i + 1)) es
+      (TrainBranch c ts)          -> (indent ++ (if c == CatFunction then "" else "_") ++ "⦅" ++ (if c == CatConjunction then "_" else "") ++ "⦆") : concatMap (go (i + 1)) ts
 
 treeCategory :: Tree -> Category
 treeCategory (Leaf c _)                  = c
@@ -350,6 +373,7 @@ treeCategory (GuardBranch _ t)           = treeCategory t
 treeCategory (ExitBranch _)              = CatArray
 treeCategory (VectorBranch _)            = CatArray
 treeCategory (HighRankBranch _)          = CatArray
+treeCategory (TrainBranch c _)           = c
 
 bindingMap :: [((Category, Category), (Int, Tree -> Tree -> Tree))]
 bindingMap =
@@ -410,6 +434,9 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   array t es _ = t <$> mapM (\x -> categorizeAndBind x >>=
     requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ head x) source $ "Invalid array entry of type " ++ show c ++ ", array required")) es
 
+  train :: Category -> [[Token]] -> SourcePos -> Result Tree
+  train cat es _ = TrainBranch cat <$> (mapM categorizeAndBind es)
+
   tokenToTree :: Token -> Result Tree
   tokenToTree num@(TokenNumber _ _)                = return $ Leaf CatArray num
   tokenToTree ch@(TokenChar _ _)                   = return $ Leaf CatArray ch
@@ -437,6 +464,9 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   tokenToTree (TokenExit result _)                 = ExitBranch <$> (categorizeAndBind result >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ head result) source $ "Invalid exit statement of type " ++ show c ++ ", array required"))
   tokenToTree (TokenVector es pos)                 = array VectorBranch es pos
   tokenToTree (TokenHighRank es pos)               = array HighRankBranch es pos
+  tokenToTree (TokenTrain fs pos)                  = train CatFunction fs pos
+  tokenToTree (TokenAdverbTrain fs pos)            = train CatAdverb fs pos
+  tokenToTree (TokenConjunctionTrain fs pos)       = train CatConjunction fs pos
 
 parse :: String -> String -> Result [Tree]
 parse name = categorize name >=> mapM bindAll
