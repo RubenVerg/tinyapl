@@ -22,7 +22,7 @@ import Data.List.NonEmpty (NonEmpty((:|)))
 type Parser = Parsec Void String
 
 data Token
-  = TokenNumber (Complex Double) SourcePos
+  = TokenNumber [(Complex Double)] SourcePos
   | TokenChar String SourcePos
   | TokenString String SourcePos
   | TokenPrimArray Char SourcePos
@@ -173,7 +173,7 @@ tokenize file source = first (makeParseErrors file source) $ Text.Megaparsec.par
   array :: Parser Token
   array = number <|> charVec <|> str <|> arrayAssign <|> try (withPos $ TokenArrayName <$> arrayName) <|> vectorNotation <|> highRankNotation <|> primArray where
     number :: Parser Token
-    number = withPos $ TokenNumber <$> complex where
+    number = withPos $ TokenNumber <$> sepBy1 complex (lexeme $ char G.tie) where
       sign :: Parser Double
       sign = option 1 (char G.negative $> (-1))
 

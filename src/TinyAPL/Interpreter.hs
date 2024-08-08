@@ -100,7 +100,8 @@ eval (HighRankBranch es)            = do
 eval _                              = throwError $ DomainError "Invalid branch in evaluation"
 
 evalLeaf :: Token -> St Value
-evalLeaf (TokenNumber num _)           = return $ VArray $ scalar $ Number num
+evalLeaf (TokenNumber [x] _)           = return $ VArray $ scalar $ Number x
+evalLeaf (TokenNumber xs _)            = return $ VArray $ vector $ Number <$> xs
 evalLeaf (TokenChar [x] _)             = return $ VArray $ scalar $ Character x
 evalLeaf (TokenChar xs _)              = return $ VArray $ vector $ Character <$> xs
 evalLeaf (TokenString xs _)            = return $ VArray $ vector $ Character <$> xs

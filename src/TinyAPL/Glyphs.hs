@@ -20,6 +20,7 @@ assign = '←'
 guard = ':'
 exit = '■'
 inlineComment = ('⟃', '⟄')
+tie = '‿'
 
 syntax =
   [ TinyAPL.Glyphs.decimal
@@ -44,7 +45,8 @@ syntax =
   , TinyAPL.Glyphs.guard
   , TinyAPL.Glyphs.exit
   , fst TinyAPL.Glyphs.inlineComment
-  , snd TinyAPL.Glyphs.inlineComment ]
+  , snd TinyAPL.Glyphs.inlineComment
+  , TinyAPL.Glyphs.tie ]
 
 escapes =
   [ (stringDelimiter, stringDelimiter)
