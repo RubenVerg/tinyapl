@@ -13,12 +13,19 @@ import Control.Applicative ((<|>))
 import Control.Monad.State
 import Data.Foldable (foldlM)
 import Control.Monad
+import Data.List
 
 data Value
   = VArray Array
   | VFunction Function
   | VAdverb Adverb
   | VConjunction Conjunction
+
+valueCategory :: Value -> Category
+valueCategory (VArray _) = CatArray
+valueCategory (VFunction _) = CatFunction
+valueCategory (VAdverb _) = CatAdverb
+valueCategory (VConjunction _) = CatConjunction
 
 instance Show Value where
   show (VArray arr)        = show arr
@@ -377,7 +384,27 @@ evalTrain cat es = let
   train3 (VArray x) (VFunction g) (VArray z) = do
     r <- callDyad g x z
     pure $ VFunction $ Function { functionMonad = Just $ F.constant1 r, functionDyad = Just $ F.constant2 r, functionRepr = "" }
-  train3 _ _ _ = throwError $ DomainError "Modifier trains not implemented yet"
+  train3 _ _ _ = throwError $ NYIError "Modifier trains not implemented yet"
+
+  train :: [Value] -> St Value
+  train [] = throwError $ DomainError "Empty train"
+  train [x] = train1 x
+  train [x, y] = train2 y x
+  train (x : y : z : rs) = train3 z y x >>= train . (: rs)
+
+  withTrainRepr :: [Value] -> Value -> St Value
+  withTrainRepr _ (VArray _) = throwError $ DomainError "Array train?"
+  withTrainRepr us (VFunction f) = pure $ VFunction $ f{ functionRepr = [fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train] }
+  withTrainRepr us (VAdverb a) = pure $ VAdverb $ a{ adverbRepr = [G.underscore, fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train] }
+  withTrainRepr us (VConjunction c) = pure $ VConjunction $ c{ conjRepr = [G.underscore, fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train, G.underscore] }
   in do
-  u <- mapM eval es
-  undefined 
+    us <- mapM eval es
+    t <- train $ reverse us
+    r <- withTrainRepr us t
+    case (cat, r) of
+      (CatArray, _) -> throwError $ DomainError "Array train?"
+      (CatFunction, r@(VFunction _)) -> pure r
+      (CatAdverb, r@(VAdverb _)) -> pure r
+      (CatConjunction, r@(VConjunction _)) -> pure r
+      (exp, g) -> throwError $ DomainError $ "Expected train of category " ++ show exp ++ ", got a " ++ show (valueCategory g)
+
