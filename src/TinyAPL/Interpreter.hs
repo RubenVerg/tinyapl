@@ -3,6 +3,7 @@ module TinyAPL.Interpreter where
 
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.Error
+import qualified TinyAPL.Functions as F
 import qualified TinyAPL.Glyphs as G
 import TinyAPL.Parser
 import qualified TinyAPL.Primitives as P
@@ -12,12 +13,19 @@ import Control.Applicative ((<|>))
 import Control.Monad.State
 import Data.Foldable (foldlM)
 import Control.Monad
+import Data.List
 
 data Value
   = VArray Array
   | VFunction Function
   | VAdverb Adverb
   | VConjunction Conjunction
+
+valueCategory :: Value -> Category
+valueCategory (VArray _) = CatArray
+valueCategory (VFunction _) = CatFunction
+valueCategory (VAdverb _) = CatAdverb
+valueCategory (VConjunction _) = CatConjunction
 
 instance Show Value where
   show (VArray arr)        = show arr
@@ -86,6 +94,8 @@ eval (ConjunctionCallBranch l r)    = do
   evalConjunctionCall l' r'
 eval (AssignBranch _ n val)         = eval val >>= evalAssign n
 eval (DefinedBranch cat statements) = evalDefined statements cat
+eval (GuardBranch _ _)              = throwError $ DomainError "Guards are not allowed outside of dfns"
+eval (ExitBranch _)                 = throwError $ DomainError "Exits are not allowed outside of dfns"
 eval (VectorBranch es)              = do
   entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) es
   return $ VArray $ vector $ box <$> entries
@@ -97,7 +107,7 @@ eval (HighRankBranch es)            = do
       if all ((== arrayShape e) . arrayShape) es
       then return $ VArray $ fromMajorCells entries
       else throwError $ DomainError "High rank notation entries must be of the same shape"
-eval _                              = throwError $ DomainError "Invalid branch in evaluation"
+eval (TrainBranch cat es)           = evalTrain cat es
 
 evalLeaf :: Token -> St Value
 evalLeaf (TokenNumber [x] _)           = return $ VArray $ scalar $ Number x
@@ -349,3 +359,52 @@ evalDefined statements cat = let
             in return dfn } )
         in return dconj
       cat -> throwError $ DomainError $ "Defined of type " ++ show cat ++ "?"
+
+evalTrain :: Category -> [Tree] -> St Value
+evalTrain cat es = let
+  train1 :: Value -> St Value
+  train1 (VArray x) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "" }
+  train1 o = pure $ o
+
+  train2 :: Value -> Value -> St Value
+  train2 (VArray x) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "" }
+  train2 (VArray x) (VFunction g) = pure $ VFunction $ Function { functionMonad = Just $ \y -> callDyad g x y, functionDyad = Nothing, functionRepr = ""}
+  train2 (VFunction f) (VArray y) = pure $ VFunction $ Function { functionMonad = Just $ \x -> callDyad f x y, functionDyad = Nothing, functionRepr = "" }
+  train2 (VFunction f) (VFunction g) = pure $ VFunction $ Function { functionMonad = Just $ F.compose (callMonad f) (callMonad g), functionDyad = Just $ F.atop (callMonad f) (callDyad g), functionRepr = "" }
+  train2 _ _ = throwError $ NYIError "Modifier trains not implemented yet"
+
+  train3 :: Value -> Value -> Value -> St Value
+  train3 (VArray _) (VArray y) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
+  train3 (VArray _) (VArray y) (VFunction _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
+  train3 (VFunction _) (VArray y) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
+  train3 (VFunction _) (VArray y) (VFunction _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
+  train3 (VFunction f) (VFunction g) (VFunction h) = pure $ VFunction $ Function { functionMonad = Just $ F.fork1 (callMonad f) (callDyad g) (callMonad h), functionDyad = Just $ F.fork2 (callDyad f) (callDyad g) (callDyad h), functionRepr = "" }
+  train3 (VArray x) (VFunction g) (VFunction h) = pure $ VFunction $ Function { functionMonad = Just $ F.compose (callDyad g x) (callMonad h), functionDyad = Just $ F.atop (callDyad g x) (callDyad h), functionRepr = "" }
+  train3 (VFunction f) (VFunction g) (VArray z) = pure $ VFunction $ Function { functionMonad = Just $ F.compose (\x -> callDyad f x z) (callMonad g), functionDyad = Just $ F.atop (\x -> callDyad f x z) (callDyad g), functionRepr = "" }
+  train3 (VArray x) (VFunction g) (VArray z) = do
+    r <- callDyad g x z
+    pure $ VFunction $ Function { functionMonad = Just $ F.constant1 r, functionDyad = Just $ F.constant2 r, functionRepr = "" }
+  train3 _ _ _ = throwError $ NYIError "Modifier trains not implemented yet"
+
+  train :: [Value] -> St Value
+  train [] = throwError $ DomainError "Empty train"
+  train [x] = train1 x
+  train [x, y] = train2 y x
+  train (x : y : z : rs) = train3 z y x >>= train . (: rs)
+
+  withTrainRepr :: [Value] -> Value -> St Value
+  withTrainRepr _ (VArray _) = throwError $ DomainError "Array train?"
+  withTrainRepr us (VFunction f) = pure $ VFunction $ f{ functionRepr = [fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train] }
+  withTrainRepr us (VAdverb a) = pure $ VAdverb $ a{ adverbRepr = [G.underscore, fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train] }
+  withTrainRepr us (VConjunction c) = pure $ VConjunction $ c{ conjRepr = [G.underscore, fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train, G.underscore] }
+  in do
+    us <- mapM eval es
+    t <- train $ reverse us
+    r <- withTrainRepr us t
+    case (cat, r) of
+      (CatArray, _) -> throwError $ DomainError "Array train?"
+      (CatFunction, r@(VFunction _)) -> pure r
+      (CatAdverb, r@(VAdverb _)) -> pure r
+      (CatConjunction, r@(VConjunction _)) -> pure r
+      (exp, g) -> throwError $ DomainError $ "Expected train of category " ++ show exp ++ ", got a " ++ show (valueCategory g)
+
