@@ -61,6 +61,20 @@ callOnValueAndValue conj (VFunction x) (VArray y) = callOnFunctionAndArray conj 
 callOnValueAndValue conj (VFunction x) (VFunction y) = callOnFunctionAndFunction conj x y
 callOnValueAndValue _ _ _ = throwError $ DomainError "Invalid type to conjunction call"
 
+makeValueAdverb :: (Value -> St Function) -> String -> Adverb
+makeValueAdverb a s = Adverb
+  { adverbOnArray = Just $ \x -> a (VArray x)
+  , adverbOnFunction = Just $ \f -> a (VFunction f)
+  , adverbRepr = s }
+
+makeValueConjunction :: (Value -> Value -> St Function) -> String -> Conjunction
+makeValueConjunction a s = Conjunction
+  { conjOnArrayArray = Just $ \x y -> a (VArray x) (VArray y)
+  , conjOnArrayFunction = Just $ \x y -> a (VArray x) (VFunction y)
+  , conjOnFunctionArray = Just $ \x y -> a (VFunction x) (VArray y)
+  , conjOnFunctionFunction = Just $ \x y -> a (VFunction x) (VFunction y)
+  , conjRepr = s } 
+
 scopeLookup :: String -> Scope -> Maybe Value
 scopeLookup name sc = (VArray <$> scopeLookupArray name sc)
                   <|> (VFunction <$> scopeLookupFunction name sc)
@@ -374,6 +388,9 @@ evalDefined statements cat = let
 
 evalTrain :: Category -> [Maybe Tree] -> St Value
 evalTrain cat es = let
+  atop :: Function -> Function -> Function
+  atop f g = Function { functionMonad = Just $ F.compose (callMonad f) (callMonad g), functionDyad = Just $ F.atop (callMonad f) (callDyad g), functionRepr = "" }
+
   train1 :: Value -> St Value
   train1 (VArray x) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "" }
   train1 o = pure $ o
@@ -382,8 +399,21 @@ evalTrain cat es = let
   train2 (VArray x) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "" }
   train2 (VArray x) (VFunction g) = pure $ VFunction $ Function { functionMonad = Just $ \y -> callDyad g x y, functionDyad = Nothing, functionRepr = ""}
   train2 (VFunction f) (VArray y) = pure $ VFunction $ Function { functionMonad = Just $ \x -> callDyad f x y, functionDyad = Nothing, functionRepr = "" }
-  train2 (VFunction f) (VFunction g) = pure $ VFunction $ Function { functionMonad = Just $ F.compose (callMonad f) (callMonad g), functionDyad = Just $ F.atop (callMonad f) (callDyad g), functionRepr = "" }
-  train2 _ _ = throwError $ NYIError "Modifier trains not implemented yet"
+  train2 (VFunction f) (VFunction g) = pure $ VFunction $ atop f g
+  train2 (VArray x) (VAdverb a) = VFunction <$> callOnArray a x 
+  train2 (VFunction f) (VAdverb a) = VFunction <$> callOnFunction a f
+  train2 (VAdverb a) (VFunction g) = pure $ VAdverb $ makeValueAdverb (\u -> (`atop` g) <$> callOnValue a u) ""
+  train2 (VAdverb a) (VAdverb b) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValue a u >>= callOnFunction b) ""
+  train2 (VAdverb a) (VConjunction c) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValue a u >>= (\r -> callOnValueAndValue c (VFunction r) u)) ""
+  train2 x@(VArray _) (VConjunction c) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValueAndValue c x u) ""
+  train2 f@(VFunction _) (VConjunction c) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValueAndValue c f u) ""
+  train2 (VConjunction c) y@(VArray _) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValueAndValue c u y) ""
+  train2 (VConjunction c) g@(VFunction _) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValueAndValue c u g) ""
+  train2 (VConjunction c) (VAdverb a) = pure $ VConjunction $ makeValueConjunction (\u v -> callOnValueAndValue c u v >>= callOnFunction a) ""
+  train2 (VConjunction c) (VConjunction d) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    a <- callOnValueAndValue d u v
+    b <- callOnValueAndValue c u v
+    pure $ atop a b) ""
 
   train3 :: Value -> Value -> Value -> St Value
   train3 (VArray _) (VArray y) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
