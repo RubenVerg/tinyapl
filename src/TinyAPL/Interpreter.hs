@@ -391,6 +391,15 @@ evalTrain cat es = let
   atop :: Function -> Function -> Function
   atop f g = Function { functionMonad = Just $ F.compose (callMonad f) (callMonad g), functionDyad = Just $ F.atop (callMonad f) (callDyad g), functionRepr = "" }
 
+  fork :: Function -> Function -> Function -> Function
+  fork f g h = Function { functionMonad = Just $ F.fork1 (callMonad f) (callDyad g) (callMonad h), functionDyad = Just $ F.fork2 (callDyad g) (callDyad f) (callDyad h), functionRepr = "" }
+
+  bindLeft :: Function -> Array -> Function
+  bindLeft f x = Function { functionMonad = Just $ \y -> callDyad f x y, functionDyad = Nothing, functionRepr = "" }
+
+  bindRight :: Function -> Array -> Function
+  bindRight f y = Function { functionMonad = Just $ \x -> callDyad f x y, functionDyad = Nothing, functionRepr = "" }
+
   train1 :: Value -> St Value
   train1 (VArray x) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "" }
   train1 o = pure $ o
@@ -414,19 +423,92 @@ evalTrain cat es = let
     a <- callOnValueAndValue d u v
     b <- callOnValueAndValue c u v
     pure $ atop a b) ""
+  train2 x y = throwError $ DomainError $ "2-train with " ++ show x ++ " and " ++ show y ++ "?"
 
   train3 :: Value -> Value -> Value -> St Value
   train3 (VArray _) (VArray y) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
   train3 (VArray _) (VArray y) (VFunction _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
   train3 (VFunction _) (VArray y) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
   train3 (VFunction _) (VArray y) (VFunction _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
-  train3 (VFunction f) (VFunction g) (VFunction h) = pure $ VFunction $ Function { functionMonad = Just $ F.fork1 (callMonad f) (callDyad g) (callMonad h), functionDyad = Just $ F.fork2 (callDyad f) (callDyad g) (callDyad h), functionRepr = "" }
-  train3 (VArray x) (VFunction g) (VFunction h) = pure $ VFunction $ Function { functionMonad = Just $ F.compose (callDyad g x) (callMonad h), functionDyad = Just $ F.atop (callDyad g x) (callDyad h), functionRepr = "" }
-  train3 (VFunction f) (VFunction g) (VArray z) = pure $ VFunction $ Function { functionMonad = Just $ F.compose (\x -> callDyad f x z) (callMonad g), functionDyad = Just $ F.atop (\x -> callDyad f x z) (callDyad g), functionRepr = "" }
+  train3 (VFunction f) (VFunction g) (VFunction h) = pure $ VFunction $ fork f g h
+  train3 (VArray x) (VFunction g) (VFunction h) = pure $ VFunction $ atop (bindLeft g x) h
+  train3 (VFunction f) (VFunction g) (VArray z) = pure $ VFunction $ atop (bindRight g z) f
   train3 (VArray x) (VFunction g) (VArray z) = do
     r <- callDyad g x z
     pure $ VFunction $ Function { functionMonad = Just $ F.constant1 r, functionDyad = Just $ F.constant2 r, functionRepr = "" }
-  train3 _ _ _ = throwError $ NYIError "Modifier trains not implemented yet"
+  train3 (VArray x) (VConjunction c) (VArray z) = VFunction <$>callOnArrayAndArray c x z
+  train3 (VArray x) (VConjunction c) (VFunction h) = VFunction <$> callOnArrayAndFunction c x h
+  train3 (VFunction f) (VConjunction c) (VArray z) = VFunction <$> callOnFunctionAndArray c f z
+  train3 (VFunction f) (VConjunction c) (VFunction h) = VFunction <$> callOnFunctionAndFunction c f h
+  train3 (VAdverb a) (VFunction g) (VFunction h) = pure $ VAdverb $ makeValueAdverb (\u -> do
+    r <- callOnValue a u
+    pure $ fork r g h) ""
+  train3 (VAdverb a) (VAdverb b) (VAdverb c) = pure $ VAdverb $ makeValueAdverb (\u -> do
+    r <- callOnValue a u
+    s <- callOnFunction b r
+    callOnFunction c s) ""
+  train3 (VArray x) (VConjunction c) (VAdverb a) = pure $ VAdverb $ makeValueAdverb (\u -> do
+    r <- callOnValue a u
+    callOnArrayAndFunction c x r) ""
+  train3 (VFunction f) (VConjunction c) (VAdverb a) = pure $ VAdverb $ makeValueAdverb (\u -> do
+    r <- callOnValue a u
+    callOnFunctionAndFunction c f r) ""
+  train3 (VAdverb a) (VConjunction c) (VArray z) = pure $ VAdverb $ makeValueAdverb (\u -> do
+    r <- callOnValue a u
+    callOnFunctionAndArray c r z) ""
+  train3 (VAdverb a) (VConjunction c) (VFunction h) = pure $ VAdverb $ makeValueAdverb (\u -> do
+    r <- callOnValue a u
+    callOnFunctionAndFunction c r h) ""
+  train3 (VFunction f) (VFunction g) (VConjunction c) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValueAndValue c u v
+    pure $ fork f g r) ""
+  train3 (VArray x) (VFunction g) (VConjunction c) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValueAndValue c u v
+    pure $ atop (bindLeft g x) r) ""
+  train3 (VConjunction c) (VFunction g) (VFunction h) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValueAndValue c u v
+    pure $ fork r g h) ""
+  train3 (VConjunction c) (VFunction g) (VConjunction d) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValueAndValue d u v
+    s <- callOnValueAndValue c u v
+    pure $ fork s g r) ""
+  train3 (VAdverb a) (VAdverb b) (VFunction h) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValue b v
+    s <- callOnValue a u
+    pure $ fork s r h) ""
+  train3 (VConjunction c) (VAdverb a) (VAdverb b) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValueAndValue c u v
+    s <- callOnFunction a r
+    callOnFunction b s) ""
+  train3 (VArray x) (VConjunction c) (VConjunction d) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValueAndValue d u v
+    callOnArrayAndFunction c x r) ""
+  train3 (VFunction f) (VConjunction c) (VConjunction d) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValueAndValue d u v
+    callOnFunctionAndFunction c f r) ""
+  train3 (VAdverb a) (VConjunction c) (VAdverb b) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValue b v
+    s <- callOnValue a u
+    callOnFunctionAndFunction c s r) ""
+  train3 (VAdverb a) (VConjunction c) (VConjunction d) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValueAndValue d u v
+    s <- callOnValue a u
+    callOnFunctionAndFunction c s r) ""
+  train3 (VConjunction c) (VConjunction d) (VArray z) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValueAndValue c u v
+    callOnFunctionAndArray d r z) ""
+  train3 (VConjunction c) (VConjunction d) (VFunction h) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValueAndValue c u v
+    callOnFunctionAndFunction d r h) ""
+  train3 (VConjunction c) (VConjunction d) (VAdverb a) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValue a v
+    s <- callOnValueAndValue c u v
+    callOnFunctionAndFunction d s r) ""
+  train3 (VConjunction c) (VConjunction d) (VConjunction e) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+    r <- callOnValueAndValue e u v
+    s <- callOnValueAndValue c u v
+    callOnFunctionAndFunction d s r) ""
+  train3 x y z = throwError $ DomainError $ "3-train with " ++ show x ++ ", " ++ show y ++ " and " ++ show z ++ "?"
 
   train :: [Maybe Value] -> St Value
   train [] = throwError $ DomainError "Empty train"
@@ -455,4 +537,3 @@ evalTrain cat es = let
       (CatAdverb, r@(VAdverb _)) -> pure r
       (CatConjunction, r@(VConjunction _)) -> pure r
       (exp, g) -> throwError $ DomainError $ "Expected train of category " ++ show exp ++ ", got a " ++ show (valueCategory g)
-

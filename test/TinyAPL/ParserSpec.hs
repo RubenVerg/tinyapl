@@ -99,6 +99,13 @@ spec = do
     it "parses parens" $ do
       tok "(1 2)" `shouldBe` pure [[TokenParens [TokenNumber [1] emptyPos, TokenNumber [2] emptyPos] emptyPos]]
 
+    it "parses trains and modifier trains" $ do
+      tok "⦅1⋄2⦆" `shouldBe` pure [[TokenTrain [Just $ [TokenNumber [1] emptyPos], Just $ [TokenNumber [2] emptyPos]] emptyPos]]
+      tok "⦅1⋄2⋄3⦆" `shouldBe` pure [[TokenTrain [Just $ [TokenNumber [1] emptyPos], Just $ [TokenNumber [2] emptyPos], Just $ [TokenNumber [3] emptyPos]] emptyPos]]
+      tok "⦅1⋄⋄2⋄3⦆" `shouldBe` pure [[TokenTrain [Just $ [TokenNumber [1] emptyPos], Nothing, Just $ [TokenNumber [2] emptyPos], Just $ [TokenNumber [3] emptyPos]] emptyPos]]
+      tok "_⦅1⋄2⋄3⦆" `shouldBe` pure [[TokenAdverbTrain [Just $ [TokenNumber [1] emptyPos], Just $ [TokenNumber [2] emptyPos], Just $ [TokenNumber [3] emptyPos]] emptyPos]]
+      tok "_⦅1⋄2⋄3⦆_" `shouldBe` pure [[TokenConjunctionTrain [Just $ [TokenNumber [1] emptyPos], Just $ [TokenNumber [2] emptyPos], Just $ [TokenNumber [3] emptyPos]] emptyPos]]
+
   describe "binder" $ do
     let e2m (Right x) = Just x
         e2m (Left _)  = Nothing
