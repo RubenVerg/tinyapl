@@ -61,7 +61,7 @@ Marked features are supported, unmarked features are planned
 		* [x] inline comments? `⟃`/`⟄`
 	* [x] console I/O with `⎕` and `⍞`
 	* [x] array notation `⟨`/`⋄`/`⟩` and `[`/`⋄`/`]`
-	* [ ] trains `⦅`/`⋄`/`⦆`
+	* [x] trains and modifier trains \[`_`\]`⦅`/`⋄`/`⦆`\[`_`\]
 * primitives
 	* arrays
 		* [x] `⍬`

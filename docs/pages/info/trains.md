@@ -1,6 +1,5 @@
 ---
 name: Trains
-planned: true
 ---
 
 Unlike in many other APLs, trains in TinyAPL are written using special syntax: `⦅`, `⋄` and `⦆`. They are a sequence of arrays, functions, adverbs and conjunctions that combine to create functions or modifiers.
