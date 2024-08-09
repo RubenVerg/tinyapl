@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TupleSections, LambdaCase #-}
 module TinyAPL.Interpreter where
 
 import TinyAPL.ArrayFunctionOperator
@@ -48,6 +48,18 @@ unwrapAdverb e _             = throwError e
 unwrapConjunction :: Error -> Value -> St Conjunction
 unwrapConjunction _ (VConjunction val) = return val
 unwrapConjunction e _                  = throwError e
+
+callOnValue :: Adverb -> Value -> St Function
+callOnValue adv (VArray x) = callOnArray adv x
+callOnValue adv (VFunction x) = callOnFunction adv x
+callOnValue _ _ = throwError $ DomainError "Invalid type to adverb call"
+
+callOnValueAndValue :: Conjunction -> Value -> Value -> St Function
+callOnValueAndValue conj (VArray x) (VArray y) = callOnArrayAndArray conj x y
+callOnValueAndValue conj (VArray x) (VFunction y) = callOnArrayAndFunction conj x y
+callOnValueAndValue conj (VFunction x) (VArray y) = callOnFunctionAndArray conj x y
+callOnValueAndValue conj (VFunction x) (VFunction y) = callOnFunctionAndFunction conj x y
+callOnValueAndValue _ _ _ = throwError $ DomainError "Invalid type to conjunction call"
 
 scopeLookup :: String -> Scope -> Maybe Value
 scopeLookup name sc = (VArray <$> scopeLookupArray name sc)
@@ -360,7 +372,7 @@ evalDefined statements cat = let
         in return dconj
       cat -> throwError $ DomainError $ "Defined of type " ++ show cat ++ "?"
 
-evalTrain :: Category -> [Tree] -> St Value
+evalTrain :: Category -> [Maybe Tree] -> St Value
 evalTrain cat es = let
   train1 :: Value -> St Value
   train1 (VArray x) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "" }
@@ -386,19 +398,25 @@ evalTrain cat es = let
     pure $ VFunction $ Function { functionMonad = Just $ F.constant1 r, functionDyad = Just $ F.constant2 r, functionRepr = "" }
   train3 _ _ _ = throwError $ NYIError "Modifier trains not implemented yet"
 
-  train :: [Value] -> St Value
+  train :: [Maybe Value] -> St Value
   train [] = throwError $ DomainError "Empty train"
-  train [x] = train1 x
-  train [x, y] = train2 y x
-  train (x : y : z : rs) = train3 z y x >>= train . (: rs)
+  train [Nothing] = throwError $ DomainError "Empty train"
+  train [Just x] = train1 x
+  train [Just y, Just x] = train2 x y
+  train [_, _] = throwError $ SyntaxError "2-train cannot contain empty entries"
+  train (Just z : Just y : Just x : rs) = train3 x y z >>= train . (: rs) . Just
+  train (Just z : Just y : Nothing : rs) = train2 y z >>= train . (: rs) . Just
+  train _ = throwError $ SyntaxError "3-train can only contain empty entries as the first tine"
 
-  withTrainRepr :: [Value] -> Value -> St Value
+  withTrainRepr :: [Maybe Value] -> Value -> St Value
   withTrainRepr _ (VArray _) = throwError $ DomainError "Array train?"
   withTrainRepr us (VFunction f) = pure $ VFunction $ f{ functionRepr = [fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train] }
   withTrainRepr us (VAdverb a) = pure $ VAdverb $ a{ adverbRepr = [G.underscore, fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train] }
   withTrainRepr us (VConjunction c) = pure $ VConjunction $ c{ conjRepr = [G.underscore, fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train, G.underscore] }
   in do
-    us <- mapM eval es
+    us <- mapM (\case
+      Nothing -> pure Nothing
+      Just x -> Just <$> eval x) es
     t <- train $ reverse us
     r <- withTrainRepr us t
     case (cat, r) of

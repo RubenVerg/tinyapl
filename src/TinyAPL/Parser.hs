@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module TinyAPL.Parser where
 
 import TinyAPL.Complex
@@ -45,9 +47,9 @@ data Token
   | TokenExit [Token] SourcePos
   | TokenVector [[Token]] SourcePos
   | TokenHighRank [[Token]] SourcePos
-  | TokenTrain [[Token]] SourcePos
-  | TokenAdverbTrain [[Token]] SourcePos
-  | TokenConjunctionTrain [[Token]] SourcePos
+  | TokenTrain [Maybe [Token]] SourcePos
+  | TokenAdverbTrain [Maybe [Token]] SourcePos
+  | TokenConjunctionTrain [Maybe[Token]] SourcePos
 
 instance Eq Token where
   (TokenNumber x _) == (TokenNumber y _) = x == y
@@ -102,9 +104,9 @@ instance Show Token where
   show (TokenExit xs _) = "(exit " ++ [G.exit, ' '] ++ unwords (show <$> xs) ++ ")"
   show (TokenVector xs _) = "(vector " ++ [fst G.vector, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.vector] ++ ")"
   show (TokenHighRank xs _) = "(high rank " ++ [fst G.highRank, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.highRank] ++ ")"
-  show (TokenTrain xs _) = "(train " ++ [fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train] ++ ")"
-  show (TokenAdverbTrain xs _) = "(adverb train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train] ++ ")"
-  show (TokenConjunctionTrain xs _) = "(conjunction train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train, G.underscore] ++ ")"
+  show (TokenTrain xs _) = "(train " ++ [fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . maybe [""] (fmap show) <$> xs) ++ [snd G.train] ++ ")" where
+  show (TokenAdverbTrain xs _) = "(adverb train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . maybe [""] (fmap show) <$> xs) ++ [snd G.train] ++ ")" where
+  show (TokenConjunctionTrain xs _) = "(conjunction train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . maybe [""] (fmap show) <$> xs) ++ [snd G.train, G.underscore] ++ ")" where
 
 tokenPos :: Token -> SourcePos
 tokenPos (TokenNumber _ pos) = pos
@@ -247,7 +249,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     dfn = withPos $ TokenDfn <$> (string [fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces])
 
     train :: Parser Token
-    train = withPos $ TokenTrain <$> (string [fst G.train] *> sepBy1 bits separator <* string [snd G.train])
+    train = withPos $ TokenTrain <$> (string [fst G.train] *> sepBy1 (option Nothing $ Just <$> bits) separator <* string [snd G.train])
 
     primFunction :: Parser Token
     primFunction = withPos $ TokenPrimFunction <$> oneOf G.functions
@@ -264,7 +266,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     dadv = withPos $ TokenDadv <$> (string [G.underscore, fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces] <* notFollowedBy (char G.underscore))
 
     adverbTrain :: Parser Token
-    adverbTrain = withPos $ TokenAdverbTrain <$> (string [G.underscore, fst G.train] *> sepBy1 bits separator <* string [snd G.train] <* notFollowedBy (char G.underscore))
+    adverbTrain = withPos $ TokenAdverbTrain <$> (string [G.underscore, fst G.train] *> sepBy1 (option Nothing $ Just <$> bits) separator <* string [snd G.train] <* notFollowedBy (char G.underscore))
 
     primAdverb :: Parser Token
     primAdverb = withPos $ TokenPrimAdverb <$> oneOf G.adverbs
@@ -281,7 +283,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     dconj = withPos $ TokenDconj <$> (string [G.underscore, fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces, G.underscore])
 
     conjunctionTrain :: Parser Token
-    conjunctionTrain = withPos $ TokenConjunctionTrain <$> (string [G.underscore, fst G.train] *> sepBy1 bits separator <* string [snd G.train, G.underscore])
+    conjunctionTrain = withPos $ TokenConjunctionTrain <$> (string [G.underscore, fst G.train] *> sepBy1 (option Nothing $ Just <$> bits) separator <* string [snd G.train, G.underscore])
 
     primConjunction :: Parser Token
     primConjunction = withPos $ TokenPrimConjunction <$> oneOf G.conjunctions
@@ -340,7 +342,7 @@ data Tree
   | ExitBranch { exitBranchResult :: Tree }
   | VectorBranch { vectorEntries :: [Tree] }
   | HighRankBranch { highRankEntries :: [Tree] }
-  | TrainBranch { trainBranchCategory :: Category, trainBranchStatements :: [Tree] }
+  | TrainBranch { trainBranchCategory :: Category, trainBranchStatements :: [Maybe Tree] }
   deriving (Eq)
 
 instance Show Tree where
@@ -359,7 +361,7 @@ instance Show Tree where
       (ExitBranch res)            -> (indent ++ "■") : go (i + 1) res
       (VectorBranch es)           -> (indent ++ "⟨⟩") : concatMap (go (i + 1)) es
       (HighRankBranch es)         -> (indent ++ "[]") : concatMap (go (i + 1)) es
-      (TrainBranch c ts)          -> (indent ++ (if c == CatFunction then "" else "_") ++ "⦅" ++ (if c == CatConjunction then "_" else "") ++ "⦆") : concatMap (go (i + 1)) ts
+      (TrainBranch c ts)          -> (indent ++ (if c == CatFunction then "" else "_") ++ "⦅" ++ (if c == CatConjunction then "_" else "") ++ "⦆") : concatMap (maybe [""] (go (i + 1))) ts
 
 treeCategory :: Tree -> Category
 treeCategory (Leaf c _)                  = c
@@ -434,8 +436,11 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   array t es _ = t <$> mapM (\x -> categorizeAndBind x >>=
     requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ head x) source $ "Invalid array entry of type " ++ show c ++ ", array required")) es
 
-  train :: Category -> [[Token]] -> SourcePos -> Result Tree
-  train cat es _ = TrainBranch cat <$> (mapM categorizeAndBind es)
+  train :: Category -> [Maybe [Token]] -> SourcePos -> Result Tree
+  train cat es _ = TrainBranch cat <$> (mapM (\case
+      Nothing -> return Nothing
+      Just y -> Just <$> categorizeAndBind y
+    ) es)
 
   tokenToTree :: Token -> Result Tree
   tokenToTree num@(TokenNumber _ _)                = return $ Leaf CatArray num
