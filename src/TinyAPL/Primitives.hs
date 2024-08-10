@@ -207,6 +207,24 @@ rightHook = Conjunction
   , conjOnArrayFunction = Nothing
   , conjOnFunctionArray = Nothing
   , conjOnFunctionFunction = Just $ \f g -> pure $ Function (Just $ F.rightHook (callDyad f) (callMonad g)) (Just $ F.after (callDyad f) (callMonad g)) (makeConjRepr (show f) G.rightHook (show g)) }
+mirror = Conjunction
+  { conjRepr = [G.mirror]
+  , conjOnArrayArray = Nothing
+  , conjOnArrayFunction = Nothing
+  , conjOnFunctionArray = Nothing
+  , conjOnFunctionFunction = Just $ \f g -> pure $ Function Nothing (Just $ F.mirror (callDyad f) (callDyad g)) (makeConjRepr (show f) G.mirror (show g)) }
+leftFork = Conjunction
+  { conjRepr = [G.leftFork]
+  , conjOnArrayArray = Nothing
+  , conjOnArrayFunction = Nothing
+  , conjOnFunctionArray = Nothing
+  , conjOnFunctionFunction = Just $ \f g -> pure $ Function (Just $ F.leftHook (callMonad f) (callDyad g)) (Just $ F.leftFork (callDyad f) (callDyad g)) (makeConjRepr (show f) G.leftFork (show g)) }
+rightFork = Conjunction
+  { conjRepr = [G.rightFork]
+  , conjOnArrayArray = Nothing
+  , conjOnArrayFunction = Nothing
+  , conjOnFunctionArray = Nothing
+  , conjOnFunctionFunction = Just $ \f g -> pure $ Function (Just $ F.rightHook (callDyad f) (callMonad g)) (Just $ F.rightFork (callDyad f) (callDyad g)) (makeConjRepr (show f) G.rightFork (show g)) }
 
 conjunctions = (\x -> (head $ conjRepr x, x)) <$>
   [ TinyAPL.Primitives.atop
@@ -214,4 +232,7 @@ conjunctions = (\x -> (head $ conjRepr x, x)) <$>
   , TinyAPL.Primitives.after
   , TinyAPL.Primitives.before
   , TinyAPL.Primitives.leftHook
-  , TinyAPL.Primitives.rightHook ]
+  , TinyAPL.Primitives.rightHook
+  , TinyAPL.Primitives.mirror
+  , TinyAPL.Primitives.leftFork
+  , TinyAPL.Primitives.rightFork ]

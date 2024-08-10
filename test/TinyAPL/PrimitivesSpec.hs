@@ -686,23 +686,23 @@ spec = do
             , box $ vector $ Number <$> [4, 5, 6], box $ Array [3, 4] $ Number <$> [12, 11, 10, 9, 8,7, 6, 5, 4, 3, 2, 1] ])
 
       describe "atop" $ do
-        it "monadically composes functions with f(gy)" $ do
+        it "monadically composes functions with F(Gy)" $ do
           cffm P.atop P.times P.minus (scalar $ Number 3) `shouldReturn` pure (scalar $ Number -1)
-        it "dyadically composes functions with f(xgy)" $ do
+        it "dyadically composes functions with F(xGy)" $ do
           cffd P.atop P.times P.minus (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Number -1)
     
     describe [G.over] $ do
       describe "over" $ do
-        it "monadically composes functions with f(gy)" $ do
+        it "monadically composes functions with F(Gy)" $ do
           cffm P.over P.times P.minus (scalar $ Number 3) `shouldReturn` pure (scalar $ Number -1)
-        it "dyadically composes functions with (gy)f(gx)" $ do
+        it "dyadically composes functions with (Gy)F(Gx)" $ do
           cffd P.over P.plus P.minus (scalar $ Number 1) (scalar $ Number 2) `shouldReturn` pure (scalar $ Number -3)
 
     describe [G.after] $ do
       describe "after" $ do
-        it "monadically composes functions with f(gy)" $ do
+        it "monadically composes functions with F(Gy)" $ do
           cffm P.after P.times P.minus (scalar $ Number 3) `shouldReturn` pure (scalar $ Number -1)
-        it "dyadically composes functions with xf(gy)" $ do
+        it "dyadically composes functions with xF(Gy)" $ do
           cffd P.after P.plus P.minus (scalar $ Number 2) (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 1)
       describe "bind" $ do
         it "binds the left argument to a dyad" $ do
@@ -715,9 +715,9 @@ spec = do
     
     describe [G.before] $ do
       describe "before" $ do
-        it "monadically composes functions with g(fy)" $ do
+        it "monadically composes functions with G(Fy)" $ do
           cffm P.before P.minus P.times (scalar $ Number 3) `shouldReturn` pure (scalar $ Number -1)  
-        it "dyadically composes functions with (fx)gy" $ do
+        it "dyadically composes functions with (Fx)Gy" $ do
           cffd P.before P.minus P.plus (scalar $ Number 1) (scalar $ Number 2) `shouldReturn` pure (scalar $ Number 1)
       describe "default bind" $ do
         it "binds the argument to a function when called monadically" $ do
@@ -729,14 +729,33 @@ spec = do
     
     describe [G.leftHook] $ do
       describe "left hook" $ do
-        it "monadically composes functions with (fx)gx" $ do
+        it "monadically composes functions with (Fx)Gx" $ do
           cffm P.leftHook P.minus P.plus (scalar $ Number 3) `shouldReturn` pure (scalar $ Number 0)
-        it "dyadically composes functions with (fx)gy" $ do
+        it "dyadically composes functions with (Fx)Gy" $ do
           cffd P.leftHook P.minus P.plus (scalar $ Number 1) (scalar $ Number 2) `shouldReturn` pure (scalar $ Number 1)
 
     describe [G.rightHook] $ do
       describe "right hook" $ do
-        it "monadically composes functions with xf(gx)" $ do
+        it "monadically composes functions with xF(Gx)" $ do
           cffm P.rightHook P.plus P.minus (scalar $ Number 5) `shouldReturn` pure (scalar $ Number 0)
-        it "dyadically composes functions with xf(gy)" $ do
+        it "dyadically composes functions with xF(Gy)" $ do
           cffd P.rightHook P.plus P.minus (scalar $ Number 2) (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 1)
+
+    describe [G.mirror] $ do
+      describe "mirror" $ do
+        it "dyadically composes functions with (yGx)F(xGy)" $ do
+          cffd P.mirror P.pair P.minus (scalar $ Number 3) (scalar $ Number 4) `shouldReturn` pure (vector [Number 1, Number -1])
+
+    describe [G.leftFork] $ do
+      describe "left fork" $ do
+        it "monadically composes functions with (Fx)Gx" $ do
+          cffm P.leftFork P.minus P.plus (scalar $ Number 3) `shouldReturn` pure (scalar $ Number 0)
+        it "dyadically composes functions with (xFy)Gy" $ do
+          cffd P.leftFork P.minus P.plus (scalar $ Number 1) (scalar $ Number 2) `shouldReturn` pure (scalar $ Number 1)
+
+    describe [G.rightFork] $ do
+      describe "right fork" $ do
+        it "monadically composes functions with xF(Gx)" $ do
+          cffm P.rightFork P.plus P.minus (scalar $ Number 5) `shouldReturn` pure (scalar $ Number 0)
+        it "dyadically composes functions with xF(xGy)" $ do
+          cffd P.rightFork P.plus P.minus (scalar $ Number 2) (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 3)

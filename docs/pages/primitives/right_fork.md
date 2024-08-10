@@ -2,7 +2,6 @@
 glyph: '⇽'
 pattern: 'r←[x](F⇽G)y'
 name: Right Fork
-planned: true
 ---
 
 If `x` is not provided, `r` is `y F (G y)`; if `x` is provided, `r` is `x F (x G y)`.

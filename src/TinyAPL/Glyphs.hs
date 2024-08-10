@@ -227,6 +227,9 @@ after = '∘'
 before = '⍛'
 leftHook = '⊸'
 rightHook = '⟜'
+mirror = '⸚'
+leftFork = '⇾'
+rightFork = '⇽'
 
 conjunctions =
   [ TinyAPL.Glyphs.atop
@@ -234,4 +237,7 @@ conjunctions =
   , TinyAPL.Glyphs.after
   , TinyAPL.Glyphs.before
   , TinyAPL.Glyphs.leftHook 
-  , TinyAPL.Glyphs.rightHook ]
+  , TinyAPL.Glyphs.rightHook
+  , TinyAPL.Glyphs.mirror
+  , TinyAPL.Glyphs.leftFork
+  , TinyAPL.Glyphs.rightFork ]
