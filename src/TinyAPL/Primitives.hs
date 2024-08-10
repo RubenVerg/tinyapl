@@ -225,6 +225,12 @@ rightFork = Conjunction
   , conjOnArrayFunction = Nothing
   , conjOnFunctionArray = Nothing
   , conjOnFunctionFunction = Just $ \f g -> pure $ Function (Just $ F.rightHook (callDyad f) (callMonad g)) (Just $ F.rightFork (callDyad f) (callDyad g)) (makeConjRepr (show f) G.rightFork (show g)) }
+repeat = Conjunction
+  { conjRepr = [G.repeat]
+  , conjOnArrayArray = Nothing
+  , conjOnArrayFunction = Nothing
+  , conjOnFunctionArray = Just $ \f y -> pure $ Function (Just $ F.repeat1 (callMonad f) y) (Just $ F.repeat2 (callDyad f) y) (makeConjRepr (show f) G.repeat (show y))
+  , conjOnFunctionFunction = Just $ \f g -> pure $ Function (Just $ F.until1 (callMonad f) (callDyad g)) (Just $ F.until2 (callDyad f) (callDyad g)) (makeConjRepr (show f) G.repeat (show g)) }
 
 conjunctions = (\x -> (head $ conjRepr x, x)) <$>
   [ TinyAPL.Primitives.atop
@@ -235,4 +241,5 @@ conjunctions = (\x -> (head $ conjRepr x, x)) <$>
   , TinyAPL.Primitives.rightHook
   , TinyAPL.Primitives.mirror
   , TinyAPL.Primitives.leftFork
-  , TinyAPL.Primitives.rightFork ]
+  , TinyAPL.Primitives.rightFork
+  , TinyAPL.Primitives.repeat ]

@@ -804,3 +804,38 @@ atRank2' :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array 
 atRank2' f r x y = do
   (_, b, c) <- parseRank r
   atRank2 f (b, c) x y
+
+repeat :: MonadError Error m => (a -> m a) -> Natural -> a -> m a
+repeat _ 0 x = pure x
+repeat f n x = f x >>= TinyAPL.Functions.repeat f (n - 1)
+
+until :: MonadError Error m => (a -> m a) -> (a -> a -> m Bool) -> a -> m a
+until f p x = let
+  go :: Monad m => (a -> m a) -> (a -> a -> m Bool) -> a -> a -> m a
+  go f p prev x = do
+    r <- f x
+    t <- p r prev
+    if t then pure r else go f p x r
+  in f x >>= go f p x
+
+repeat1 :: MonadError Error m => (Array -> m Array) -> Array -> Array -> m Array
+repeat1 f t y = do
+  let err = DomainError "Repeat right operand must be a natural scalar"
+  n <- asScalar err t >>= asNumber err >>= asNat err
+  TinyAPL.Functions.repeat f n y
+
+repeat2 :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> Array -> m Array
+repeat2 f t x y = do
+  let err = DomainError "Repeat right operand must be a natural scalar"
+  n <- asScalar err t >>= asNumber err >>= asNat err
+  TinyAPL.Functions.repeat (f x) n y
+
+until1 :: MonadError Error m => (Array -> m Array) -> (Array -> Array -> m Array) -> Array -> m Array
+until1 f p y = let
+  err = DomainError "Until right operand must return a boolean scalar"
+  in TinyAPL.Functions.until f (\cu pr -> p cu pr >>= asScalar err >>= asBool err) y
+
+until2 :: MonadError Error m => (Array -> Array -> m Array) -> (Array -> Array -> m Array) -> Array -> Array -> m Array
+until2 f p x y = let
+  err = DomainError "Until right operand must return a boolean scalar"
+  in TinyAPL.Functions.until (f x) (\cu pr -> p cu pr >>= asScalar err >>= asBool err) y
