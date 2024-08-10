@@ -230,6 +230,7 @@ rightHook = '⟜'
 mirror = '⸚'
 leftFork = '⇾'
 rightFork = '⇽'
+repeat = '⍣'
 
 conjunctions =
   [ TinyAPL.Glyphs.atop
@@ -240,4 +241,5 @@ conjunctions =
   , TinyAPL.Glyphs.rightHook
   , TinyAPL.Glyphs.mirror
   , TinyAPL.Glyphs.leftFork
-  , TinyAPL.Glyphs.rightFork ]
+  , TinyAPL.Glyphs.rightFork
+  , TinyAPL.Glyphs.repeat ]

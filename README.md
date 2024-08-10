@@ -240,8 +240,8 @@ Marked features are supported, unmarked features are planned
 		* [x] `¨` each
 		* [x] `ᐵ` each-left
 		* [x] `ᑈ` each-right
-		* [ ] `⍣` repeat (with inverses?)
-		* [ ] `⍣` until
+		* [x] `⍣` repeat
+		* [x] `⍣` until
 		* [ ] `∙` inner product
 		* [ ] `∙` alternant?
 		* [ ] `⊞` outer product

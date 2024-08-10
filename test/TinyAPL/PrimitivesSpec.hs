@@ -759,3 +759,14 @@ spec = do
           cffm P.rightFork P.plus P.minus (scalar $ Number 5) `shouldReturn` pure (scalar $ Number 0)
         it "dyadically composes functions with xF(xGy)" $ do
           cffd P.rightFork P.plus P.minus (scalar $ Number 2) (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 3)
+
+    describe [G.repeat] $ do
+      describe "repeat" $ do
+        it "repeats a function n times" $ do
+          Right inc <- runResult $ fst <$> runSt (callOnFunctionAndArray P.after P.plus (scalar $ Number 1)) context
+          cfam P.repeat inc (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Number 8)
+          cfad P.repeat P.plus (scalar $ Number 5) (scalar $ Number 2) (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 11)
+      describe "until" $ do
+        it "applies a function until a condition is met" $ do
+          Right step <- runResult $ fst <$> runSt (callOnFunctionAndFunction P.after P.plus P.divide) context
+          cffd P.repeat step P.identical (scalar $ Number 1) (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 1.618033988749897)
