@@ -680,6 +680,22 @@ fork2 f g h x y = do
   a <- f x y
   g a b
 
+mirror :: MonadError Error m => (b -> b -> m c) -> (a -> a -> m b) -> a -> a -> m c
+mirror f g x y = do
+  b <- g x y
+  a <- g y x
+  f a b
+
+leftFork :: MonadError Error m => (a -> b -> m c) -> (c -> b -> m d) -> a -> b -> m d
+leftFork f g x y = do
+  a <- f x y
+  g a y
+
+rightFork :: MonadError Error m => (a -> c -> m d) -> (a -> b -> m c) -> a -> b -> m d
+rightFork f g x y = do
+  a <- g x y
+  f x a
+
 constant1 :: MonadError Error m => a -> b -> m a
 constant1 a _ = pure a
 
