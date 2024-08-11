@@ -58,7 +58,7 @@ Marked features are supported, unmarked features are planned
 		* [x] dfns `{...}`, dadvs `_{...}`, dconjs `_{...}_`
 		* [x] refer to arguments and operands: `⍺` left argument, `⍵` right argument, `⍺⍺` left array operand, `⍶⍶` left function operand, `⍵⍵` right array operand, `⍹⍹` right function operand
 		* [x] recursion: `∇` recurse function, `_∇` recurse adverb, `_∇_` recurse conjunction
-	* [ ] comments `⍝`
+	* [x] comments `⍝`
 		* [x] inline comments? `⟃`/`⟄`
 	* [x] console I/O with `⎕` and `⍞`
 	* [x] array notation `⟨`/`⋄`/`⟩` and `[`/`⋄`/`]`
