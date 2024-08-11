@@ -16,6 +16,8 @@ spec = do
 
     it "ignores comments" $ do
       tok "⟃abc⟄ 1" `shouldBe` pure [[TokenNumber [1] emptyPos]]
+      tok "2 ⍝ abc" `shouldBe` pure [[TokenNumber [2] emptyPos]]
+      tok "1 ⍝ abc\n10" `shouldBe` pure [[TokenNumber [1] emptyPos, TokenNumber [10] emptyPos]]
 
     it "parses numbers" $ do
       tok "1" `shouldBe` pure [[TokenNumber [1] emptyPos]]
@@ -94,7 +96,10 @@ spec = do
 
     it "parses separator-separated statements" $ do
       tok "1⋄2" `shouldBe` pure [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos]]
-      tok "1\n2" `shouldBe` pure [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos]]
+
+    it "ignores spaces and newlines" $ do
+      tok "1\n2" `shouldBe` pure [[TokenNumber [1] emptyPos, TokenNumber [2] emptyPos]]
+      tok "1     2" `shouldBe` pure [[TokenNumber [1] emptyPos, TokenNumber [2] emptyPos]]
     
     it "parses parens" $ do
       tok "(1 2)" `shouldBe` pure [[TokenParens [TokenNumber [1] emptyPos, TokenNumber [2] emptyPos] emptyPos]]

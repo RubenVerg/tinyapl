@@ -19,6 +19,7 @@ separator = '⋄'
 assign = '←'
 guard = ':'
 exit = '■'
+comment = '⍝'
 inlineComment = ('⟃', '⟄')
 tie = '‿'
 train = ('⦅', '⦆')
@@ -45,6 +46,7 @@ syntax =
   , TinyAPL.Glyphs.assign
   , TinyAPL.Glyphs.guard
   , TinyAPL.Glyphs.exit
+  , TinyAPL.Glyphs.comment
   , fst TinyAPL.Glyphs.inlineComment
   , snd TinyAPL.Glyphs.inlineComment
   , TinyAPL.Glyphs.tie
