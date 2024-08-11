@@ -163,10 +163,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   withPos = (<**>) getSourcePos
 
   spaceConsumer :: Parser ()
-  spaceConsumer = L.space
-    (void (satisfy (\x -> isSpace x && x /= '\n')))
-    empty
-    (char (fst G.inlineComment) *> void (many (noneOf [snd G.inlineComment])) <* char (snd G.inlineComment))
+  spaceConsumer = L.space space1 (L.skipLineComment [G.comment]) (L.skipBlockComment [fst G.inlineComment] [snd G.inlineComment])
 
   lexeme :: Parser a -> Parser a
   lexeme = L.lexeme spaceConsumer
@@ -304,7 +301,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   bracketed = withPos $ TokenParens <$> between (char $ fst G.parens) (char $ snd G.parens) bits
 
   separator :: Parser ()
-  separator = oneOf [G.separator, '\n'] $> ()
+  separator = void $ char (G.separator)
 
   bit :: Parser Token
   bit = lexeme (bracketed <|> conjunction <|> adverb <|> function <|> array)
