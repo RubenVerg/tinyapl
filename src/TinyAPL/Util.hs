@@ -123,9 +123,6 @@ group _ _ = error "group: mismatched array lengths"
 groupBy :: Eq k => (a -> k) -> [a] -> [(k, [a])]
 groupBy f as = group (f <$> as) as
 
-sortByUp :: Ord a => [a] -> [b] -> [b]
-sortByUp as bs = snd <$> sortOn fst (zip as bs)
-
 oneIndex :: Integral n => [a] -> [n] -> Maybe [a]
 oneIndex _ [] = Just []
 oneIndex as (i:is)

@@ -145,6 +145,8 @@ roll = '?'
 squad = '⌷'
 rank = 'ϼ'
 catenate = '⍪'
+gradeUp = '⍋'
+gradeDown = '⍒'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -198,7 +200,9 @@ functions =
   , TinyAPL.Glyphs.roll
   , TinyAPL.Glyphs.squad
   , TinyAPL.Glyphs.rank
-  , TinyAPL.Glyphs.catenate ]
+  , TinyAPL.Glyphs.catenate
+  , TinyAPL.Glyphs.gradeUp
+  , TinyAPL.Glyphs.gradeDown ]
 
 -- * Adverbs
 
