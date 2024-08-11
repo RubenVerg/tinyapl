@@ -631,6 +631,17 @@ squad iarr carr = do
   is <- asVector err iarr >>= mapM (asVector err >=> mapM (asNumber err >=> asInt err)) . fmap fromScalar
   indexDeep is carr
 
+catenate :: MonadError Error m => Array -> Array -> m Array
+catenate a@(Array ash acs) b@(Array bsh bcs) = 
+  if arrayRank a == arrayRank b then
+    if (isScalar a && isScalar b) || (tail ash == tail bsh) then pure $ fromMajorCells $ majorCells a ++ majorCells b
+    else throwError $ LengthError "Incompatible shapes to Catenate"
+  else if isScalar a then catenate (fromJust $ arrayReshaped (1 : tail bsh) acs) b
+  else if isScalar b then catenate a (fromJust $ arrayReshaped (1 : tail ash) bcs)
+  else if arrayRank a == arrayRank b + 1 then promote b >>= (a `catenate`) 
+  else if arrayRank a + 1 == arrayRank b then promote a >>= (`catenate` b)
+  else throwError $ RankError "Incompatible ranks to Catenate"
+
 -- * Operators
 
 compose :: MonadError Error m => (b -> m c) -> (a -> m b) -> a -> m c

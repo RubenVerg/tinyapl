@@ -2,7 +2,6 @@
 glyph: '⍪'
 pattern: 'r←x⍪y'
 name: Catenate
-planned: true
 ---
 
 `x` and `y`, after extension, must have the same trailing axes (that is, the only difference in shape is the first element). Extension is as follows:

@@ -205,7 +205,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍀` expand? (might not make much sense without prototypes)
 		* [x] `,` ravel
 		* [ ] `⍪` table
-		* [ ] `⍪` catenate
+		* [x] `⍪` catenate
 		* [x] `⍴` reshape
 		* [x] `ϼ` rerank (generalized version of promote/demote: introduce leading length-1 axes or combine leading axes)
 		* [x] `⊖` reverse

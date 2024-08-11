@@ -65,6 +65,7 @@ element = Function (Just F.enlist') Nothing [G.element]
 roll = Function (Just F.roll') Nothing [G.roll]
 squad = Function Nothing (Just $ F.squad) [G.squad]
 rank = Function (Just F.rank') (Just F.rerank') [G.rank]
+catenate = Function Nothing (Just F.catenate) [G.catenate]
 
 functions = (\x -> (head $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -117,7 +118,8 @@ functions = (\x -> (head $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.element
   , TinyAPL.Primitives.roll
   , TinyAPL.Primitives.squad
-  , TinyAPL.Primitives.rank ]
+  , TinyAPL.Primitives.rank
+  , TinyAPL.Primitives.catenate ]
 
 -- * Primitive adverbs
 
