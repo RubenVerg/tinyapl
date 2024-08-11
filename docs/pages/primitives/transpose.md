@@ -2,7 +2,6 @@
 glyph: '⍉'
 pattern: 'r←[x]⍉y'
 name: Transpose
-planned: true
 ---
 
 `x` must be a vector of naturals, and each item must be at most the rank of `y`. If `x` is not provided, it is set to `⊖⍳ϼy`.

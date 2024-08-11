@@ -709,6 +709,24 @@ sortDown = pure . fmap getDown . sort . fmap Down
 sortDown' :: MonadError Error m => Array -> m Array
 sortDown' = fmap fromMajorCells . sortDown . majorCells
 
+reorderAxes' :: MonadError Error m => Array -> Array -> m Array
+reorderAxes' x y = do
+  shy <- shape' y
+  sx <- sortUp' x
+  is <- sortByUp' shy x
+  is' <- key' ((reduce' min') `atop` (pure .: flip const)) sx is
+  iota <- indexGenerator' is'
+  indices <- eachRight from x iota
+  from indices y
+
+reorderAxes :: MonadError Error m => [Natural] -> Array -> m Array
+reorderAxes is arr = reorderAxes' (vector $ Number . fromInteger . toInteger <$> is) arr
+
+transpose :: MonadError Error m => Array -> m Array
+transpose arr = do
+  r <- rank' arr >>= indexGenerator' >>= reverse'
+  reorderAxes' r arr
+
 -- * Operators
 
 compose :: MonadError Error m => (b -> m c) -> (a -> m b) -> a -> m c

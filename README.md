@@ -58,7 +58,7 @@ Marked features are supported, unmarked features are planned
 		* [x] dfns `{...}`, dadvs `_{...}`, dconjs `_{...}_`
 		* [x] refer to arguments and operands: `⍺` left argument, `⍵` right argument, `⍺⍺` left array operand, `⍶⍶` left function operand, `⍵⍵` right array operand, `⍹⍹` right function operand
 		* [x] recursion: `∇` recurse function, `_∇` recurse adverb, `_∇_` recurse conjunction
-	* [ ] comments `⍝`
+	* [x] comments `⍝`
 		* [x] inline comments? `⟃`/`⟄`
 	* [x] console I/O with `⎕` and `⍞`
 	* [x] array notation `⟨`/`⋄`/`⟩` and `[`/`⋄`/`]`
@@ -210,8 +210,8 @@ Marked features are supported, unmarked features are planned
 		* [x] `ϼ` rerank (generalized version of promote/demote: introduce leading length-1 axes or combine leading axes)
 		* [x] `⊖` reverse
 		* [x] `⊖` rotate
-		* [ ] `⍉` transpose
-		* [ ] `⍉` reorder axes
+		* [x] `⍉` transpose
+		* [x] `⍉` reorder axes
 		* [x] `∧` promote (introduce leading axis)
 		* [x] `∨` demote (combine two leading axes)
 		* [ ] `,` laminate

@@ -74,6 +74,7 @@ succeedsOrIdentical = Function (Just $ F.sortDown') (Just F.succeedsOrIdentical'
 succeeds = Function Nothing (Just F.succeeds') [G.succeeds]
 minimal = Function Nothing (Just F.minimal) [G.minimal]
 maximal = Function Nothing (Just F.maximal) [G.maximal]
+transpose = Function (Just F.transpose) (Just F.reorderAxes') [G.transpose]
 
 functions = (\x -> (head $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -135,7 +136,8 @@ functions = (\x -> (head $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.succeedsOrIdentical
   , TinyAPL.Primitives.succeeds
   , TinyAPL.Primitives.minimal
-  , TinyAPL.Primitives.maximal ]
+  , TinyAPL.Primitives.maximal
+  , TinyAPL.Primitives.transpose ]
 
 -- * Primitive adverbs
 
