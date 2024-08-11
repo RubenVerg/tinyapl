@@ -122,11 +122,20 @@ highlight str = reverse $ hColors $ execState hl (HState [] str) where
     advance
     push CNumber
 
-  comment :: HSt ()
-  comment = do
+  inlineComment :: HSt ()
+  inlineComment = do
     advance
     push CComment
     whileM_ (andNotAtEnd $ (/= (snd G.inlineComment)) <$> peek) $ do
+      advance
+      push CComment
+    advance
+    push CComment
+
+  comment :: HSt ()
+  comment = do
+    advance
+    whileM_ (andNotAtEnd $ (/= '\n') <$> peek) $ do
       advance
       push CComment
     advance
@@ -153,8 +162,13 @@ highlight str = reverse $ hColors $ execState hl (HState [] str) where
     else if p == G.underscore && n == fst G.braces then advance >> advance >> pushMany [CSyntax, CSyntax]
     else if p == snd G.braces && n == G.underscore then advance >> advance >> pushMany [CSyntax, CSyntax]
     else if p == snd G.braces then advance >> push CSyntax
+    else if p == fst G.train then advance >> push CSyntax
+    else if p == G.underscore && n == fst G.train then advance >> advance >> pushMany [CSyntax, CSyntax]
+    else if p == snd G.train && n == G.underscore then advance >> advance >> pushMany [CSyntax, CSyntax]
+    else if p == snd G.train then advance >> push CSyntax
     else if p `elem` identifierChars then identifier
-    else if p == fst G.inlineComment then comment
+    else if p == fst G.inlineComment then inlineComment
+    else if p == G.comment then comment
     else if p `elem` G.syntax then advance >> push CSyntax
     else if p `elem` G.arrays then advance >> push CPrimArray
     else if p `elem` G.functions then advance >> push CPrimFunction
