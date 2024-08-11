@@ -12,10 +12,11 @@ import qualified TinyAPL.Complex as Cx
 import TinyAPL.Complex ( Complex((:+)) )
 import Data.Char (ord, chr)
 import Data.Maybe (fromJust)
-import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericReplicate, nub, genericIndex, singleton)
+import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericReplicate, nub, genericIndex, singleton, sortOn, sort)
 import Numeric.Natural (Natural)
 import Control.Monad
 import Control.Monad.State (MonadIO)
+import Data.Ord (Down(..))
 
 -- * Functions
 
@@ -641,6 +642,42 @@ catenate a@(Array ash acs) b@(Array bsh bcs) =
   else if arrayRank a == arrayRank b + 1 then promote b >>= (a `catenate`) 
   else if arrayRank a + 1 == arrayRank b then promote a >>= (`catenate` b)
   else throwError $ RankError "Incompatible ranks to Catenate"
+
+gradeUp :: MonadError Error m => Ord a => [a] -> m [Natural]
+gradeUp xs = pure $ map fst $ sortOn snd $ zip [1..genericLength xs] xs
+
+gradeUp' :: MonadError Error m => Array -> m Array
+gradeUp' arr = vector . fmap (Number . fromInteger . toInteger) <$> gradeUp (majorCells arr)
+
+gradeDown :: MonadError Error m => Ord a => [a] -> m [Natural]
+gradeDown xs = pure $ map fst $ sortOn snd $ zip [1..genericLength xs] (Down <$> xs)
+
+gradeDown' :: MonadError Error m => Array -> m Array
+gradeDown' arr = vector . fmap (Number . fromInteger . toInteger) <$> gradeDown (majorCells arr)
+
+sortByUp :: MonadError Error m => Ord b => [a] -> [b] -> m [a]
+sortByUp as bs = pure $ map fst $ sortOn snd $ zip as bs
+
+sortByUp' :: MonadError Error m => Array -> Array -> m Array
+sortByUp' as bs = fromMajorCells <$> sortByUp (majorCells as) (majorCells bs)
+
+sortByDown :: MonadError Error m => Ord b => [a] -> [b] -> m [a]
+sortByDown as bs = pure $ map fst $ sortOn snd $ zip as $ Down <$> bs
+
+sortByDown' :: MonadError Error m => Array -> Array -> m Array
+sortByDown' as bs = fromMajorCells <$> sortByDown (majorCells as) (majorCells bs)
+
+sortUp :: MonadError Error m => Ord a =>[a] -> m [a]
+sortUp = pure . sort
+
+sortUp' :: MonadError Error m => Array -> m Array
+sortUp' = fmap fromMajorCells . sortUp . majorCells
+
+sortDown :: MonadError Error m => Ord a => [a] -> m [a]
+sortDown = pure . fmap getDown . sort . fmap Down
+
+sortDown' :: MonadError Error m => Array -> m Array
+sortDown' = fmap fromMajorCells . sortDown . majorCells
 
 -- * Operators
 

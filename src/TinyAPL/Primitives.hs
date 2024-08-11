@@ -26,9 +26,9 @@ floor = Function (Just F.floor') (Just F.min') [G.floor]
 ceil = Function (Just F.ceil') (Just F.max') [G.ceil]
 round = Function (Just F.round') Nothing [G.round]
 less = Function Nothing (Just F.less') [G.less]
-lessEqual = Function Nothing (Just F.lessEqual') [G.lessEqual]
+lessEqual = Function (Just $ F.sortUp') (Just F.lessEqual') [G.lessEqual]
 equal = Function Nothing (Just F.equal') [G.equal]
-greaterEqual = Function Nothing (Just F.greaterEqual') [G.greaterEqual]
+greaterEqual = Function (Just $ F.sortDown') (Just F.greaterEqual') [G.greaterEqual]
 greater = Function Nothing (Just F.greater') [G.greater]
 notEqual = Function (Just F.nubSieve') (Just F.notEqual') [G.notEqual]
 and = Function (Just F.promote) (Just F.lcm') [G.and]
@@ -66,6 +66,8 @@ roll = Function (Just F.roll') Nothing [G.roll]
 squad = Function Nothing (Just $ F.squad) [G.squad]
 rank = Function (Just F.rank') (Just F.rerank') [G.rank]
 catenate = Function Nothing (Just F.catenate) [G.catenate]
+gradeUp = Function (Just F.gradeUp') (Just F.sortByUp') [G.gradeUp]
+gradeDown = Function (Just F.gradeDown') (Just F.sortByDown') [G.gradeDown]
 
 functions = (\x -> (head $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -119,7 +121,9 @@ functions = (\x -> (head $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.roll
   , TinyAPL.Primitives.squad
   , TinyAPL.Primitives.rank
-  , TinyAPL.Primitives.catenate ]
+  , TinyAPL.Primitives.catenate
+  , TinyAPL.Primitives.gradeUp
+  , TinyAPL.Primitives.gradeDown ]
 
 -- * Primitive adverbs
 

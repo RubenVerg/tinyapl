@@ -270,6 +270,16 @@ spec = do
           d P.greater (vector [Number 1, Number 1, Number 1]) (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 1, Number 0, Number 0])
           d P.notEqual (vector [Number 1, Number 1, Number 1]) (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 1, Number 0, Number 1])
           d P.greaterEqual (vector [Number 1, Number 1, Number 1]) (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 1, Number 1, Number 0])
+
+    describe [G.lessEqual] $ do
+      describe "sort up" $ do
+        it "sorts an array ascending" $ do
+          m P.lessEqual (vector [Number 7, Number 9, Number 2, Number 2]) `shouldReturn` pure (vector [Number 2, Number 2, Number 7, Number 9])
+    
+    describe [G.greaterEqual] $ do
+      describe "sort down" $ do
+        it "sorts an array descending" $ do
+          m P.greaterEqual (vector [Number 7, Number 9, Number 2, Number 2]) `shouldReturn` pure (vector [Number 9, Number 7, Number 2, Number 2])
     
     describe [G.notEqual] $ do
       describe "nub sieve" $ do
@@ -677,6 +687,30 @@ spec = do
       describe "monad key" $ do
         it "applies a function to each unique element of the argument and the corresponding indices" $ do
           afm P.key P.pair (vector $ Character <$> "mississippi") `shouldReturn` pure (fromMajorCells [vector [Character 'm', box $ vector [Number 1]], vector [Character 'i', box $ vector [Number 2, Number 5, Number 8, Number 11]], vector [Character 's', box $ vector [Number 3, Number 4, Number 6, Number 7]], vector [Character 'p', box $ vector [Number 9, Number 10]]])
+
+    describe [G.gradeUp] $ do
+      describe "grade up" $ do
+        it "grades an array ascending" $ do
+          m P.gradeUp (vector [Number 4, Number 2, Number 10]) `shouldReturn` pure (vector [Number 2, Number 1, Number 3])
+        it "is stable" $ do
+          m P.gradeUp (vector [Number 1, Number 5, Number 1]) `shouldReturn` pure (vector [Number 1, Number 3, Number 2])
+      describe "sort by up" $ do
+        it "sorts an array according to the ascending grade of another" $ do
+          d P.gradeUp (vector $ Character <$> "hello") (vector [Number 5, Number 9, Number -2, Number 10, Number 3]) `shouldReturn` pure (vector $ Character <$> "lohel")
+        it "is stable" $ do
+          d P.gradeUp (vector $ Character <$> "hi!") (vector [Number 9, Number 2, Number 2]) `shouldReturn` pure (vector $ Character <$> "i!h")
+
+    describe [G.gradeDown] $ do
+      describe "grade down" $ do
+        it "grades an array descending" $ do
+          m P.gradeDown (vector [Number 4, Number 2, Number 10]) `shouldReturn` pure (vector [Number 3, Number 1, Number 2])
+        it "is stable" $ do
+          m P.gradeDown (vector [Number 1, Number 5, Number 1]) `shouldReturn` pure (vector [Number 2, Number 1, Number 3])
+      describe "sort by down" $ do
+        it "sorts an array according to the descending grade of another" $ do
+          d P.gradeDown (vector $ Character <$> "hello") (vector [Number 5, Number 9, Number -2, Number 10, Number 3]) `shouldReturn` pure (vector $ Character <$> "lehol")
+        it "is stable" $ do
+          d P.gradeDown (vector $ Character <$> "hi!") (vector [Number 9, Number 2, Number 2]) `shouldReturn` pure (vector $ Character <$> "hi!")
 
   describe "conjunctions" $ do
     describe [G.atop] $ do
