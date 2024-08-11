@@ -270,16 +270,6 @@ spec = do
           d P.greater (vector [Number 1, Number 1, Number 1]) (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 1, Number 0, Number 0])
           d P.notEqual (vector [Number 1, Number 1, Number 1]) (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 1, Number 0, Number 1])
           d P.greaterEqual (vector [Number 1, Number 1, Number 1]) (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 1, Number 1, Number 0])
-
-    describe [G.lessEqual] $ do
-      describe "sort up" $ do
-        it "sorts an array ascending" $ do
-          m P.lessEqual (vector [Number 7, Number 9, Number 2, Number 2]) `shouldReturn` pure (vector [Number 2, Number 2, Number 7, Number 9])
-    
-    describe [G.greaterEqual] $ do
-      describe "sort down" $ do
-        it "sorts an array descending" $ do
-          m P.greaterEqual (vector [Number 7, Number 9, Number 2, Number 2]) `shouldReturn` pure (vector [Number 9, Number 7, Number 2, Number 2])
     
     describe [G.notEqual] $ do
       describe "nub sieve" $ do
@@ -377,6 +367,16 @@ spec = do
           d precedesOrIdentical l r `shouldReturn` pure (vector [Number 1, Number 1, Number 0])
           d succeedsOrIdentical l r `shouldReturn` pure (vector [Number 0, Number 1, Number 1])
           d succeeds l r `shouldReturn` pure (vector [Number 0, Number 0, Number 1])
+
+    describe [G.precedesOrIdentical] $ do
+      describe "sort up" $ do
+        it "sorts an array ascending" $ do
+          m P.precedesOrIdentical (vector [Number 7, Number 9, Number 2, Number 2]) `shouldReturn` pure (vector [Number 2, Number 2, Number 7, Number 9])
+    
+    describe [G.succeedsOrIdentical] $ do
+      describe "sort down" $ do
+        it "sorts an array descending" $ do
+          m P.succeedsOrIdentical (vector [Number 7, Number 9, Number 2, Number 2]) `shouldReturn` pure (vector [Number 9, Number 7, Number 2, Number 2])
 
     describe [G.minimal, G.maximal] $ do
       describe "minimal and maximal" $ do
