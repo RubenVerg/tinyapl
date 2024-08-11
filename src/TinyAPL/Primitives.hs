@@ -68,6 +68,12 @@ rank = Function (Just F.rank') (Just F.rerank') [G.rank]
 catenate = Function Nothing (Just F.catenate) [G.catenate]
 gradeUp = Function (Just F.gradeUp') (Just F.sortByUp') [G.gradeUp]
 gradeDown = Function (Just F.gradeDown') (Just F.sortByDown') [G.gradeDown]
+precedes = Function Nothing (Just F.precedes') [G.precedes]
+precedesOrIdentical = Function Nothing (Just F.precedesOrIdentical') [G.precedesOrIdentical]
+succeedsOrIdentical = Function Nothing (Just F.succeedsOrIdentical') [G.succeedsOrIdentical]
+succeeds = Function Nothing (Just F.succeeds') [G.succeeds]
+minimal = Function Nothing (Just F.minimal) [G.minimal]
+maximal = Function Nothing (Just F.maximal) [G.maximal]
 
 functions = (\x -> (head $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -123,7 +129,13 @@ functions = (\x -> (head $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.rank
   , TinyAPL.Primitives.catenate
   , TinyAPL.Primitives.gradeUp
-  , TinyAPL.Primitives.gradeDown ]
+  , TinyAPL.Primitives.gradeDown
+  , TinyAPL.Primitives.precedes
+  , TinyAPL.Primitives.precedesOrIdentical
+  , TinyAPL.Primitives.succeedsOrIdentical
+  , TinyAPL.Primitives.succeeds
+  , TinyAPL.Primitives.minimal
+  , TinyAPL.Primitives.maximal ]
 
 -- * Primitive adverbs
 
