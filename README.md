@@ -231,12 +231,14 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⇂` minimal (TAO minimum)
 		* [ ] `↾` maximal (TAO maximum)
 	* operators
-		* [x] `⍆` reduce left-to-right
-		* [ ] `⍆` windowed reduce left-to-right
-		* [x] `⍅` reduce right-to-left
-		* [ ] `⍅` windowed reduce right-to-left
+		* [x] `⍆` reduce (left-to-right)
+		* [ ] `⍆` fold (seeded reduce)
+		* [x] `⍅` reduce back (right-to-left)
+		* [ ] `⍅` fold back
 		* [x] `↟` on prefixes
 		* [x] `↡` on suffixes
+		* [ ] `↟` on infixes
+		* [ ] `↡` on outfixes
 		* [x] `¨` each
 		* [x] `ᐵ` each-left
 		* [x] `ᑈ` each-right
