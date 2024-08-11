@@ -148,10 +148,10 @@ Marked features are supported, unmarked features are planned
 		* [x] `>` greater
 		* [x] `≡` identical
 		* [x] `≢` not identical
-		* [ ] `⊲` precedes (TAO less)
-		* [ ] `⊴` precedes or identical (TAO less or equal)
-		* [ ] `⊵` succeeds or identical (TAO greater or equal)
-		* [ ] `⊳` succeeds (TAO greater)
+		* [x] `⊲` precedes (TAO less)
+		* [x] `⊴` precedes or identical (TAO less or equal)
+		* [x] `⊵` succeeds or identical (TAO greater or equal)
+		* [x] `⊳` succeeds (TAO greater)
 		* [x] `∧` and
 		* [x] `∨` or
 		* [x] `⍲` nand
@@ -197,8 +197,8 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍒` grade down
 		* [x] `⍋` sort by up
 		* [x] `⍒` sort by down
-		* [x] `≤` sort up
-		* [x] `≥` sort down
+		* [x] `⊴` sort up
+		* [x] `⊵` sort down
 		* [x] `⍸` where
 		* [x] `∊` enlist
 		* [x] `⌿` replicate
@@ -228,8 +228,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍎` execute
 		* [ ] `⍕` format
 		* [ ] `↗` raise?
-		* [ ] `⇂` minimal (TAO minimum)
-		* [ ] `↾` maximal (TAO maximum)
+		* [x] `⇂` minimal (TAO minimum)
+		* [x] `↾` maximal (TAO maximum)
 	* operators
 		* [x] `⍆` reduce (left-to-right)
 		* [ ] `⍆` fold (seeded reduce)

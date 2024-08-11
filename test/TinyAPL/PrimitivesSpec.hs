@@ -270,16 +270,6 @@ spec = do
           d P.greater (vector [Number 1, Number 1, Number 1]) (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 1, Number 0, Number 0])
           d P.notEqual (vector [Number 1, Number 1, Number 1]) (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 1, Number 0, Number 1])
           d P.greaterEqual (vector [Number 1, Number 1, Number 1]) (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 1, Number 1, Number 0])
-
-    describe [G.lessEqual] $ do
-      describe "sort up" $ do
-        it "sorts an array ascending" $ do
-          m P.lessEqual (vector [Number 7, Number 9, Number 2, Number 2]) `shouldReturn` pure (vector [Number 2, Number 2, Number 7, Number 9])
-    
-    describe [G.greaterEqual] $ do
-      describe "sort down" $ do
-        it "sorts an array descending" $ do
-          m P.greaterEqual (vector [Number 7, Number 9, Number 2, Number 2]) `shouldReturn` pure (vector [Number 9, Number 7, Number 2, Number 2])
     
     describe [G.notEqual] $ do
       describe "nub sieve" $ do
@@ -350,11 +340,6 @@ spec = do
           m P.identical (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (scalar $ Number 1)
         it "returns the correct depth for complex arrays" $ do
           m P.identical (vector [box $ vector [Number 1, box $ vector [Number 2, Number 3]], box $ vector [Number 4, Number 5, box $ vector [Number 6, box $ vector [Number 7, Number 8], box $ scalar $ box $ scalar $ box $ vector [Number 9]]]]) `shouldReturn` pure (scalar $ Number 6)
-      describe "identical" $ do
-        it "returns true for equal arrays" $ do
-          d P.identical (vector [Number 1, Number 2]) (vector [Number 1, Number 2]) `shouldReturn` pure (scalar $ Number 1)
-        it "returns false for different arrays" $ do
-          d P.identical (vector [Number 1, Number 2]) (vector [Number 1, Number 3]) `shouldReturn` pure (scalar $ Number 0)
 
     describe [G.notIdentical] $ do
       describe "tally" $ do
@@ -364,11 +349,40 @@ spec = do
           m P.notIdentical (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (scalar $ Number 2)
         it "returns 1 for a scalar" $ do
           m P.notIdentical (scalar $ Number 10) `shouldReturn` pure (scalar $ Number 1)
-      describe "not identical" $ do
-        it "returns true for different arrays" $ do
-          d P.notIdentical (vector [Number 1, Number 2]) (vector [Number 1, Number 3]) `shouldReturn` pure (scalar $ Number 1)
-        it "return false for equal arrays" $ do
-          d P.notIdentical (vector [Number 1, Number 2]) (vector [Number 1, Number 2]) `shouldReturn` pure (scalar $ Number 0)
+
+    describe [G.identical, G.notIdentical, G.precedes, G.precedesOrIdentical, G.succeedsOrIdentical, G.succeeds] $ do
+      describe "tao comparisons" $ do
+        it "compares arrays" $ do
+          let l = vector [box $ vector [Number 1, Number 1, Number 1], box $ vector [Number 2, Number 2, Number 2], box $ vector [Number 3, Number 3, Number 3]]
+          let r = vector [box $ vector [Number 2, Number 2, Number 2], box $ vector [Number 2, Number 2, Number 2], box $ vector [Number 2, Number 2, Number 2]]
+          Right identical <- runResult $ fst <$> runSt (callOnFunction P.each P.identical) context
+          Right notIdentical <- runResult $ fst <$> runSt (callOnFunction P.each P.notIdentical) context
+          Right precedes <- runResult $ fst <$> runSt (callOnFunction P.each P.precedes) context
+          Right precedesOrIdentical <- runResult $ fst <$> runSt (callOnFunction P.each P.precedesOrIdentical) context
+          Right succeedsOrIdentical <- runResult $ fst <$> runSt (callOnFunction P.each P.succeedsOrIdentical) context
+          Right succeeds <- runResult $ fst <$> runSt (callOnFunction P.each P.succeeds) context
+          d identical l r `shouldReturn` pure (vector [Number 0, Number 1, Number 0])
+          d notIdentical l r `shouldReturn` pure (vector [Number 1, Number 0, Number 1])
+          d precedes l r `shouldReturn` pure (vector [Number 1, Number 0, Number 0])
+          d precedesOrIdentical l r `shouldReturn` pure (vector [Number 1, Number 1, Number 0])
+          d succeedsOrIdentical l r `shouldReturn` pure (vector [Number 0, Number 1, Number 1])
+          d succeeds l r `shouldReturn` pure (vector [Number 0, Number 0, Number 1])
+
+    describe [G.precedesOrIdentical] $ do
+      describe "sort up" $ do
+        it "sorts an array ascending" $ do
+          m P.precedesOrIdentical (vector [Number 7, Number 9, Number 2, Number 2]) `shouldReturn` pure (vector [Number 2, Number 2, Number 7, Number 9])
+    
+    describe [G.succeedsOrIdentical] $ do
+      describe "sort down" $ do
+        it "sorts an array descending" $ do
+          m P.succeedsOrIdentical (vector [Number 7, Number 9, Number 2, Number 2]) `shouldReturn` pure (vector [Number 9, Number 7, Number 2, Number 2])
+
+    describe [G.minimal, G.maximal] $ do
+      describe "minimal and maximal" $ do
+        it "returns the smallest and largest of two arrays" $ do
+          d P.minimal (vector [Number 1, Number 2, Number 3]) (vector [Number 4, Number 5, Number 6]) `shouldReturn` pure (vector [Number 1, Number 2, Number 3])
+          d P.maximal (vector [Number 1, Number 2, Number 3]) (vector [Number 4, Number 5, Number 6]) `shouldReturn` pure (vector [Number 4, Number 5, Number 6])
 
     describe [G.rho] $ do
       describe "shape" $ do

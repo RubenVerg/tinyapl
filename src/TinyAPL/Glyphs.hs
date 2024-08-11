@@ -147,6 +147,12 @@ rank = 'ϼ'
 catenate = '⍪'
 gradeUp = '⍋'
 gradeDown = '⍒'
+precedes = '⊲'
+precedesOrIdentical = '⊴'
+succeedsOrIdentical = '⊵'
+succeeds = '⊳'
+minimal = '⇂'
+maximal = '↾'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -202,7 +208,13 @@ functions =
   , TinyAPL.Glyphs.rank
   , TinyAPL.Glyphs.catenate
   , TinyAPL.Glyphs.gradeUp
-  , TinyAPL.Glyphs.gradeDown ]
+  , TinyAPL.Glyphs.gradeDown
+  , TinyAPL.Glyphs.precedes
+  , TinyAPL.Glyphs.precedesOrIdentical
+  , TinyAPL.Glyphs.succeedsOrIdentical
+  , TinyAPL.Glyphs.succeeds
+  , TinyAPL.Glyphs.minimal
+  , TinyAPL.Glyphs.maximal ]
 
 -- * Adverbs
 

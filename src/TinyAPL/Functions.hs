@@ -355,6 +355,36 @@ greater x y = pure $ x > y
 greater' :: MonadError Error m => Array -> Array -> m Array
 greater' = scalarDyad (fmap boolToScalar .: greater)
 
+precedes :: MonadError Error m => Array -> Array -> m Bool
+precedes x y = pure $ x < y
+
+precedes' :: MonadError Error m => Array -> Array -> m Array
+precedes' x y = scalar . boolToScalar <$> precedes x y
+
+precedesOrIdentical :: MonadError Error m => Array -> Array -> m Bool
+precedesOrIdentical x y = pure $ x <= y
+
+precedesOrIdentical' :: MonadError Error m => Array -> Array -> m Array
+precedesOrIdentical' x y = scalar . boolToScalar <$> precedesOrIdentical x y
+
+succeedsOrIdentical :: MonadError Error m => Array -> Array -> m Bool
+succeedsOrIdentical x y = pure $ x >= y
+
+succeedsOrIdentical' :: MonadError Error m => Array -> Array -> m Array
+succeedsOrIdentical' x y = scalar . boolToScalar <$> succeedsOrIdentical x y
+
+succeeds :: MonadError Error m => Array -> Array -> m Bool
+succeeds x y = pure $ x > y
+
+succeeds' :: MonadError Error m => Array -> Array -> m Array
+succeeds' x y = scalar . boolToScalar <$> succeeds x y
+
+minimal :: MonadError Error m => Array -> Array -> m Array
+minimal x y = pure $ Prelude.min x y
+
+maximal :: MonadError Error m => Array -> Array -> m Array
+maximal x y = pure $ Prelude.max x y
+
 identical :: MonadError Error m => Array -> Array -> m Bool
 identical x y = pure $ x == y
 
