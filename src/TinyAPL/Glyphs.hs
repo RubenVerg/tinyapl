@@ -153,6 +153,7 @@ succeedsOrIdentical = '⊵'
 succeeds = '⊳'
 minimal = '⇂'
 maximal = '↾'
+transpose = '⍉'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -214,7 +215,8 @@ functions =
   , TinyAPL.Glyphs.succeedsOrIdentical
   , TinyAPL.Glyphs.succeeds
   , TinyAPL.Glyphs.minimal
-  , TinyAPL.Glyphs.maximal ]
+  , TinyAPL.Glyphs.maximal
+  , TinyAPL.Glyphs.transpose ]
 
 -- * Adverbs
 

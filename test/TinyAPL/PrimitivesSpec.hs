@@ -638,6 +638,16 @@ spec = do
             pure (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 10, Number 10]])
         it "fails with mismatched trailing shapes" $ do
           e2m <$> d P.catenate (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) (fromMajorCells [vector [Number 5, Number 6, Number 7], vector [Number 8, Number 9, Number 10]]) `shouldReturn` Nothing
+
+    describe [G.transpose] $ do
+      describe "monad transpose" $ do
+        it "transposes an array" $ do
+          m P.transpose (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number 4]])
+      describe "dyad transpose" $ do
+        it "reorders axes of an array" $ do
+          d P.transpose (vector [Number 2, Number 1]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number 4]])
+        it "extracts diagonals" $ do
+          d P.transpose (vector [Number 1, Number 1]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [Number 1, Number 4])
   
   describe "adverbs" $ do
     describe [G.selfie] $ do

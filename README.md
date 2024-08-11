@@ -210,8 +210,8 @@ Marked features are supported, unmarked features are planned
 		* [x] `ϼ` rerank (generalized version of promote/demote: introduce leading length-1 axes or combine leading axes)
 		* [x] `⊖` reverse
 		* [x] `⊖` rotate
-		* [ ] `⍉` transpose
-		* [ ] `⍉` reorder axes
+		* [x] `⍉` transpose
+		* [x] `⍉` reorder axes
 		* [x] `∧` promote (introduce leading axis)
 		* [x] `∨` demote (combine two leading axes)
 		* [ ] `,` laminate
