@@ -1,6 +1,6 @@
 ---
-glyph: '≤'
-pattern: 'r←≤y'
+glyph: '⊴'
+pattern: 'r←⊴y'
 name: Sort Up
 planned: true
 ---

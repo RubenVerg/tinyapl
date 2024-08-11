@@ -197,8 +197,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍒` grade down
 		* [ ] `⍋` sort by up?
 		* [ ] `⍒` sort by down?
-		* [ ] `≤` sort up? useless with sort by (`⍋⍨`)
-		* [ ] `≥` sort down? as above
+		* [ ] `⊴` sort up? useless with sort by (`⍋⍨`)
+		* [ ] `⊵` sort down? as above
 		* [x] `⍸` where
 		* [x] `∊` enlist
 		* [x] `⌿` replicate
