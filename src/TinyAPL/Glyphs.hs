@@ -144,6 +144,7 @@ element = '∊'
 roll = '?'
 squad = '⌷'
 rank = 'ϼ'
+catenate = '⍪'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -196,7 +197,8 @@ functions =
   , TinyAPL.Glyphs.element
   , TinyAPL.Glyphs.roll
   , TinyAPL.Glyphs.squad
-  , TinyAPL.Glyphs.rank ]
+  , TinyAPL.Glyphs.rank
+  , TinyAPL.Glyphs.catenate ]
 
 -- * Adverbs
 

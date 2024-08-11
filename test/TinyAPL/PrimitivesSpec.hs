@@ -593,6 +593,27 @@ spec = do
         it "demotes arrays if argument is less than the rank" $ do
           d P.rank (scalar $ Number 1) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [Number 1, Number 2, Number 3, Number 4])
           d P.rank (scalar $ Number 0) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (scalar $ Number 1)
+
+    describe [G.catenate] $ do
+      describe "catenate" $ do
+        it "pairs scalars" $ do
+          d P.catenate (scalar $ Number 1) (scalar $ Number 2) `shouldReturn` pure (vector [Number 1, Number 2])
+        it "catenates arrays of equal rank" $ do
+          d P.catenate (vector [Number 1, Number 2]) (vector [Number 3, Number 4]) `shouldReturn` pure (vector [Number 1, Number 2, Number 3, Number 4])
+          d P.catenate (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) (fromMajorCells [vector [Number 5, Number 6], vector [Number 7, Number 8]]) `shouldReturn`
+            pure (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 5, Number 6], vector [Number 7, Number 8]])
+        it "promotes arrays once if necessary" $ do
+          d P.catenate (vector [Number 1, Number 2]) (fromMajorCells [vector [Number 3, Number 4], vector [Number 5, Number 6]]) `shouldReturn`
+            pure (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 5, Number 6]])
+          d P.catenate (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) (vector [Number 5, Number 6]) `shouldReturn`
+            pure (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 5, Number 6]])
+        it "reshapes scalars" $ do
+          d P.catenate (scalar $ Number 10) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn`
+            pure (fromMajorCells [vector [Number 10, Number 10], vector [Number 1, Number 2], vector [Number 3, Number 4]])
+          d P.catenate (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) (scalar $ Number 10) `shouldReturn`
+            pure (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 10, Number 10]])
+        it "fails with mismatched trailing shapes" $ do
+          e2m <$> d P.catenate (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) (fromMajorCells [vector [Number 5, Number 6, Number 7], vector [Number 8, Number 9, Number 10]]) `shouldReturn` Nothing
   
   describe "adverbs" $ do
     describe [G.selfie] $ do
