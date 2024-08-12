@@ -4,12 +4,12 @@ module TinyAPL.PrimitivesSpec where
 
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.CoreQuads
+import TinyAPL.Complex
 import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
 import qualified TinyAPL.Primitives as P
 
 import Test.Hspec
-import TinyAPL.Complex
 
 spec :: Spec
 spec = do
@@ -862,9 +862,12 @@ spec = do
         it "applies a function under another" $ do
           Right inc <- runResult $ fst <$> runSt (callOnFunctionAndArray P.after P.plus (scalar $ Number 1)) context
           Right t3 <- runResult $ fst <$> runSt (callOnArrayAndFunction P.after (scalar $ Number 3) P.take) context
-          cffm P.under inc t3 (vector [Number 1, Number 2, Number 3, Number 4, Number 5]) `shouldReturn` pure (vector [Number 2, Number 3, Number 4, Number 4, Number 5])
+          cffm P.under inc t3 (vector [Number 3, Number 2, Number 9, Number 5, Number 6]) `shouldReturn` pure (vector [Number 4, Number 3, Number 10, Number 5, Number 6])
         it "substitutes elements of the argument" $ do
           Right t3 <- runResult $ fst <$> runSt (callOnArrayAndFunction P.after (scalar $ Number 3) P.take) context
-          cafm P.under (vector [Number 10, Number 11, Number 12]) t3 (vector [Number 1, Number 2, Number 3, Number 4, Number 5]) `shouldReturn` pure (vector [Number 10, Number 11, Number 12, Number 4, Number 5])
-          cafm P.under (scalar $ Number 7) t3 (vector [Number 1, Number 2, Number 3, Number 4, Number 5]) `shouldReturn` pure (vector [Number 7, Number 7, Number 7, Number 4, Number 5])
+          cafm P.under (vector [Number 10, Number 11, Number 12]) t3 (vector [Number 2, Number 4, Number 1, Number 5, Number 3]) `shouldReturn` pure (vector [Number 10, Number 11, Number 12, Number 5, Number 3])
+          cafm P.under (scalar $ Number 7) t3 (vector [Number 2, Number 9, Number 3, Number 0, Number 1]) `shouldReturn` pure (vector [Number 7, Number 7, Number 7, Number 0, Number 1])
+        it "works with sort up right argument" $ do
+          Right op <- runResult $ fst <$> runSt (callOnFunctionAndFunction P.atop P.iota P.notIdentical >>= callOnFunctionAndFunction P.rightHook P.plus) context
+          cffm P.under op P.precedesOrIdentical (vector [Number 9, Number 7, Number 1, Number 4, Number 10]) `shouldReturn` pure (vector [Number 13, Number 10, Number 2, Number 6, Number 15])
           

@@ -152,3 +152,7 @@ whileM_ p f = go where
   go = do
     x <- p
     if x then f >> go else pure ()
+
+distinct :: Eq a => [a] -> Bool
+distinct [] = True
+distinct (x:xs) = x `notElem` xs && distinct xs

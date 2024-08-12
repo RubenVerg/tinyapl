@@ -4,7 +4,7 @@ pattern: 'r←[x]({Fn}⍢G)y'
 name: Under
 ---
 
-`G` is a structural monadic function, i.e. a function that only reorders the argument without changing the elements' values. `r` is the result of applying `G`, calling \[`x∘`\]`F`, or `n⍨` on the reordered elements and then undo the reordering. If the result of `F`/`n⍨` is scalar, the result is repeated for all substituted elements of the result.
+`G` is a structural monadic function, i.e. a function that only reorders the argument without changing or depending on the elements' values, except for their ordering. `r` is the result of applying `G`, calling \[`x∘`\]`F`, or `n⍨` on the reordered elements and then undo the reordering. If the result of `F`/`n⍨` is scalar, the result is repeated for all substituted elements of the result.
 
 ## Functions supported as `G`
 
@@ -20,9 +20,11 @@ name: Under
 * [`∨` Demote](/docs/primitive/demote)
 * [`⌷` Index](/docs/primitive/index)
 * [`⊇` From](/docs/primitive/from)
-* [`⊃` First](/docs/primitive/first)
-* [`⊇` Last](/docs/primitive/last)
+* [`⊃` First](/docs/primitive/first) (if `y` is simple)
+* [`⊇` Last](/docs/primitive/last) (if `y` is simple)
 * [`⌿` Replicate](/docs/primitive/replicate)
+* [`⊴` Sort Up](/docs/primitive/sort_up)
+* [`⊵` Sort Down](/docs/primitive/sort_down) (not stable)
 * All combinations of these functions
 * These function on any [`⍤` At Rank](/docs/primitive/at_rank)
 * All dfns which are structural, as defined above
