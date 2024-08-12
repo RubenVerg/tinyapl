@@ -254,7 +254,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⌸` key with vocabulary
 		* [ ] `⍁` diagonals?
 		* [ ] `⌺` stencil
-		* [ ] `⁖` valences (call left if monad and right if dyad)
+		* [x] `⁖` valences (call left if monad and right if dyad)
 		* [ ] `⍢` strucutral under
 	* combinators
 		* [x] `⍨` constant
