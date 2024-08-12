@@ -17,6 +17,7 @@ import Numeric.Natural (Natural)
 import Control.Monad
 import Control.Monad.State (MonadIO)
 import Data.Ord (Down(..))
+import qualified Data.Matrix as M
 
 -- * Functions
 
@@ -142,6 +143,25 @@ root _ _ = throwError expectedNumber
 
 root' :: MonadError Error m => Array -> Array -> m Array
 root' = scalarDyad root
+
+matrixInverse :: MonadError Error m => M.Matrix (Complex Double) -> m (M.Matrix (Complex Double))
+matrixInverse y = do
+  let hermitian = fmap Cx.conjugate . M.transpose
+  case M.inverse (hermitian y * y) of
+    Left err -> throwError $ DomainError err
+    Right r -> pure $ r * hermitian y
+
+matrixInverse' :: MonadError Error m => Array -> m Array
+matrixInverse' = atRank1 (\y -> (matrix . fmap Number) <$> (asMatrix (DomainError "") y >>= mapM (asNumber (DomainError "Matrix inverse argument must be numeric")) >>= matrixInverse)) 2
+
+matrixDivide :: MonadError Error m => M.Matrix (Complex Double) -> M.Matrix (Complex Double) -> m (M.Matrix (Complex Double))
+matrixDivide x y = (* x) <$> matrixInverse y
+
+matrixDivide' :: MonadError Error m => Array -> Array -> m Array
+matrixDivide' = atRank2 (\x y -> do
+  x' <- asMatrix (DomainError "") x >>= mapM (asNumber (DomainError "Matrix divide arguments must be numeric"))
+  y' <- asMatrix (DomainError "") y >>= mapM (asNumber (DomainError "Matrix divide arguments must be numeric")) 
+  matrix . fmap Number <$> matrixDivide x' y') (2, 2)
 
 piTimes :: MonadError Error m => ScalarValue -> m ScalarValue
 piTimes (Number y) = pure $ Number $ pi * y

@@ -648,6 +648,21 @@ spec = do
           d P.transpose (vector [Number 2, Number 1]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number 4]])
         it "extracts diagonals" $ do
           d P.transpose (vector [Number 1, Number 1]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [Number 1, Number 4])
+
+    describe [G.matrixInverse] $ do
+      describe "matrix inverse" $ do
+        it "returns the inverse of a square matrix" $ do
+          m P.matrixInverse (fromMajorCells [vector [Number 0, Number 0, Number 1], vector [Number 1, Number 0, Number 0], vector [Number 0, Number 1, Number 0]]) `shouldReturn`
+            pure (fromMajorCells [vector [Number 0, Number 1, Number 0], vector [Number 0, Number 0, Number 1], vector [Number 1, Number 0, Number 0]])
+        it "returns the left inverse of a non-square matrix" $ do
+          m P.matrixInverse (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 5, Number 6]]) `shouldReturn`
+            pure (fromMajorCells [vector [Number (-4 / 3), Number (-1 / 3), Number (2 / 3)], vector [Number (13 / 12), Number (1 / 3), Number (-5 / 12)]])
+      describe "matrix divide" $ do
+        it "divides two matrices" $ do
+          d P.matrixInverse
+            (fromMajorCells [vector [Number 2, Number 1], vector [Number 3, Number 5], vector [Number 9, Number 1]])
+            (fromMajorCells [vector [Number 3, Number 1, Number 4], vector [Number 1, Number 5, Number 9], vector [Number 2, Number 6, Number 5]]) `shouldReturn`
+            pure (fromMajorCells [vector [Number (10 / 9), Number (-11 / 18)], vector [Number (16 / 9), Number (-5 / 18)], vector [Number (-7 / 9), Number (7 / 9)]])
   
   describe "adverbs" $ do
     describe [G.selfie] $ do

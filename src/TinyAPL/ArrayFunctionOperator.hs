@@ -14,6 +14,7 @@ import Control.Monad.Except (ExceptT, MonadError)
 import Control.Applicative (Alternative((<|>)))
 import Data.List.NonEmpty (NonEmpty, toList)
 import Data.Tuple (swap)
+import qualified Data.Matrix as M
 
 -- * Arrays
 
@@ -55,6 +56,9 @@ scalar x = Array [] [x]
 
 vector :: [ScalarValue] -> Array
 vector xs = Array [genericLength xs] xs
+
+matrix :: M.Matrix ScalarValue -> Array
+matrix mat = Array [toEnum $ M.nrows mat, toEnum $ M.ncols mat] $ M.toList mat
 
 arrayOf :: [Natural] -> [ScalarValue] -> Maybe Array
 arrayOf sh cs
@@ -231,6 +235,12 @@ asVector :: MonadError Error m => Error -> Array -> m [ScalarValue]
 asVector _ (Array [] scalar) = pure scalar
 asVector _ (Array [_] vec)   = pure vec
 asVector e _                 = throwError e
+
+asMatrix :: MonadError Error m => Error -> Array -> m (M.Matrix ScalarValue)
+asMatrix _ (Array [] scalar)        = pure $ M.fromList 1 1 scalar
+asMatrix _ (Array [cols] vec)       = pure $ M.fromList 1 (fromEnum cols) vec
+asMatrix _ (Array [rows, cols] mat) = pure $ M.fromList (fromEnum rows) (fromEnum cols) mat
+asMatrix e _                        = throwError e
 
 onMajorCells :: MonadError Error m =>
   ([Array] -> m [Array])

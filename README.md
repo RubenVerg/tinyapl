@@ -119,8 +119,8 @@ Marked features are supported, unmarked features are planned
 		* [x] `⌈` maximum
 		* [x] `⸠` round
 		* [ ] `⸠` average?
-		* [ ] `⌹` matrix inverse
-		* [ ] `⌹` matrix divide
+		* [x] `⌹` matrix inverse
+		* [x] `⌹` matrix divide
 		* [ ] `!` factorial/gamma
 		* [ ] `!` binomial
 		* [x] `|` magnitude
