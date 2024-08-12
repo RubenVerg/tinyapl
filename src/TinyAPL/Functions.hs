@@ -152,7 +152,12 @@ matrixInverse y = do
     Right r -> pure $ r * hermitian y
 
 matrixInverse' :: MonadError Error m => Array -> m Array
-matrixInverse' = atRank1 (\y -> (matrix . fmap Number) <$> (asMatrix (DomainError "") y >>= mapM (asNumber (DomainError "Matrix inverse argument must be numeric")) >>= matrixInverse)) 2
+matrixInverse' = atRank1 (\y -> do
+  r <- rank y
+  mat <- asMatrix (DomainError "") y >>= mapM (asNumber (DomainError "Matrix inverse argument must be numeric"))
+  inv <- fmap Number <$> matrixInverse (if r < 2 then M.transpose mat else mat)
+  if r < 2 then pure $ Array (arrayShape y) (M.toList inv)
+  else pure $ matrix inv) 2
 
 matrixDivide :: MonadError Error m => M.Matrix (Complex Double) -> M.Matrix (Complex Double) -> m (M.Matrix (Complex Double))
 matrixDivide x y = (* x) <$> matrixInverse y
