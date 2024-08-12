@@ -24,5 +24,5 @@ name: Under
 * [`⊇` Last](/docs/primitive/last)
 * [`⌿` Replicate](/docs/primitive/replicate)
 * All combinations of these functions
-* These function on any [`⍤` At Rank](/docs/primitive/at-rank)
+* These function on any [`⍤` At Rank](/docs/primitive/at_rank)
 * All dfns which are structural, as defined above
