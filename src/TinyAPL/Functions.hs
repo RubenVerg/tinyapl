@@ -939,10 +939,12 @@ until2 f p x y = let
 under :: MonadError Error m => (Array -> m Array) -> (Array -> m Array) -> Array -> m Array
 under f g arr = do
   let nums = fromJust $ arrayReshaped (arrayShape arr) $ Number . (:+ 0) <$> [1..]
-  nums' <- g nums
-  if nub (arrayContents nums') /= arrayContents nums' then throwError $ DomainError "Under right argument must return each element at most once"
+  pairs <- atRank2 (atop enclose' pair) (0, 0) arr nums
+  rs <- g pairs
+  nums' <- atRank1 (compose TinyAPL.Functions.last first) 0 rs
+  if Prelude.not $ distinct $ arrayContents rs then throwError $ DomainError "Under right operand must return each element at most once"
   else do
-    res <- g arr >>= f
+    res <- atRank1 (compose first first) 0 rs >>= f
     if isScalar res then do
       pure $ Array (arrayShape arr) $ zipWith (\num el -> if num `elem` (arrayContents nums') then head $ arrayContents res else el) (arrayContents nums) (arrayContents arr)
     else if arrayShape nums' == arrayShape res then do
