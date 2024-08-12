@@ -154,6 +154,7 @@ succeeds = '⊳'
 minimal = '⇂'
 maximal = '↾'
 transpose = '⍉'
+matrixInverse = '⌹'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -216,7 +217,8 @@ functions =
   , TinyAPL.Glyphs.succeeds
   , TinyAPL.Glyphs.minimal
   , TinyAPL.Glyphs.maximal
-  , TinyAPL.Glyphs.transpose ]
+  , TinyAPL.Glyphs.transpose
+  , TinyAPL.Glyphs.matrixInverse ]
 
 -- * Adverbs
 

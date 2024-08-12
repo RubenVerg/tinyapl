@@ -520,11 +520,15 @@ evalTrain cat es = let
   train (Just z : Just y : Nothing : rs) = train2 y z >>= train . (: rs) . Just
   train _ = throwError $ SyntaxError "3-train can only contain empty entries as the first tine"
 
+  showTine :: Maybe Value -> String
+  showTine Nothing = ""
+  showTine (Just x) = show x
+
   withTrainRepr :: [Maybe Value] -> Value -> St Value
   withTrainRepr _ (VArray _) = throwError $ DomainError "Array train?"
-  withTrainRepr us (VFunction f) = pure $ VFunction $ f{ functionRepr = [fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train] }
-  withTrainRepr us (VAdverb a) = pure $ VAdverb $ a{ adverbRepr = [G.underscore, fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train] }
-  withTrainRepr us (VConjunction c) = pure $ VConjunction $ c{ conjRepr = [G.underscore, fst G.train] ++ intercalate [' ', G.separator, ' '] (show <$> us) ++ [snd G.train, G.underscore] }
+  withTrainRepr us (VFunction f) = pure $ VFunction $ f{ functionRepr = [fst G.train] ++ intercalate [' ', G.separator, ' '] (showTine <$> us) ++ [snd G.train] }
+  withTrainRepr us (VAdverb a) = pure $ VAdverb $ a{ adverbRepr = [G.underscore, fst G.train] ++ intercalate [' ', G.separator, ' '] (showTine <$> us) ++ [snd G.train] }
+  withTrainRepr us (VConjunction c) = pure $ VConjunction $ c{ conjRepr = [G.underscore, fst G.train] ++ intercalate [' ', G.separator, ' '] (showTine <$> us) ++ [snd G.train, G.underscore] }
   in do
     us <- mapM (\case
       Nothing -> pure Nothing

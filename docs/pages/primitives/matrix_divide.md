@@ -2,7 +2,6 @@
 glyph: '⌹'
 pattern: 'r←x⌹y'
 name: Matrix Divide
-planned: true
 ---
 
-`x` and `y` are matrices, `r` is the result of the matrix division between `x` and `y`, that is, `y+⤈∙×r` (the matrix product of `y` and `r`) is `x`.
+`x` and `y` are matrices, `r` is the result of the matrix division between `x` and `y`, that is, `y+⍆∙×r` (the matrix product of `y` and `r`) is `x`.
