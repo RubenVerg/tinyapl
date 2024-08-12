@@ -253,6 +253,7 @@ mirror = '⸚'
 leftFork = '⇾'
 rightFork = '⇽'
 repeat = '⍣'
+valences = '⁖'
 
 conjunctions =
   [ TinyAPL.Glyphs.atop
@@ -264,4 +265,5 @@ conjunctions =
   , TinyAPL.Glyphs.mirror
   , TinyAPL.Glyphs.leftFork
   , TinyAPL.Glyphs.rightFork
-  , TinyAPL.Glyphs.repeat ]
+  , TinyAPL.Glyphs.repeat
+  , TinyAPL.Glyphs.valences ]

@@ -849,3 +849,10 @@ spec = do
         it "applies a function until a condition is met" $ do
           Right step <- runResult $ fst <$> runSt (callOnFunctionAndFunction P.after P.plus P.divide) context
           cffd P.repeat step P.identical (scalar $ Number 1) (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 1.618033988749897)
+
+    describe [G.valences] $ do
+      describe "valences" $ do
+        it "calls the left funtion when called monadically" $ do
+          cffm P.valences P.minus P.plus (scalar $ Number 2) `shouldReturn` pure (scalar $ Number -2)
+        it "calls the right function when called dyadically" $ do
+          cffd P.valences P.minus P.plus (scalar $ Number 2) (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 3)
