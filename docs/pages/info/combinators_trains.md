@@ -1,0 +1,28 @@
+---
+name: Combinators ↔ Trains
+---
+
+Trains and combinators serve the same purpose, and are interchangeable. Depending on your need, you might want to convert between the two of them. Maybe you're golfing and want to see if the alternative is shorter, or maybe you just want to make your code more readable.
+
+## Combinators → Trains
+
+* `F⍤G` is `⦅F⋄G⦆`
+* `F⍥G` is `⦅F⍤⊣⋄G⋄F⍤⊢⦆`, which is `⦅⦅F⋄⊣⦆⋄G⋄⦅F⋄⊢⦆⦆`
+* `x⍨` is `⦅x⦆`
+* `F⍨` is `⦅⊣⋄F⋄⊢⦆`
+* `F⊸G` is `⦅F⍤⊣⋄G⋄⊢⦆`
+* `F⟜G` is `⦅⊣⋄F⋄G⍤⊢⦆`
+* `F⇽G` is `⦅F⋄G⋄⊢⦆`
+* `F⇾G` is `⦅⊣⋄F⋄G⦆`
+* `F⸚G` is `⦅G⍨⋄F⋄G⦆`
+* `F«G»H` is `⦅F⋄G⋄H⦆`
+
+The other combinators are just Valence cases of the above.
+
+## Trains → Combinators
+
+As well as the reverse comparisons of the ones above, some combinations of more combinators can appear as trains:
+
+* `⦅F⍤⊣⋄G⋄H⍤⊢⦆` is `F⊸G⟜H`
+* `⦅F⋄G⋄H⍤⊢⦆` is `F⇾(G⟜H)`
+* `⦅F⍤⊣⋄G⋄H⦆` is `F⊸G⇽H`
