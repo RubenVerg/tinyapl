@@ -657,6 +657,10 @@ spec = do
         it "returns the left inverse of a non-square matrix" $ do
           m P.matrixInverse (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 5, Number 6]]) `shouldReturn`
             pure (fromMajorCells [vector [Number (-4 / 3), Number (-1 / 3), Number (2 / 3)], vector [Number (13 / 12), Number (1 / 3), Number (-5 / 12)]])
+        it "returns the reciprocal of a scalar" $ do
+          m P.matrixInverse (scalar $ Number 2) `shouldReturn` pure (scalar $ Number 0.5)
+        it "returns the invere of the transpose of a vector" $ do
+          m P.matrixInverse (vector [Number 1, Number 2, Number 1]) `shouldReturn` pure (vector [Number (1 / 6), Number (1 / 3), Number (1 / 6)])
       describe "matrix divide" $ do
         it "divides two matrices" $ do
           d P.matrixInverse
