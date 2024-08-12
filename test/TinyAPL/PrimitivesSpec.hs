@@ -856,3 +856,15 @@ spec = do
           cffm P.valences P.minus P.plus (scalar $ Number 2) `shouldReturn` pure (scalar $ Number -2)
         it "calls the right function when called dyadically" $ do
           cffd P.valences P.minus P.plus (scalar $ Number 2) (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 3)
+
+    describe [G.under] $ do
+      describe "under" $ do
+        it "applies a function under another" $ do
+          Right inc <- runResult $ fst <$> runSt (callOnFunctionAndArray P.after P.plus (scalar $ Number 1)) context
+          Right t3 <- runResult $ fst <$> runSt (callOnArrayAndFunction P.after (scalar $ Number 3) P.take) context
+          cffm P.under inc t3 (vector [Number 1, Number 2, Number 3, Number 4, Number 5]) `shouldReturn` pure (vector [Number 2, Number 3, Number 4, Number 4, Number 5])
+        it "substitutes elements of the argument" $ do
+          Right t3 <- runResult $ fst <$> runSt (callOnArrayAndFunction P.after (scalar $ Number 3) P.take) context
+          cafm P.under (vector [Number 10, Number 11, Number 12]) t3 (vector [Number 1, Number 2, Number 3, Number 4, Number 5]) `shouldReturn` pure (vector [Number 10, Number 11, Number 12, Number 4, Number 5])
+          cafm P.under (scalar $ Number 7) t3 (vector [Number 1, Number 2, Number 3, Number 4, Number 5]) `shouldReturn` pure (vector [Number 7, Number 7, Number 7, Number 4, Number 5])
+          

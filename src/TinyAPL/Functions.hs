@@ -12,7 +12,7 @@ import qualified TinyAPL.Complex as Cx
 import TinyAPL.Complex ( Complex((:+)) )
 import Data.Char (ord, chr)
 import Data.Maybe (fromJust)
-import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericReplicate, nub, genericIndex, singleton, sortOn, sort)
+import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericReplicate, nub, genericIndex, singleton, sortOn, sort, find)
 import Numeric.Natural (Natural)
 import Control.Monad
 import Control.Monad.State (MonadIO)
@@ -935,3 +935,25 @@ until2 :: MonadError Error m => (Array -> Array -> m Array) -> (Array -> Array -
 until2 f p x y = let
   err = DomainError "Until right operand must return a boolean scalar"
   in TinyAPL.Functions.until (f x) (\cu pr -> p cu pr >>= asScalar err >>= asBool err) y
+
+under :: MonadError Error m => (Array -> m Array) -> (Array -> m Array) -> Array -> m Array
+under f g arr = do
+  let nums = fromJust $ arrayReshaped (arrayShape arr) $ Number . (:+ 0) <$> [1..]
+  nums' <- g nums
+  if nub (arrayContents nums') /= arrayContents nums' then throwError $ DomainError "Under right argument must return each element at most once"
+  else do
+    res <- g arr >>= f
+    if isScalar res then do
+      pure $ Array (arrayShape arr) $ zipWith (\num el -> if num `elem` (arrayContents nums') then head $ arrayContents res else el) (arrayContents nums) (arrayContents arr)
+    else if arrayShape nums' == arrayShape res then do
+      let cs = zip (arrayContents nums') (arrayContents res)
+      pure $ Array (arrayShape arr) $ zipWith (\num el -> case find (\(num', _) -> num == num') cs of
+        Just (_, el') -> el'
+        Nothing -> el) (arrayContents nums) (arrayContents arr)
+    else throwError $ DomainError "Under left argument mustn't change the shape of the argument"
+
+under2 :: MonadError Error m => (Array -> Array -> m Array) -> (Array -> m Array) -> Array -> Array -> m Array
+under2 f g x = under (f x) g
+
+underK :: MonadError Error m => Array -> (Array -> m Array) -> Array -> m Array
+underK arr = under (\_ -> pure arr)
