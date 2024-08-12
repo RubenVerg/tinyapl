@@ -254,6 +254,7 @@ leftFork = '⇾'
 rightFork = '⇽'
 repeat = '⍣'
 valences = '⁖'
+under = '⍢'
 
 conjunctions =
   [ TinyAPL.Glyphs.atop
@@ -266,4 +267,5 @@ conjunctions =
   , TinyAPL.Glyphs.leftFork
   , TinyAPL.Glyphs.rightFork
   , TinyAPL.Glyphs.repeat
-  , TinyAPL.Glyphs.valences ]
+  , TinyAPL.Glyphs.valences
+  , TinyAPL.Glyphs.under ]
