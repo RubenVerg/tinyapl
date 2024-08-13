@@ -202,7 +202,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `∊` enlist
 		* [x] `⌿` replicate
 		* [x] `,` ravel
-		* [ ] `⍪` table
+		* [ ] `⍪` ravel items
 		* [x] `⍪` catenate
 		* [x] `⍴` reshape
 		* [x] `ϼ` rerank (generalized version of promote/demote: introduce leading length-1 axes or combine leading axes)
@@ -246,7 +246,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍣` until
 		* [ ] `∙` inner product
 		* [ ] `∙` alternant?
-		* [ ] `⊞` outer product
+		* [ ] `⊞` table
 		* [x] `⍤` at rank
 		* [x] `◡` on cells (`⍤¯1`)
 		* [x] `◠` on scalars (`⍤0`)

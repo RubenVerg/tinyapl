@@ -1020,3 +1020,6 @@ under2 f g x = under (f x) g
 
 underK :: MonadError Error m => Array -> (Array -> m Array) -> Array -> m Array
 underK arr = under (\_ -> pure arr)
+
+table :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+table f = atRank2 (atRank2 f (0, 0)) (0, 10000)
