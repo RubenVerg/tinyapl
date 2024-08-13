@@ -782,6 +782,14 @@ spec = do
           afm P.onContents P.minus (scalar $ box $ vector [Number 1, Number 2]) `shouldReturn` pure (vector [Number -1, Number -2])
           afd P.onContents P.plus (scalar $ box $ vector [Number 1, Number 2]) (scalar $ box $ vector [Number 3, Number 4]) `shouldReturn` pure (vector [Number 4, Number 6])
 
+    describe [G.table] $ do
+      describe "table" $ do
+        it "computes the outer product of two arrays" $ do
+          Right dr <- runResult $ fst <$> runSt (callOnFunctionAndFunction P.atop P.first P.right) context
+          afd P.table P.pair (vector [Number 1, Number 2]) (vector [Number 3, Number 4]) `shouldReturn` pure (fromMajorCells [fromMajorCells [vector [Number 1, Number 3], vector [Number 1, Number 4]], fromMajorCells [vector [Number 2, Number 3], vector [Number 2, Number 4]]])
+          afd P.table dr (vector [box $ vector [Number 1, Number 2], box $ vector [Number 3, Number 4]]) (vector [box $ vector [Number 5, Number 6], box $ vector [Number 7, Number 8]]) `shouldReturn`
+            pure (fromMajorCells [fromMajorCells [vector [Number 5, Number 6], vector [Number 7, Number 8]], fromMajorCells [vector [Number 5, Number 6], vector [Number 7, Number 8]]])
+
   describe "conjunctions" $ do
     describe [G.atop] $ do
       describe "at rank" $ do

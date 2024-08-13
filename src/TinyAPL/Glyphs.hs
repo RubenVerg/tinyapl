@@ -235,6 +235,7 @@ onCells = '◡'
 onScalars = '◠'
 boxed = 'ᑣ'
 onContents = 'ᑒ'
+table = '⊞'
 
 adverbs =
   [ TinyAPL.Glyphs.selfie
@@ -249,7 +250,8 @@ adverbs =
   , TinyAPL.Glyphs.onCells
   , TinyAPL.Glyphs.onScalars
   , TinyAPL.Glyphs.boxed
-  , TinyAPL.Glyphs.onContents ]
+  , TinyAPL.Glyphs.onContents
+  , TinyAPL.Glyphs.table ]
 
 -- * Conjunctions
 

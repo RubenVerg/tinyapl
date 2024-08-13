@@ -1,8 +1,7 @@
 ---
-glyph: '⍪'
-pattern: 'r←⍪y'
+glyph: '⊞'
+pattern: 'r←x(F⊞)y'
 name: Table
-planned: true
 ---
 
-`r` is a matrix whose major cells are the ravel of the major cells of `y`.
+`r` is the result of the (flat) outer product of `x` and `y` using `F`: `r←x F⍤0⍤0‿∞ y`.

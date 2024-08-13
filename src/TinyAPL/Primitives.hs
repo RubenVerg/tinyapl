@@ -195,6 +195,10 @@ onContents = Adverb
   { adverbRepr = [G.onContents]
   , adverbOnArray = Nothing
   , adverbOnFunction = Just $ \f -> pure $ Function (Just $ F.onContents1 $ callMonad f) (Just $ F.onContents2 $ callDyad f) (makeAdverbRepr (show f) G.onContents) }
+table = Adverb
+  { adverbRepr = [G.table]
+  , adverbOnArray = Nothing
+  , adverbOnFunction = Just $ \f -> pure $ Function Nothing (Just $ F.table (callDyad f)) (makeAdverbRepr (show f) G.table) }
 
 adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   [ TinyAPL.Primitives.selfie
@@ -209,7 +213,8 @@ adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   , TinyAPL.Primitives.onCells
   , TinyAPL.Primitives.onScalars
   , TinyAPL.Primitives.boxed
-  , TinyAPL.Primitives.onContents ]
+  , TinyAPL.Primitives.onContents
+  , TinyAPL.Primitives.table ]
 
 -- * Primitive conjunctions
 
