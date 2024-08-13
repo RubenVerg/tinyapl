@@ -44,7 +44,7 @@ Marked features are supported, unmarked features are planned
 			* [x] `⍘n` -> newline
 			* [x] `⍘r` -> carriage return
 			* [x] `⍘t` -> tab
-			* [ ] `⍘{22be}` -> unicode?
+			* [ ] `⍘{22be}` -> unicode
 	* [x] names
 		* [x] array names (`abc`)
 		* [x] function names (`Abc`)
@@ -170,7 +170,6 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍸` interval index
 		* [ ] `∊` element of
 		* [ ] `⍷` find
-		* [ ] `⍷` type? depends on if prototypes are added or not
 		* [ ] `⋷` histogram (inverse of where)
 		* [ ] `⋷` count
 		* [x] `≡` depth
@@ -181,7 +180,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍳` index generator
 		* [x] `?` roll
 		* [ ] `?` deal
-		* [ ] `…` range?
+		* [ ] `…` range
 		* [x] `⍮` pair
 		* [x] `⍮` half pair
 	* array manipulation functions
@@ -195,14 +194,13 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⊆` group (not partition!)
 		* [ ] `⍋` grade up
 		* [ ] `⍒` grade down
-		* [ ] `⍋` sort by up?
-		* [ ] `⍒` sort by down?
-		* [ ] `⊴` sort up? useless with sort by (`⍋⍨`)
-		* [ ] `⊵` sort down? as above
+		* [ ] `⍋` sort by up
+		* [ ] `⍒` sort by down
+		* [ ] `⊴` sort up
+		* [ ] `⊵` sort down
 		* [x] `⍸` where
 		* [x] `∊` enlist
 		* [x] `⌿` replicate
-		* [ ] `⍀` expand? (might not make much sense without prototypes)
 		* [x] `,` ravel
 		* [ ] `⍪` table
 		* [ ] `⍪` catenate
@@ -242,7 +240,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `¨` each
 		* [x] `ᐵ` each-left
 		* [x] `ᑈ` each-right
-		* [ ] `⍣` repeat (with inverses?)
+		* [ ] `⍣` repeat
 		* [ ] `⍣` until
 		* [ ] `∙` inner product
 		* [ ] `∙` alternant?
