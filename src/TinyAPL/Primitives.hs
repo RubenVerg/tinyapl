@@ -187,7 +187,14 @@ onScalars = Adverb
   { adverbRepr = [G.onScalars]
   , adverbOnArray = Just $ \x -> pure $ Function (Just $ F.onScalars1 $ F.constant1 x) (Just $ F.onScalars2 $ F.constant2 x) (makeAdverbRepr (show x) G.onScalars)
   , adverbOnFunction = Just $ \f -> pure $ Function (Just $ F.onScalars1 $ callMonad f) (Just $ F.onScalars2 $ callDyad f) (makeAdverbRepr (show f) G.onScalars) }
-
+boxed = Adverb
+  { adverbRepr = [G.boxed]
+  , adverbOnArray = Nothing
+  , adverbOnFunction = Just $ \f -> pure $ Function (Just $ F.boxed1 $ callMonad f) (Just $ F.boxed2 $ callDyad f) (makeAdverbRepr (show f) G.boxed) }
+onContents = Adverb
+  { adverbRepr = [G.onContents]
+  , adverbOnArray = Nothing
+  , adverbOnFunction = Just $ \f -> pure $ Function (Just $ F.onContents1 $ callMonad f) (Just $ F.onContents2 $ callDyad f) (makeAdverbRepr (show f) G.onContents) }
 
 adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   [ TinyAPL.Primitives.selfie
@@ -200,7 +207,9 @@ adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   , TinyAPL.Primitives.eachRight
   , TinyAPL.Primitives.key
   , TinyAPL.Primitives.onCells
-  , TinyAPL.Primitives.onScalars ]
+  , TinyAPL.Primitives.onScalars
+  , TinyAPL.Primitives.boxed
+  , TinyAPL.Primitives.onContents ]
 
 -- * Primitive conjunctions
 

@@ -871,6 +871,30 @@ each2 f (Array ash acs) (Array bsh bcs)
   | length ash /= length bsh = throwError $ RankError "Incompatible ranks to Each"
   | otherwise = throwError $ LengthError "Incompatible shapes to Each"
 
+{-
+We'd want to do this:
+
+each1 :: MonadError Error m => (Array -> m Array) -> Array -> m Array
+each1 = boxed1 . onContents1 . onScalars1
+
+each2 :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+each2 = boxed2 . onContents2 . onScalars2
+
+but atRank2 is defined using each2 (which I'm not sure I like), so we can't.
+-}
+
+boxed1 :: MonadError Error m => (Array -> m Array) -> Array -> m Array
+boxed1 = compose enclose'
+
+boxed2 :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+boxed2 = atop enclose'
+
+onContents1 :: MonadError Error m => (Array -> m Array) -> Array -> m Array
+onContents1 = (`compose` first)
+
+onContents2 :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+onContents2 = (`over` first)
+
 eachLeft :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
 eachLeft f x y = each2 f x (scalar $ box y)
 

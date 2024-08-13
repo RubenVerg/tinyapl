@@ -770,6 +770,18 @@ spec = do
         it "replaces scalars of an array with a value" $ do
           aam P.onScalars (scalar $ Number 5) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [vector [Number 5, Number 5], vector [Number 5, Number 5]])
 
+    describe [G.boxed] $ do
+      describe "boxed" $ do
+        it "encloses the result of a function" $ do
+          afm P.boxed P.pair (scalar $ Number 3) `shouldReturn` pure (scalar $ box $ vector [Number 3])
+          afd P.boxed P.pair (scalar $ Number 1) (scalar $ Number 9) `shouldReturn` pure (scalar $ box $ vector [Number 1, Number 9])
+      
+    describe [G.onContents] $ do
+      describe "on contents" $ do
+        it "discloses the arguments of a function" $ do
+          afm P.onContents P.minus (scalar $ box $ vector [Number 1, Number 2]) `shouldReturn` pure (vector [Number -1, Number -2])
+          afd P.onContents P.plus (scalar $ box $ vector [Number 1, Number 2]) (scalar $ box $ vector [Number 3, Number 4]) `shouldReturn` pure (vector [Number 4, Number 6])
+
   describe "conjunctions" $ do
     describe [G.atop] $ do
       describe "at rank" $ do

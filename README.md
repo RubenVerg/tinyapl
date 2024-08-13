@@ -240,8 +240,8 @@ Marked features are supported, unmarked features are planned
 		* [x] `¨` each
 		* [x] `ᐵ` each-left
 		* [x] `ᑈ` each-right
-		* [ ] `ᑣ` boxed (`⊂⍤`)
-		* [ ] `ᑒ` on contents (`⍥⊃`)
+		* [x] `ᑣ` boxed (`⊂⍤`)
+		* [x] `ᑒ` on contents (`⍥⊃`)
 		* [x] `⍣` repeat
 		* [x] `⍣` until
 		* [ ] `∙` inner product
