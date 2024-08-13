@@ -240,13 +240,18 @@ Marked features are supported, unmarked features are planned
 		* [x] `¨` each
 		* [x] `ᐵ` each-left
 		* [x] `ᑈ` each-right
+		* [ ] `ᑣ` boxed (`⊂⍤`)
+		* [ ] `ᑒ` on contents (`⍥⊃`)
 		* [ ] `⍣` repeat
 		* [ ] `⍣` until
 		* [ ] `∙` inner product
 		* [ ] `∙` alternant?
 		* [ ] `⊞` outer product
 		* [x] `⍤` at rank
+		* [ ] `◡` on cells (`⍤¯1`)
+		* [ ] `◠` on scalars (`⍤0`)
 		* [ ] `⍥` at depth
+		* [ ] `⌓` on simple scalars (`⍥0`)
 		* [ ] `@` at
 		* [x] `⌸` key
 		* [ ] `⌸` key with vocabulary
