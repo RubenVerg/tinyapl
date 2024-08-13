@@ -44,7 +44,7 @@ Marked features are supported, unmarked features are planned
 			* [x] `⍘n` -> newline
 			* [x] `⍘r` -> carriage return
 			* [x] `⍘t` -> tab
-			* [ ] `⍘{22be}` -> unicode?
+			* [ ] `⍘{22be}` -> unicode
 	* [x] names
 		* [x] array names (`abc`)
 		* [x] function names (`Abc`)
@@ -170,7 +170,6 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍸` interval index
 		* [ ] `∊` element of
 		* [ ] `⍷` find
-		* [ ] `⍷` type? depends on if prototypes are added or not
 		* [ ] `⋷` histogram (inverse of where)
 		* [ ] `⋷` count
 		* [x] `≡` depth
@@ -181,7 +180,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍳` index generator
 		* [x] `?` roll
 		* [ ] `?` deal
-		* [ ] `…` range?
+		* [ ] `…` range
 		* [x] `⍮` pair
 		* [x] `⍮` half pair
 	* array manipulation functions
@@ -202,7 +201,6 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍸` where
 		* [x] `∊` enlist
 		* [x] `⌿` replicate
-		* [ ] `⍀` expand? (might not make much sense without prototypes)
 		* [x] `,` ravel
 		* [ ] `⍪` table
 		* [x] `⍪` catenate
@@ -242,13 +240,18 @@ Marked features are supported, unmarked features are planned
 		* [x] `¨` each
 		* [x] `ᐵ` each-left
 		* [x] `ᑈ` each-right
+		* [x] `ᑣ` boxed (`⊂⍤`)
+		* [x] `ᑒ` on contents (`⍥⊃`)
 		* [x] `⍣` repeat
 		* [x] `⍣` until
 		* [ ] `∙` inner product
 		* [ ] `∙` alternant?
 		* [ ] `⊞` outer product
 		* [x] `⍤` at rank
+		* [x] `◡` on cells (`⍤¯1`)
+		* [x] `◠` on scalars (`⍤0`)
 		* [ ] `⍥` at depth
+		* [ ] `⌓` on simple scalars (`⍥0`)
 		* [ ] `@` at
 		* [x] `⌸` key
 		* [ ] `⌸` key with vocabulary
