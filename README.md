@@ -248,8 +248,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `∙` alternant?
 		* [ ] `⊞` outer product
 		* [x] `⍤` at rank
-		* [ ] `◡` on cells (`⍤¯1`)
-		* [ ] `◠` on scalars (`⍤0`)
+		* [x] `◡` on cells (`⍤¯1`)
+		* [x] `◠` on scalars (`⍤0`)
 		* [ ] `⍥` at depth
 		* [ ] `⌓` on simple scalars (`⍥0`)
 		* [ ] `@` at

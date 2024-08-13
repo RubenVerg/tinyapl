@@ -639,6 +639,30 @@ spec = do
         it "fails with mismatched trailing shapes" $ do
           e2m <$> d P.catenate (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) (fromMajorCells [vector [Number 5, Number 6, Number 7], vector [Number 8, Number 9, Number 10]]) `shouldReturn` Nothing
 
+    describe [G.gradeUp] $ do
+      describe "grade up" $ do
+        it "grades an array ascending" $ do
+          m P.gradeUp (vector [Number 4, Number 2, Number 10]) `shouldReturn` pure (vector [Number 2, Number 1, Number 3])
+        it "is stable" $ do
+          m P.gradeUp (vector [Number 1, Number 5, Number 1]) `shouldReturn` pure (vector [Number 1, Number 3, Number 2])
+      describe "sort by up" $ do
+        it "sorts an array according to the ascending grade of another" $ do
+          d P.gradeUp (vector $ Character <$> "hello") (vector [Number 5, Number 9, Number -2, Number 10, Number 3]) `shouldReturn` pure (vector $ Character <$> "lohel")
+        it "is stable" $ do
+          d P.gradeUp (vector $ Character <$> "hi!") (vector [Number 9, Number 2, Number 2]) `shouldReturn` pure (vector $ Character <$> "i!h")
+
+    describe [G.gradeDown] $ do
+      describe "grade down" $ do
+        it "grades an array descending" $ do
+          m P.gradeDown (vector [Number 4, Number 2, Number 10]) `shouldReturn` pure (vector [Number 3, Number 1, Number 2])
+        it "is stable" $ do
+          m P.gradeDown (vector [Number 1, Number 5, Number 1]) `shouldReturn` pure (vector [Number 2, Number 1, Number 3])
+      describe "sort by down" $ do
+        it "sorts an array according to the descending grade of another" $ do
+          d P.gradeDown (vector $ Character <$> "hello") (vector [Number 5, Number 9, Number -2, Number 10, Number 3]) `shouldReturn` pure (vector $ Character <$> "lehol")
+        it "is stable" $ do
+          d P.gradeDown (vector $ Character <$> "hi!") (vector [Number 9, Number 2, Number 2]) `shouldReturn` pure (vector $ Character <$> "hi!")
+
     describe [G.transpose] $ do
       describe "monad transpose" $ do
         it "transposes an array" $ do
@@ -731,29 +755,20 @@ spec = do
         it "applies a function to each unique element of the argument and the corresponding indices" $ do
           afm P.key P.pair (vector $ Character <$> "mississippi") `shouldReturn` pure (fromMajorCells [vector [Character 'm', box $ vector [Number 1]], vector [Character 'i', box $ vector [Number 2, Number 5, Number 8, Number 11]], vector [Character 's', box $ vector [Number 3, Number 4, Number 6, Number 7]], vector [Character 'p', box $ vector [Number 9, Number 10]]])
 
-    describe [G.gradeUp] $ do
-      describe "grade up" $ do
-        it "grades an array ascending" $ do
-          m P.gradeUp (vector [Number 4, Number 2, Number 10]) `shouldReturn` pure (vector [Number 2, Number 1, Number 3])
-        it "is stable" $ do
-          m P.gradeUp (vector [Number 1, Number 5, Number 1]) `shouldReturn` pure (vector [Number 1, Number 3, Number 2])
-      describe "sort by up" $ do
-        it "sorts an array according to the ascending grade of another" $ do
-          d P.gradeUp (vector $ Character <$> "hello") (vector [Number 5, Number 9, Number -2, Number 10, Number 3]) `shouldReturn` pure (vector $ Character <$> "lohel")
-        it "is stable" $ do
-          d P.gradeUp (vector $ Character <$> "hi!") (vector [Number 9, Number 2, Number 2]) `shouldReturn` pure (vector $ Character <$> "i!h")
-
-    describe [G.gradeDown] $ do
-      describe "grade down" $ do
-        it "grades an array descending" $ do
-          m P.gradeDown (vector [Number 4, Number 2, Number 10]) `shouldReturn` pure (vector [Number 3, Number 1, Number 2])
-        it "is stable" $ do
-          m P.gradeDown (vector [Number 1, Number 5, Number 1]) `shouldReturn` pure (vector [Number 2, Number 1, Number 3])
-      describe "sort by down" $ do
-        it "sorts an array according to the descending grade of another" $ do
-          d P.gradeDown (vector $ Character <$> "hello") (vector [Number 5, Number 9, Number -2, Number 10, Number 3]) `shouldReturn` pure (vector $ Character <$> "lehol")
-        it "is stable" $ do
-          d P.gradeDown (vector $ Character <$> "hi!") (vector [Number 9, Number 2, Number 2]) `shouldReturn` pure (vector $ Character <$> "hi!")
+    describe [G.onCells] $ do
+      describe "on cells" $ do
+        it "applies a function to major cells of arrays" $ do
+          afm P.onCells P.enclose (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [box $ vector [Number 1, Number 2], box $ vector [Number 3, Number 4]])
+          afd P.onCells P.pair (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) (fromMajorCells [vector [Number 5, Number 6], vector [Number 7, Number 8]]) `shouldReturn` pure (fromMajorCells [vector [box $ vector [Number 1, Number 2], box $ vector [Number 5, Number 6]], vector [box $ vector [Number 3, Number 4], box $ vector [Number 7, Number 8]]])
+        it "replaces major cells of an array with a value" $ do
+          aam P.onCells (scalar $ Number 3) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [Number 3, Number 3])
+    
+    describe [G.onScalars] $ do
+      describe "on scalars" $ do
+        it "applies a function to scalars of arrays" $ do
+          afm P.onScalars P.pair (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [fromMajorCells [vector [Number 1], vector [Number 2]], fromMajorCells [vector [Number 3], vector [Number 4]]])
+        it "replaces scalars of an array with a value" $ do
+          aam P.onScalars (scalar $ Number 5) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [vector [Number 5, Number 5], vector [Number 5, Number 5]])
 
   describe "conjunctions" $ do
     describe [G.atop] $ do

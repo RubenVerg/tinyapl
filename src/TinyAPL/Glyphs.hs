@@ -231,6 +231,8 @@ each = '¨'
 eachLeft = 'ᐵ'
 eachRight = 'ᑈ'
 key = '⌸'
+onCells = '◡'
+onScalars = '◠'
 
 adverbs =
   [ TinyAPL.Glyphs.selfie
@@ -241,7 +243,9 @@ adverbs =
   , TinyAPL.Glyphs.each
   , TinyAPL.Glyphs.eachLeft
   , TinyAPL.Glyphs.eachRight
-  , TinyAPL.Glyphs.key ]
+  , TinyAPL.Glyphs.key
+  , TinyAPL.Glyphs.onCells
+  , TinyAPL.Glyphs.onScalars ]
 
 -- * Conjunctions
 

@@ -179,6 +179,15 @@ key = Adverb
   { adverbRepr = [G.key]
   , adverbOnArray = Nothing
   , adverbOnFunction = Just $ \f -> pure $ Function (Just $ F.keyMonad $ callDyad f) (Just $ F.key' $ callDyad f) (makeAdverbRepr (show f) G.key) }
+onCells = Adverb
+  { adverbRepr = [G.onCells]
+  , adverbOnArray = Just $ \x -> pure $ Function (Just $ F.onCells1 $ F.constant1 x) (Just $ F.onCells2 $ F.constant2 x) (makeAdverbRepr (show x) G.onCells)
+  , adverbOnFunction = Just $ \f -> pure $ Function (Just $ F.onCells1 $ callMonad f) (Just $ F.onCells2 $ callDyad f) (makeAdverbRepr (show f) G.onCells) }
+onScalars = Adverb
+  { adverbRepr = [G.onScalars]
+  , adverbOnArray = Just $ \x -> pure $ Function (Just $ F.onScalars1 $ F.constant1 x) (Just $ F.onScalars2 $ F.constant2 x) (makeAdverbRepr (show x) G.onScalars)
+  , adverbOnFunction = Just $ \f -> pure $ Function (Just $ F.onScalars1 $ callMonad f) (Just $ F.onScalars2 $ callDyad f) (makeAdverbRepr (show f) G.onScalars) }
+
 
 adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   [ TinyAPL.Primitives.selfie
@@ -189,7 +198,9 @@ adverbs = (\x -> (head $ adverbRepr x, x)) <$>
   , TinyAPL.Primitives.each
   , TinyAPL.Primitives.eachLeft
   , TinyAPL.Primitives.eachRight
-  , TinyAPL.Primitives.key ]
+  , TinyAPL.Primitives.key
+  , TinyAPL.Primitives.onCells
+  , TinyAPL.Primitives.onScalars ]
 
 -- * Primitive conjunctions
 

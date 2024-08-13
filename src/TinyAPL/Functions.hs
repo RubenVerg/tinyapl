@@ -926,6 +926,18 @@ atRank2' f r x y = do
   (_, b, c) <- parseRank r
   atRank2 f (b, c) x y
 
+onCells1 :: MonadError Error m => (Array -> m Array) -> Array -> m Array
+onCells1 f = atRank1 f (-1)
+
+onCells2 :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+onCells2 f = atRank2 f (-1, -1)
+
+onScalars1 :: MonadError Error m => (Array -> m Array) -> Array -> m Array
+onScalars1 f = atRank1 f 0
+
+onScalars2 :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+onScalars2 f = atRank2 f (0, 0)
+
 repeat :: MonadError Error m => (a -> m a) -> Natural -> a -> m a
 repeat _ 0 x = pure x
 repeat f n x = f x >>= TinyAPL.Functions.repeat f (n - 1)
