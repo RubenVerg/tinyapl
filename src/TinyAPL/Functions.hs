@@ -1023,3 +1023,6 @@ underK arr = under (\_ -> pure arr)
 
 table :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
 table f = atRank2 (atRank2 f (0, 0)) (0, 10000)
+
+innerProduct :: MonadError Error m => (Array -> m Array) -> (Array -> Array -> m Array) -> Array -> Array -> m Array
+innerProduct f g = atRank2 (atop f (atRank2 (atRank2 g (0, 0)) (-1, -1))) (1, 10000)

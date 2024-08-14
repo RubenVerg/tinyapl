@@ -267,6 +267,7 @@ rightFork = '⇽'
 repeat = '⍣'
 valences = '⁖'
 under = '⍢'
+innerProduct = '∙'
 
 conjunctions =
   [ TinyAPL.Glyphs.atop
@@ -280,4 +281,5 @@ conjunctions =
   , TinyAPL.Glyphs.rightFork
   , TinyAPL.Glyphs.repeat
   , TinyAPL.Glyphs.valences
-  , TinyAPL.Glyphs.under ]
+  , TinyAPL.Glyphs.under
+  , TinyAPL.Glyphs.innerProduct ]
