@@ -23,6 +23,7 @@ import Expression from './deps/npm/eval-estree-expression.ts';
 
 import { DeprecatedAlert, PlannedAlert } from './components/Banners.tsx';
 import CombinatorDiagram from './components/CombinatorDiagram.tsx';
+import HighlightCode from './components/HighlightCode.tsx';
 import PrimitiveLink from './components/PrimitiveLink.tsx';
 
 const handlers: MdastHandlers = {
@@ -234,6 +235,7 @@ export function renderMarkdown(source: string) {
 			combinator: CombinatorDiagram,
 			deprecated: DeprecatedAlert,
 			planned: PlannedAlert,
+			hl: HighlightCode,
 		} as unknown as Components,
 	};
 
@@ -253,7 +255,7 @@ export function renderMarkdown(source: string) {
 		(data.toMarkdownExtensions as unknown[]).push(mdxToMarkdown());
 	}
 
-	return unified()
+	const md = unified()
 		.use(remarkParse)
 		.use(plugMdx)
 		.use(remarkGfm)
@@ -270,5 +272,6 @@ export function renderMarkdown(source: string) {
 		.use(toJsx)
 		.processSync(source)
 		.result as JSX.Element;
-}
 
+	return md;
+}

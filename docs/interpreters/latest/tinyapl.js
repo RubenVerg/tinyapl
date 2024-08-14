@@ -1,3 +1,4 @@
+// @ts-self-types="./tinyapl.d.ts"
 // @ts-ignore Import from web not supported
 import { WASI, OpenFile, File, ConsoleStdout } from 'https://esm.run/@bjorn3/browser_wasi_shim@0.3.0';
 import ghc_wasm_jsffi from './ghc_wasm_jsffi.js';
