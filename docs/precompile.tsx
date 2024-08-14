@@ -1,8 +1,9 @@
-import pages, { loadPages } from './pages.ts';
+import pages, { forcePages, loadPages } from './pages.ts';
 import interpreters, { loadInterpreters } from './interpreters.ts';
 import { JSXNode } from './deps/x/htm.ts';
 
 await loadPages();
+await forcePages();
 await loadInterpreters();
 
 await Deno.writeTextFile('pages.json', JSON.stringify({

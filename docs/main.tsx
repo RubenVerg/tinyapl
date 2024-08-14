@@ -7,11 +7,11 @@ import FullPage from './components/FullPage.tsx';
 import Index from './components/Index.tsx';
 import RunInterpreter from './components/RunInterpreter.tsx';
 import { Info, Primitive, Quad, Pages } from './types.d.ts';
-import pages, { loadPages } from './pages.ts';
+import pages, { forcePages, loadPages } from './pages.ts';
 import interpreters from './interpreters.ts';
 
 import { serveDir } from './deps/std/http.ts';
-import html, { h, HtmlOptions, JSXNode } from './deps/x/htm.ts';
+import html, { h, HtmlOptions } from './deps/x/htm.ts';
 
 const stylesheets = [
 	'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
@@ -36,26 +36,12 @@ const sharedOptions: Partial<HtmlOptions> = {
 	},
 }
 
+await forcePages();
+
 async function render(page: JSX.Element, options: Partial<HtmlOptions>) {
-	const force = async (el: JSX.Element) => {
-		if (el.children) {
-			for (let idx = 0; idx < el.children.length; idx++) {
-				const c = el.children[idx];
-				if (c instanceof JSXNode) {
-					if (c.tag instanceof Function)
-						el.children[idx] = await c.tag({ ...c.props, ...(c.children && { children: c.children }) });
-					await force(el.children[idx] as typeof c);
-				}
-			}
-		};
-		return el;
-	}
-	console.log('before force');
-	const p = await force(page);
-	console.log('after force');
 	return await html({
 		...sharedOptions,
-		body: p,
+		body: page,
 		...options,
 	});
 }

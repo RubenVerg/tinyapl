@@ -30,16 +30,12 @@ export interface HighlightCodeProps {
 }
 
 async function HighlightCode({ code: c }: HighlightCodeProps) {
-	console.log('<hl>', c);
 	const code = <code></code>;
-	console.log('highlighting', c);
 	const chars = await tinyapl.splitString(c);
 	const hl = await tinyapl.highlight(c);
-	console.log('highlghted', hl);
 	for (const [t, c] of zip(chars, hl)) code.children.push(
 		<span class={`hl-char hl-char-${tinyapl.colorsInv[c]} ${colors[tinyapl.colorsInv[c] as keyof typeof colors]}`}>{t}</span>
 	);
-	console.log('now children are', code.children);
 	return code;
 }
 
