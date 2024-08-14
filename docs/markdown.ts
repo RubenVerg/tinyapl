@@ -21,6 +21,7 @@ import { toJsxRuntime, Options as ToJsxRuntimeOptions, Jsx, Components } from '.
 import * as acorn from './deps/npm/acorn.ts';
 import Expression from './deps/npm/eval-estree-expression.ts';
 
+import CombinatorDiagram from './components/CombinatorDiagram.tsx';
 import PrimitiveLink from './components/PrimitiveLink.tsx';
 
 const handlers: MdastHandlers = {
@@ -229,6 +230,7 @@ export function renderMarkdown(source: string) {
 		}),
 		components: {
 			primitive: PrimitiveLink,
+			combinator: CombinatorDiagram,
 		} as unknown as Components,
 	};
 
