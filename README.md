@@ -235,8 +235,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⍅` fold back
 		* [x] `↟` on prefixes
 		* [x] `↡` on suffixes
-		* [ ] `↟` on infixes
-		* [ ] `↡` on outfixes
+		* [ ] `↡` on infixes
+		* [ ] `↟` on outfixes
 		* [x] `¨` each
 		* [x] `ᐵ` each-left
 		* [x] `ᑈ` each-right

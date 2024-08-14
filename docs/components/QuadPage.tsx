@@ -20,7 +20,7 @@ function QuadPage({ quad }: QuadPageProps) {
 
 		<div><em>Category: {quad.category}</em></div>
 
-		<div dangerouslySetInnerHTML={{ __html: quad.body }} />
+		{quad.body}
 	</>;
 }
 

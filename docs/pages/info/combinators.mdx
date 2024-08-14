@@ -1,0 +1,40 @@
+---
+name: Combinators
+---
+
+A combinator is a function or operator that only refers to its arguments and operands without modifying them in any way.
+
+|Symbol|APL expression|Bird[^1]|TinyAPL|Diagram|
+|------|--------------|--------|-------|:------|
+|$\mathrm I$|`y`|Identity|<primitive key="left" short />/<primitive key="right" short />|<combinator key="same" name="Same diagram" />|
+|$\mathrm K$|`x`|Kestrel|<primitive key="left" short />|<combinator key="left" name="Left diagram" />|
+|$\kappa$|`y`|Kite|<primitive key="right" short />|<combinator key="right" name="Right diagram" />|
+|$\mathrm W$|`y F y`|Warbler|<primitive key="duplicate" short />|<combinator key="duplicate" name="Duplicate diagram" />|
+|$\mathrm C$|`y F x`|Cardinal|<primitive key="commute" short />|<combinator key="commute" name="Commute diagram" />|
+|$\mathrm B$|`F (G y)`|Bluebird|<primitive key="after" short />/<primitive key="atop" short />/<primitive key="over" short />|<combinator key="compose" name="Compose diagram" />|
+|$\mathrm Q$|`G (F y)`|Queer|<primitive key="before" short />|<combinator key="reverse_compose" name="Reverse Compose diagram" />|
+|${\mathrm B}_1$|`F (x G y)`|Blackbird|<primitive key="atop" short />|<combinator key="atop" name="Atop diagram" />|
+|$\Psi$|`(G x) F (G y)`|Psi|<primitive key="over" short />|<combinator key="over" name="Over diagram" />|
+|$\mathrm S$|`y F (G y)`|Starling|<primitive key="right_hook" short />/<primitive key="right_fork" short />|<combinator key="right_hook" name="Right Hook diagram" />|
+|$\Sigma$|`(F y) G y`|Violet Starling|<primitive key="left_hook" short />/<primitive key="left_fork" short />|<combinator key="left_hook" name="Left Hook diagram" />|
+|$\mathrm D$|`x F (G y)`|Dove|<primitive key="after" short />/<primitive key="right_hook" short />|<combinator key="after" name="After diagram" />|
+|$\Delta$|`(F x) G y`|Zebra Dove|<primitive key="before" short />/<primitive key="left_hook" short />|<combinator key="before" name="Before diagram" />|
+|$\Phi$|`(F y) G (H y)`|Phoenix|[`«»`](/docs/primitive/fork)|<combinator key="fork_1" name="Fork (monad) diagram" />|
+|$\Phi_1$|`(x F y) G (x H y)`|Pheasant|[`«»`](/docs/primitive/fork)|<combinator key="fork_2" name="Fork (dyad) diagram" />|
+|${\mathrm D}_2$|`(F x) G (H y)`|Dovekie|<primitive key="left_hook" short />&nbsp;+&nbsp;<primitive key="right_hook" short />|<combinator key="bracket" name="Bracket diagram" />|
+|$\mathrm P$|`(y G x) F (x G y)`|Parrot[^2]|<primitive key="mirror" short />|<combinator key="mirror" name="Mirror diagram" />|
+|$\mathrm N$|`x F (x G y)`|Eastern Nicator|<primitive key="right_fork" short />|<combinator key="right_fork" name="Right Fork diagram" />|
+|$\mathrm \nu$|`(x F y) G y`|Western Nicator|<primitive key="left_fork" short />|<combinator key="left_fork" name="Left Fork diagram" />|
+
+Additionally, some other primitives have combinator-like behavior:
+
+|APL expression|TinyAPL|Diagram|
+|--------------|-------|:------|
+|`n`|<primitive key="constant" short />|<combinator key="constant_1" name="Constant (monad) diagram" />|
+|`n`|<primitive key="constant" short />|<combinator key="constant_2" name="Constant (dyad) diagram" />|
+|`F y`|<primitive key="valences" short />|<combinator key="valences_1" name="Valences (monad) diagram" />|
+|`x G y`|<primitive key="valences" short />|<combinator key="valences_2" name="Valences (dyad) diagram" />|
+
+
+[^1]: Some combinators have bird names, originating from [To Mock a Mockingbird](https://en.wikipedia.org/wiki/To_Mock_a_Mockingbird) by Raymond Smullyan. Some of the bird names are taken from the [Uiua combinator page](https://www.uiua.org/docs/combinators).
+[^2]: I made this one up.

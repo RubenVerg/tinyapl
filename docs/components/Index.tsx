@@ -4,11 +4,11 @@
 import { Fragment, h } from '../deps/x/htm.ts';
 
 export interface IndexProps {
-	body: string;
+	body: JSX.Element;
 }
 
 function Index({ body }: IndexProps) {
-	return <div dangerouslySetInnerHTML={{ __html: body }} />;
+	return body;
 }
 
 export default Index;

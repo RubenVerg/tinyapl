@@ -1,6 +1,7 @@
 import { Info, Primitive, Quad, Pages } from './types.d.ts';
 import { readFrontmatter, renderMarkdown } from './markdown.ts';
 import { recordGetter } from './utils.ts';
+import { h, Fragment } from './deps/x/htm.ts';
 
 function readInfo(path: string, src: string): Info {
 	const frontmatter = recordGetter(readFrontmatter(src));
@@ -47,33 +48,32 @@ function readQuad(path: string, src: string): Quad {
 	};
 }
 
-let pages: Pages = { index: '', info: {}, primitives: {}, quads: {} };
+let pages: Pages = { index: h(Fragment, {}), info: {}, primitives: {}, quads: {} };
 
 export async function loadPages(): Promise<void> {
-	pages.index = renderMarkdown(await Deno.readTextFile('pages/index.md'));
+	pages.index = renderMarkdown(await Deno.readTextFile('pages/index.mdx'));
 
 	for await (const file of Deno.readDir('pages/info')) {
-		if (file.isFile && file.name.endsWith('.md')) {
-			const path = file.name.slice(0, -3);
+		if (file.isFile && file.name.endsWith('.mdx')) {
+			const path = file.name.slice(0, -4);
 			pages.info[path] = readInfo(path, await Deno.readTextFile(`pages/info/${file.name}`));
 		}
 	}
 
 	for await (const file of Deno.readDir('pages/primitives')) {
-		if (file.isFile && file.name.endsWith('.md')) {
-			const path = file.name.slice(0, -3);
+		if (file.isFile && file.name.endsWith('.mdx')) {
+			const path = file.name.slice(0, -4);
 			pages.primitives[path] = readPrimitive(path, await Deno.readTextFile(`pages/primitives/${file.name}`));
 		}
 	}
 
 	for await (const file of Deno.readDir('pages/quads')) {
-		if (file.isFile && file.name.endsWith('.md')) {
-			const path = file.name.slice(0, -3);
+		if (file.isFile && file.name.endsWith('.mdx')) {
+			const path = file.name.slice(0, -4);
 			pages.quads[path] = readQuad(path, await Deno.readTextFile(`pages/quads/${file.name}`))
 		}
 	}
 }
-
 
 try {
 	pages = JSON.parse(await Deno.readTextFile('pages.json'));
