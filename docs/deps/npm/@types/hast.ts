@@ -1,1 +1,1 @@
-export type * from 'npm:@types/hast@2.3.5';
+export type * from 'npm:@types/hast@2.3.10';

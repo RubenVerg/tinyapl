@@ -1,7 +1,7 @@
 export interface Info {
 	name: string;
 	planned: boolean;
-	body: string;
+	body: JSX.Element;
 }
 
 export interface Primitive {
@@ -10,7 +10,7 @@ export interface Primitive {
 	name: string;
 	planned: boolean;
 	deprecated: boolean;
-	body: string;
+	body: JSX.Element;
 }
 
 export interface Quad {
@@ -20,11 +20,11 @@ export interface Quad {
 	category: string;
 	planned: boolean;
 	deprecated: boolean;
-	body: string;
+	body: JSX.Element;
 }
 
 export interface Pages {
-	index: string;
+	index: JSX.Element;
 	info: Record<string, Info>;
 	primitives: Record<string, Primitive>;
 	quads: Record<string, Quad>;
