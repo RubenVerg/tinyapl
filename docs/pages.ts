@@ -76,13 +76,12 @@ export async function loadPages(): Promise<void> {
 }
 
 try {
-	pages = JSON.parse(await Deno.readTextFile('pages.json'), (_k, v) => {
-		if (typeof v !== 'object' || !('props' in v)) return v;
-		const tag = (v.tag as string | undefined) ?? Fragment;
-		return h(tag, v.props, v.children);
+	const p = JSON.parse(await Deno.readTextFile('pages.json'), (k, v) => {
+		if (k !== 'body') return v;
+		return h('div', { dangerouslySetInnerHTML: { __html: v } });
 	});
-} catch (ex) {
-	console.error(ex);
+	pages = { ...p, index: p.index.body };
+} catch {
 	await loadPages();
 }
 
