@@ -8,4 +8,4 @@ name: Duplicate
 
 |Monad|
 |:----|
-|<img src="/combinators/duplicate.svg" width="128" alt="Duplicate diagram">|
+|<img src="/combinators/duplicate.svg" width="128" alt="Duplicate diagram" />|

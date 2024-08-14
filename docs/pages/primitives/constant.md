@@ -8,4 +8,4 @@ name: Constant
 
 |Monad|Dyad|
 |:----|:---|
-|<img src="/combinators/constant_1.svg" width="128" alt="Constant (monad) diagram">|<img src="/combinators/constant_2.svg" width="128" alt="Constant (dyad) diagram">|
+|<img src="/combinators/constant_1.svg" width="128" alt="Constant (monad) diagram" />|<img src="/combinators/constant_2.svg" width="128" alt="Constant (dyad) diagram" />|

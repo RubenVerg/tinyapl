@@ -1,11 +1,12 @@
+import { h, Fragment } from './deps/x/htm.ts';
 import * as Hast from './deps/npm/@types/hast.ts';
 import * as Mdast from './deps/npm/@types/mdast.ts';
+import * as Unist from './deps/npm/@types/unist.ts';
 import { Handlers as MdastHandlers, revert } from './deps/npm/mdast-util-to-hast.ts';
 import { normalizeUri } from './deps/npm/micromark-util-sanitize-uri.ts';
 import { pointStart, pointEnd } from './deps/npm/unist-util-position.ts';
 import rehypeFormat from './deps/npm/rehype-format.ts';
 import rehypeKatex from './deps/npm/rehype-katex.ts';
-import rehypeStringify from './deps/npm/rehype-stringify.ts';
 import remarkFrontmatter from './deps/npm/remark-frontmatter.ts';
 import remarkGfm from './deps/npm/remark-gfm.ts';
 import remarkMath from './deps/npm/remark-math.ts';
@@ -14,10 +15,17 @@ import remarkRehype from './deps/npm/remark-rehype.ts';
 import { CompilerFunction, Plugin, Processor, unified } from './deps/npm/unified.ts';
 import { visit as unistVisit } from './deps/npm/unist-util-visit.ts';
 import { parse as parseYaml} from './deps/npm/yaml.ts';
+import { mdxFromMarkdown, mdxToMarkdown } from './deps/npm/mdast-util-mdx.ts';
+import { mdxjs } from './deps/npm/micromark-extension-mdxjs.ts';
+import { toJsxRuntime, Options as ToJsxRuntimeOptions, Jsx, Components } from './deps/npm/hast-util-to-jsx-runtime.ts';
+import * as acorn from './deps/npm/acorn.ts';
+import Expression from './deps/npm/eval-estree-expression.ts';
+
+import PrimitiveLink from './components/PrimitiveLink.tsx';
 
 const handlers: MdastHandlers = {
 	heading(state, node) {
-		const heading = node as unknown as Mdast.Heading;
+		const heading = node as Mdast.Heading;
 		const result = {
 			type: 'element',
 			tagName: `h${heading.depth}`,
@@ -30,7 +38,7 @@ const handlers: MdastHandlers = {
 		return state.applyData(node, result);
 	},
 	link(state, node) {
-		const link = node as unknown as Mdast.Link;
+		const link = node as Mdast.Link;
 		const properties = {
 			href: normalizeUri(link.url),
 			...link.title && { title: link.title },
@@ -46,7 +54,7 @@ const handlers: MdastHandlers = {
 		return state.applyData(node, result);
 	},
 	linkReference(state, node) {
-		const linkReference = node as unknown as Mdast.LinkReference;
+		const linkReference = node as Mdast.LinkReference;
 		const def = state.definition(linkReference.identifier);
 		if (!def) return revert(state, node);
 		const properties = {
@@ -121,7 +129,7 @@ const handlers: MdastHandlers = {
 	},
 	table(state, node) {
 		const table = node as Mdast.Table;
-		const rows = state.all(table);
+		const rows = state.all(node);
 		const firstRow = rows.shift();
 		const tableContent: Hast.Element[] = [];
 		if (firstRow) {
@@ -131,12 +139,12 @@ const handlers: MdastHandlers = {
 				properties: {},
 				children: state.wrap([firstRow], true),
 			};
-			state.patch(table.children[0], head);
+			state.patch(node.children[0], head);
 			tableContent.push(head)
 		}
 
 		if (rows.length > 0) {
-			const body: Hast.Content = {
+			const body: Hast.Element & { position?: Unist.Position } = {
 				type: 'element',
 				tagName: 'tbody',
 				properties: {},
@@ -155,8 +163,8 @@ const handlers: MdastHandlers = {
 			properties: { class: 'table' },
 			children: state.wrap(tableContent, true),
 		};
-		state.patch(table, result);
-		return state.applyData(table, result);
+		state.patch(node, result);
+		return state.applyData(node, result);
 	}
 };
 
@@ -199,17 +207,63 @@ const fixFootnoteLabels: Plugin<[], Hast.Root> = () => (root: Hast.Root) => {
 }
 
 export function renderMarkdown(source: string) {
+	const jsx: Jsx = (type, props, key) => {
+		const children = props.children === undefined ? [] : Array.isArray(props.children) ? props.children : [props.children];
+		return h(type as string | CallableFunction, {
+			...Object.fromEntries(Object.entries(props).filter(([k]) => k !== 'children')),
+			...'style' in props && { style: Object.entries(props.style as Record<string, unknown>).map(([k, v]) => k + ':' + v).join('; ') },
+			_jsx_key: key
+		}, ...children.filter(child => child !== undefined && child !== null));
+	}
+
+	const options: ToJsxRuntimeOptions = {
+		jsx,
+		jsxs: jsx,
+		Fragment,
+		development: false,
+		elementAttributeNameCase: 'html',
+		stylePropertyNameCase: 'css',
+		createEvaluater: () => ({
+			evaluateExpression: expr => Expression.evaluate.sync(expr),
+			evaluateProgram: prog => Expression.evaluate.sync(prog),
+		}),
+		components: {
+			primitive: PrimitiveLink,
+		} as unknown as Components,
+	};
+
+	const toJsx: Plugin<[], Hast.Root, JSX.Element> = function (this: Processor) {
+		Object.assign(this, { Compiler: ((function compiler(root: Hast.Root) {
+			return toJsxRuntime(root as unknown as Parameters<typeof toJsxRuntime>[0], options);
+		}) as unknown as CompilerFunction<Hast.Node, JSX.Element>) });
+	}
+
+	const plugMdx: Plugin<[], Mdast.Root, Mdast.Root> = function (this: Processor) {
+		const data = this.data();
+		data.micromarkExtensions ??= [];
+		data.fromMarkdownExtensions ??= [];
+		data.toMarkdownExtensions ??= [];
+		(data.micromarkExtensions as unknown[]).push(mdxjs({ acorn, addResult: true }));
+		(data.fromMarkdownExtensions as unknown[]).push(mdxFromMarkdown());
+		(data.toMarkdownExtensions as unknown[]).push(mdxToMarkdown());
+	}
+
 	return unified()
 		.use(remarkParse)
+		.use(plugMdx)
 		.use(remarkGfm)
 		.use(remarkFrontmatter)
 		.use(remarkMath)
-		.use(remarkRehype, null, { handlers, allowDangerousHtml: true })
+		.use(remarkRehype, null, {
+			handlers,
+			allowDangerousHtml: true,
+			passThrough: [ 'mdxJsxFlowElement', 'mdxJsxTextElement', 'mdxFlowExpression', 'mdxTextExpression', 'mdxjsEsm' ],
+		})
 		.use(fixFootnoteLabels)
-		.use(rehypeKatex)
+		.use(rehypeKatex as unknown as Plugin<[], Hast.Root>)
 		.use(rehypeFormat)
-		.use(rehypeStringify, { allowDangerousHtml: true })
+		.use(toJsx)
 		.processSync(source)
-		.value as string;
+		.result as JSX.Element;
 }
 

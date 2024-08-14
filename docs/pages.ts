@@ -1,6 +1,7 @@
 import { Info, Primitive, Quad, Pages } from './types.d.ts';
 import { readFrontmatter, renderMarkdown } from './markdown.ts';
 import { recordGetter } from './utils.ts';
+import { h, Fragment } from './deps/x/htm.ts';
 
 function readInfo(path: string, src: string): Info {
 	const frontmatter = recordGetter(readFrontmatter(src));
@@ -47,7 +48,7 @@ function readQuad(path: string, src: string): Quad {
 	};
 }
 
-let pages: Pages = { index: '', info: {}, primitives: {}, quads: {} };
+let pages: Pages = { index: h(Fragment, {}), info: {}, primitives: {}, quads: {} };
 
 export async function loadPages(): Promise<void> {
 	pages.index = renderMarkdown(await Deno.readTextFile('pages/index.md'));
@@ -73,7 +74,6 @@ export async function loadPages(): Promise<void> {
 		}
 	}
 }
-
 
 try {
 	pages = JSON.parse(await Deno.readTextFile('pages.json'));

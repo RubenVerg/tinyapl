@@ -16,7 +16,7 @@ function InfoPage({ info }: InfoPageProps) {
 
 		{info.planned && <PlannedAlert />}
 
-		<div dangerouslySetInnerHTML={{ __html: info.body }} />
+		{info.body}
 	</>;
 }
 

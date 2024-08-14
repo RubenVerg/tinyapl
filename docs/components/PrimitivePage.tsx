@@ -18,7 +18,7 @@ function PrimitivePage({ primitive }: PrimitivePageProps) {
 
 		{primitive.deprecated && <DeprecatedAlert />}
 
-		<div dangerouslySetInnerHTML={{ __html: primitive.body }} />
+		{primitive.body}
 	</>;
 }
 

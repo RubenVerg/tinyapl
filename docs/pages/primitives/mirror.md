@@ -8,4 +8,4 @@ name: Mirror
 
 |Dyad|
 |:---|
-|<img src="/combinators/mirror.svg" width="128" alt="Mirror diagram">|
+|<img src="/combinators/mirror.svg" width="128" alt="Mirror diagram" />|

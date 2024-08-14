@@ -1,0 +1,1 @@
+export * from 'npm:micromark-extension-mdxjs@2.0.0';

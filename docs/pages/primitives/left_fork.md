@@ -8,4 +8,4 @@ If `x` is not provided, `r` is `(F y) G y`; if `x` is provided, `r` is `(x F y) 
 
 |Monad|Dyad|
 |:----|:---|
-|<img src="/combinators/left_hook.svg" width="128" alt="Left Hook diagram">|<img src="/combinators/left_fork.svg" width="128" alt="Left Fork diagram">|
+|<img src="/combinators/left_hook.svg" width="128" alt="Left Hook diagram" />|<img src="/combinators/left_fork.svg" width="128" alt="Left Fork diagram" />|
