@@ -2,69 +2,69 @@
 name: Trains
 ---
 
-Unlike in many other APLs, trains in TinyAPL are written using special syntax: `⦅`, `⋄` and `⦆`. They are a sequence of arrays, functions, adverbs and conjunctions that combine to create functions or modifiers.
+Unlike in many other APLs, trains in TinyAPL are written using special syntax: <hl code="⦅" />, <hl code="⋄" /> and <hl code="⦆" />. They are a sequence of arrays, functions, adverbs and conjunctions that combine to create functions or modifiers.
 
 ## 1-trains
 
 The simplest train is the 1-train:
 
-* `⦅x⦆` is `x⍨`;
-* `⦅F⦆` is `F`;
-* `u _⦅_A⦆` is `u _A`;
-* `u _⦅_C_⦆_ v` is `u _C_ v`;
+* <hl code="⦅x⦆" /> is <hl code="x⍨" />;
+* <hl code="⦅F⦆" /> is <hl code="F" />;
+* <hl code="u _⦅_A⦆" /> is <hl code="u _A" />;
+* <hl code="u _⦅_C_⦆_ v" /> is <hl code="u _C_ v" />;
 
 ## 2-trains
 
-* `⦅x⋄y⦆` is `x⍨`
-* `⦅x⋄G⦆` is `x∘G`
-* `⦅F⋄y⦆` is `F∘y`
-* `⦅F⋄G⦆` is `F⍤G`
-* `⦅x⋄_A⦆` is `x _A`
-* `⦅F⋄_A⦆` is `F _A`
-* `u _⦅_A⋄G⦆` is `(u _A)⍤G`
-* `u _⦅_A⋄_B⦆` is `(u _A) _B`
-* `u _⦅_A⋄_C_⦆` is `(u _A) _C_ u` *should this be changed to Over-like `(u _A) _C_ (v _A)`?
-* `u _⦅x⋄_C_⦆` is `x _C_ u`
-* `u _⦅F⋄_C_⦆` is `F _C_ u`
-* `u _⦅_C_⋄y⦆` is `u _C_ y`
-* `u _⦅_C_⋄G⦆` is `u _C_ G`
-* `u _⦅_C_⋄_A⦆_ v` is `(u _C_ v) _A`
-* `u _⦅_C_⋄_D_⦆_ v` is `(u _C_ v)⍤(u _D_ v)`
+* <hl code="⦅x⋄y⦆" /> is <hl code="x⍨" />
+* <hl code="⦅x⋄G⦆" /> is <hl code="x∘G" />
+* <hl code="⦅F⋄y⦆" /> is <hl code="F∘y" />
+* <hl code="⦅F⋄G⦆" /> is <hl code="F⍤G" />
+* <hl code="⦅x⋄_A⦆" /> is <hl code="x _A" />
+* <hl code="⦅F⋄_A⦆" /> is <hl code="F _A" />
+* <hl code="u _⦅_A⋄G⦆" /> is <hl code="(u _A)⍤G" />
+* <hl code="u _⦅_A⋄_B⦆" /> is <hl code="(u _A) _B" />
+* <hl code="u _⦅_A⋄_C_⦆" /> is <hl code="(u _A) _C_ u" /> *should this be changed to Over-like <hl code="(u _A) _C_ (v _A)" />?
+* <hl code="u _⦅x⋄_C_⦆" /> is <hl code="x _C_ u" />
+* <hl code="u _⦅F⋄_C_⦆" /> is <hl code="F _C_ u" />
+* <hl code="u _⦅_C_⋄y⦆" /> is <hl code="u _C_ y" />
+* <hl code="u _⦅_C_⋄G⦆" /> is <hl code="u _C_ G" />
+* <hl code="u _⦅_C_⋄_A⦆_ v" /> is <hl code="(u _C_ v) _A" />
+* <hl code="u _⦅_C_⋄_D_⦆_ v" /> is <hl code="(u _C_ v)⍤(u _D_ v)" />
 
 ## 3-trains
 
-* `⦅x⋄y⋄z⦆` is `y⍨`
-* `⦅x⋄y⋄H⦆` is `y⍨`
-* `⦅F⋄y⋄x⦆` is `y⍨`
-* `⦅F⋄y⋄H⦆` is `y⍨`
-* `⦅F⋄G⋄H⦆` is `F«G»H`
-* `⦅x⋄G⋄H⦆` is `(x∘G)⍤H`
-* `⦅F⋄G⋄z⦆` is `(G∘z)⍤F`
-* `⦅x⋄G⋄z⦆` is `(x G z)⍨`
-* `⦅x⋄_C_⋄z⦆` is `x _C_ z`
-* `⦅x⋄_C_⋄H⦆` is `x _C_ H`
-* `⦅F⋄_C_⋄z⦆` is `F _C_ z`
-* `⦅F⋄_C_⋄H⦆` is `F _C_ H`
-* `u _⦅_A⋄G⋄H⦆` is `(u _A)«G»H`
-* `u _⦅_A⋄_B⋄_C⦆` is `((u _A) _B) _C`
-* `u _⦅x⋄_C_⋄_A⦆` is `x _C_ (u _A)`
-* `u _⦅F⋄_C_⋄_A⦆` is `F _C_ (u _A)`
-* `u _⦅_A⋄_C_⋄z⦆` is `(u _A) _C_ z`
-* `u _⦅_A⋄_C_⋄H⦆` is `(u _A) _C_ H`
-* `u _⦅F⋄G⋄_C_⦆_ v` is `F«G»(u _C_ v)`
-* `u _⦅x⋄G⋄_C_⦆_ v` is `(x∘G)⍤(u _C_ v)`
-* `u _⦅_C_⋄G⋄H⦆_ v` is `(u _C_ v)«G»H`
-* `u _⦅_C_⋄G⋄_D_⦆_ v` is `(u _C_ v)«G»(u _D_ v)`
-* `u _⦅_A⋄_B⋄H⦆_ v` is `(u _A)«(v _B)»H`
-* `u _⦅_C_⋄_A⋄_B⦆_ v` is `((u _C_ v) _A) _B`
-* `u _⦅x⋄_C_⋄_D_⦆_ v` is `x _C_ (u _D_ v)`
-* `u _⦅F⋄_C_⋄_D_⦆_ v` is `F _C_ (u _D_ v)`
-* `u _⦅_A⋄_C_⋄_B⦆_ v` is `(u _A) _C_ (v _B)`
-* `u _⦅_A⋄_C_⋄_D_⦆ v` is `(u _A) _C_ (u _D_ v)`
-* `u _⦅_C_⋄_D_⋄z⦆_ v` is `(u _C_ v) _D_ z`
-* `u _⦅_C_⋄_D_⋄H⦆_ v` is `(u _C_ v) _D_ H`
-* `u _⦅_C_⋄_D_⋄_A⦆_ v` is `(u _C_ v) _D_ (v _A)`
-* `u _⦅_C_⋄_D_⋄_E_⦆_ v` is `(u _C_ v) _D_ (u _E_ v)`
+* <hl code="⦅x⋄y⋄z⦆" /> is <hl code="y⍨" />
+* <hl code="⦅x⋄y⋄H⦆" /> is <hl code="y⍨" />
+* <hl code="⦅F⋄y⋄x⦆" /> is <hl code="y⍨" />
+* <hl code="⦅F⋄y⋄H⦆" /> is <hl code="y⍨" />
+* <hl code="⦅F⋄G⋄H⦆" /> is <hl code="F«G»H" />
+* <hl code="⦅x⋄G⋄H⦆" /> is <hl code="(x∘G)⍤H" />
+* <hl code="⦅F⋄G⋄z⦆" /> is <hl code="(G∘z)⍤F" />
+* <hl code="⦅x⋄G⋄z⦆" /> is <hl code="(x G z)⍨" />
+* <hl code="⦅x⋄_C_⋄z⦆" /> is <hl code="x _C_ z" />
+* <hl code="⦅x⋄_C_⋄H⦆" /> is <hl code="x _C_ H" />
+* <hl code="⦅F⋄_C_⋄z⦆" /> is <hl code="F _C_ z" />
+* <hl code="⦅F⋄_C_⋄H⦆" /> is <hl code="F _C_ H" />
+* <hl code="u _⦅_A⋄G⋄H⦆" /> is <hl code="(u _A)«G»H" />
+* <hl code="u _⦅_A⋄_B⋄_C⦆" /> is <hl code="((u _A) _B) _C" />
+* <hl code="u _⦅x⋄_C_⋄_A⦆" /> is <hl code="x _C_ (u _A)" />
+* <hl code="u _⦅F⋄_C_⋄_A⦆" /> is <hl code="F _C_ (u _A)" />
+* <hl code="u _⦅_A⋄_C_⋄z⦆" /> is <hl code="(u _A) _C_ z" />
+* <hl code="u _⦅_A⋄_C_⋄H⦆" /> is <hl code="(u _A) _C_ H" />
+* <hl code="u _⦅F⋄G⋄_C_⦆_ v" /> is <hl code="F«G»(u _C_ v)" />
+* <hl code="u _⦅x⋄G⋄_C_⦆_ v" /> is <hl code="(x∘G)⍤(u _C_ v)" />
+* <hl code="u _⦅_C_⋄G⋄H⦆_ v" /> is <hl code="(u _C_ v)«G»H" />
+* <hl code="u _⦅_C_⋄G⋄_D_⦆_ v" /> is <hl code="(u _C_ v)«G»(u _D_ v)" />
+* <hl code="u _⦅_A⋄_B⋄H⦆_ v" /> is <hl code="(u _A)«(v _B)»H" />
+* <hl code="u _⦅_C_⋄_A⋄_B⦆_ v" /> is <hl code="((u _C_ v) _A) _B" />
+* <hl code="u _⦅x⋄_C_⋄_D_⦆_ v" /> is <hl code="x _C_ (u _D_ v)" />
+* <hl code="u _⦅F⋄_C_⋄_D_⦆_ v" /> is <hl code="F _C_ (u _D_ v)" />
+* <hl code="u _⦅_A⋄_C_⋄_B⦆_ v" /> is <hl code="(u _A) _C_ (v _B)" />
+* <hl code="u _⦅_A⋄_C_⋄_D_⦆ v" /> is <hl code="(u _A) _C_ (u _D_ v)" />
+* <hl code="u _⦅_C_⋄_D_⋄z⦆_ v" /> is <hl code="(u _C_ v) _D_ z" />
+* <hl code="u _⦅_C_⋄_D_⋄H⦆_ v" /> is <hl code="(u _C_ v) _D_ H" />
+* <hl code="u _⦅_C_⋄_D_⋄_A⦆_ v" /> is <hl code="(u _C_ v) _D_ (v _A)" />
+* <hl code="u _⦅_C_⋄_D_⋄_E_⦆_ v" /> is <hl code="(u _C_ v) _D_ (u _E_ v)" />
 
 ## Longer trains
 
