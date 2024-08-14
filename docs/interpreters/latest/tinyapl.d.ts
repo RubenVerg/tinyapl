@@ -1,3 +1,8 @@
+declare global {
+    interface ImportMeta {
+        resolve(specifier: string): string;
+    }
+}
 export type Complex = [number, number];
 export type ScalarValue = Complex | string | Arr;
 export interface Arr {

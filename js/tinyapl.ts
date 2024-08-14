@@ -2,6 +2,12 @@
 import { WASI, OpenFile, File, ConsoleStdout } from 'https://esm.run/@bjorn3/browser_wasi_shim@0.3.0';
 import ghc_wasm_jsffi from './ghc_wasm_jsffi.js';
 
+declare global {
+	interface ImportMeta {
+		resolve(specifier: string): string;
+	}
+}
+
 export type Complex = [number, number];
 export type ScalarValue = Complex | string | Arr;
 export interface Arr {
@@ -27,7 +33,8 @@ const options = {};
 const wasi = new WASI([], [], files, options);
 
 const instanceExports = {};
-const { instance } = await WebAssembly.instantiateStreaming(fetch("./tinyapl-js.wasm"), {
+const url = 'resolve' in import.meta ? import.meta.resolve('./tinyapl-js.wasm') : './tinyapl-js.wasm';
+const { instance } = await WebAssembly.instantiateStreaming(fetch(url), {
 	wasi_snapshot_preview1: (wasi as any).wasiImport,
 	ghc_wasm_jsffi: ghc_wasm_jsffi(instanceExports),
 });

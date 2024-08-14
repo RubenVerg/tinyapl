@@ -1,7 +1,5 @@
 /** @jsx h */
 
-import pages from '../pages.ts';
-
 import { h } from '../deps/x/htm.ts';
 
 export interface CombinatorDiagramProps {

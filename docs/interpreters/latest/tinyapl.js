@@ -9,7 +9,8 @@ const files = [
 const options = {};
 const wasi = new WASI([], [], files, options);
 const instanceExports = {};
-const { instance } = await WebAssembly.instantiateStreaming(fetch("./tinyapl-js.wasm"), {
+const url = 'resolve' in import.meta ? import.meta.resolve('./tinyapl-js.wasm') : './tinyapl-js.wasm';
+const { instance } = await WebAssembly.instantiateStreaming(fetch(url), {
     wasi_snapshot_preview1: wasi.wasiImport,
     ghc_wasm_jsffi: ghc_wasm_jsffi(instanceExports),
 });
