@@ -924,4 +924,10 @@ spec = do
         it "works with sort up right argument" $ do
           Right op <- runResult $ fst <$> runSt (callOnFunctionAndFunction P.atop P.iota P.notIdentical >>= callOnFunctionAndFunction P.rightHook P.plus) context
           cffm P.under op P.precedesOrIdentical (vector [Number 9, Number 7, Number 1, Number 4, Number 10]) `shouldReturn` pure (vector [Number 13, Number 10, Number 2, Number 6, Number 15])
+
+    describe [G.innerProduct] $ do
+      describe "inner product" $ do
+        it "computes the inner product of two arrays" $ do
+          Right pr <- runResult $ fst <$> runSt (callOnFunction P.reduce P.plus) context
+          cffd P.innerProduct pr P.times (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) (fromMajorCells [vector [Number 5, Number 6], vector [Number 7, Number 8]]) `shouldReturn` pure (fromMajorCells [vector [Number 19, Number 22], vector [Number 43, Number 50]])
           

@@ -244,9 +244,9 @@ Marked features are supported, unmarked features are planned
 		* [x] `ᑒ` on contents (`⍥⊃`)
 		* [x] `⍣` repeat
 		* [x] `⍣` until
-		* [ ] `∙` inner product
+		* [x] `∙` inner product
 		* [ ] `∙` alternant?
-		* [ ] `⊞` table
+		* [x] `⊞` table
 		* [x] `⍤` at rank
 		* [x] `◡` on cells (`⍤¯1`)
 		* [x] `◠` on scalars (`⍤0`)

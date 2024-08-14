@@ -290,6 +290,12 @@ under = Conjunction
   , conjOnArrayFunction = Just $ \x g -> pure $ Function (Just $ F.underK x (callMonad g)) Nothing (makeConjRepr (show x) G.under (show g))
   , conjOnFunctionArray = Nothing
   , conjOnFunctionFunction = Just $ \f g -> pure $ Function (Just $ F.under (callMonad f) (callMonad g)) (Just $ F.under2 (callDyad f) (callMonad g)) (makeConjRepr (show f) G.under (show g)) }
+innerProduct = Conjunction
+  { conjRepr = [G.innerProduct]
+  , conjOnArrayArray = Nothing
+  , conjOnArrayFunction = Nothing
+  , conjOnFunctionArray = Nothing
+  , conjOnFunctionFunction = Just $ \f g -> pure $ Function Nothing (Just $ F.innerProduct (callMonad f) (callDyad g)) (makeConjRepr (show f) G.innerProduct (show g)) }
 
 conjunctions = (\x -> (head $ conjRepr x, x)) <$>
   [ TinyAPL.Primitives.atop
@@ -303,4 +309,5 @@ conjunctions = (\x -> (head $ conjRepr x, x)) <$>
   , TinyAPL.Primitives.rightFork
   , TinyAPL.Primitives.repeat
   , TinyAPL.Primitives.valences
-  , TinyAPL.Primitives.under ]
+  , TinyAPL.Primitives.under
+  , TinyAPL.Primitives.innerProduct ]
