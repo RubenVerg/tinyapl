@@ -76,7 +76,11 @@ export async function loadPages(): Promise<void> {
 }
 
 try {
-	pages = JSON.parse(await Deno.readTextFile('pages.json'));
+	const p = JSON.parse(await Deno.readTextFile('pages.json'), (k, v) => {
+		if (k !== 'body') return v;
+		return h('div', { dangerouslySetInnerHTML: { __html: v } });
+	});
+	pages = { ...p, index: p.index.body };
 } catch {
 	await loadPages();
 }
