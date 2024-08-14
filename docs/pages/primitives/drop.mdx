@@ -5,3 +5,9 @@ name: Drop
 ---
 
 `x` must be a scalar or vector of integers. `r` is the result of removing from each axis of `y` as many elements as specified by the corresponding element of `x`. If `x` is positive, the first `x` elements are removed; if `x` is negative, the last `x` elements are removed; if `x` is zero, no element is removed.
+
+## Infix
+
+<planned />
+
+If (an element of) `x` is nested, it must be a two-element vector, with the first item a nonnegative integer and the second item a nonpositive integer. In that case, the items removed on the corresponding axis are the first `⊃x` and the last `-⊇x`.

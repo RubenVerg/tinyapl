@@ -21,6 +21,7 @@ import { toJsxRuntime, Options as ToJsxRuntimeOptions, Jsx, Components } from '.
 import * as acorn from './deps/npm/acorn.ts';
 import Expression from './deps/npm/eval-estree-expression.ts';
 
+import { DeprecatedAlert, PlannedAlert } from './components/Banners.tsx';
 import CombinatorDiagram from './components/CombinatorDiagram.tsx';
 import PrimitiveLink from './components/PrimitiveLink.tsx';
 
@@ -231,6 +232,8 @@ export function renderMarkdown(source: string) {
 		components: {
 			primitive: PrimitiveLink,
 			combinator: CombinatorDiagram,
+			deprecated: DeprecatedAlert,
+			planned: PlannedAlert,
 		} as unknown as Components,
 	};
 
