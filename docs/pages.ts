@@ -1,7 +1,21 @@
 import { Info, Primitive, Quad, Pages } from './types.d.ts';
 import { readFrontmatter, renderMarkdown } from './markdown.ts';
 import { recordGetter } from './utils.ts';
-import { h, Fragment } from './deps/x/htm.ts';
+import { h, Fragment, JSXNode } from './deps/x/htm.ts';
+
+const force = async (el: JSX.Element) => {
+	if (el.children) {
+		for (let idx = 0; idx < el.children.length; idx++) {
+			const c = el.children[idx];
+			if (c instanceof JSXNode) {
+				if (c.tag instanceof Function)
+					el.children[idx] = await c.tag({ ...c.props, ...(c.children && { children: c.children }) });
+				await force(el.children[idx] as typeof c);
+			}
+		}
+	};
+	return el;
+};
 
 function readInfo(path: string, src: string): Info {
 	const frontmatter = recordGetter(readFrontmatter(src));
@@ -73,6 +87,13 @@ export async function loadPages(): Promise<void> {
 			pages.quads[path] = readQuad(path, await Deno.readTextFile(`pages/quads/${file.name}`))
 		}
 	}
+}
+
+export async function forcePages(): Promise<void> {
+	pages.index = await force(pages.index);
+	pages.info = Object.fromEntries(await Promise.all(Object.entries(pages.info).map(async ([k, v]) => [k, { ...v, body: await force(v.body) }])));
+	pages.primitives = Object.fromEntries(await Promise.all(Object.entries(pages.primitives).map(async ([k, v]) => [k, { ...v, body: await force(v.body) }])));
+	pages.quads = Object.fromEntries(await Promise.all(Object.entries(pages.quads).map(async ([k, v]) => [k, { ...v, body: await force(v.body) }])));
 }
 
 try {
