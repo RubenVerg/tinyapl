@@ -691,6 +691,23 @@ spec = do
             (fromMajorCells [vector [Number 2, Number 1], vector [Number 3, Number 5], vector [Number 9, Number 1]])
             (fromMajorCells [vector [Number 3, Number 1, Number 4], vector [Number 1, Number 5, Number 9], vector [Number 2, Number 6, Number 5]]) `shouldReturn`
             pure (fromMajorCells [vector [Number (10 / 9), Number (-11 / 18)], vector [Number (16 / 9), Number (-5 / 18)], vector [Number (-7 / 9), Number (7 / 9)]])
+
+    describe [G.factorial] $ do
+      describe "factorial" $ do
+        it "returns the factorial of a natural number" $ do
+          m P.factorial (scalar $ Number 3) `shouldReturn` pure (scalar $ Number 6)
+        it "returns the factorial of a complex number" $ do
+          m P.factorial (scalar $ Number (3 :+ 2)) `shouldReturn` pure (scalar $ Number $ -3.01154037032662022167363895320352158969957852249181859280699134 :+ 1.77016819446711624877987093755267094949031742656012402258841406)
+        it "fails for negative integers" $ do
+          e2m <$> m P.factorial (scalar $ Number (-1)) `shouldReturn` Nothing
+      describe "binomial" $ do
+        it "returns the binomial coefficient of two natural numbers" $ do
+          d P.factorial (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Number 10)
+          d P.factorial (scalar $ Number 5) (scalar $ Number 2) `shouldReturn` pure (scalar $ Number 0)
+        it "returns the binomial coefficient of integers" $ do
+          d P.factorial (scalar $ Number 5) (scalar $ Number -2) `shouldReturn` pure (scalar $ Number -6)
+          d P.factorial (scalar $ Number -1) (scalar $ Number -2) `shouldReturn` pure (scalar $ Number 0)
+          d P.factorial (scalar $ Number -8) (scalar $ Number -2) `shouldReturn` pure (scalar $ Number 7)
   
   describe "adverbs" $ do
     describe [G.selfie] $ do

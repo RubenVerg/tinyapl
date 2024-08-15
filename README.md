@@ -121,8 +121,8 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⸠` average?
 		* [x] `⌹` matrix inverse
 		* [x] `⌹` matrix divide
-		* [ ] `!` factorial/gamma
-		* [ ] `!` binomial
+		* [x] `!` factorial/gamma
+		* [x] `!` binomial
 		* [x] `|` magnitude
 		* [x] `|` remainder
 		* [x] `∨` greatest common divisor

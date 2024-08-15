@@ -1,6 +1,17 @@
-{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, DeriveTraversable #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, DeriveTraversable, FlexibleInstances, TypeFamilies, TypeApplications, ScopedTypeVariables, MultiParamTypeClasses #-}
 
-module TinyAPL.Complex where
+module TinyAPL.Complex
+  ( Complex(..)
+  , realPart
+  , imagPart
+  , conjugate
+  , mkPolar
+  , cis
+  , polar
+  , magnitude
+  , phase
+  , toStd
+  , fromStd ) where
 
 import GHC.Generics
 import Data.Data
@@ -9,6 +20,11 @@ import Foreign.Storable
 import Foreign.Ptr
 import Control.Monad.Zip
 import Control.Monad.Fix
+import qualified Data.Complex as Cx
+import qualified Data.Vector.Generic as VG
+import qualified Data.Vector.Generic.Mutable as VGM
+import qualified Data.Vector.Unboxed as VU
+import Data.Coerce
 
 infix 6 :+
 
@@ -182,4 +198,60 @@ instance MonadFix Complex where
 "realToFrac/a->Complex Float"
   realToFrac = \x -> realToFrac x :+ (0 :: Float)
 
-  #-}
+#-}
+
+toStd :: Complex a -> Cx.Complex a
+toStd (x :+ y) = x Cx.:+ y
+
+fromStd :: Cx.Complex a -> Complex a
+fromStd (x Cx.:+ y) = x :+ y
+
+newtype instance VU.MVector s (Complex a) = MV_Complex (VU.MVector s (a, a))
+newtype instance VU.Vector (Complex a) = V_Complex (VU.Vector (a, a))
+
+instance (VU.Unbox a) => VGM.MVector VU.MVector (Complex a) where
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicOverlaps #-}
+  {-# INLINE basicUnsafeNew #-}
+  {-# INLINE basicInitialize #-}
+  {-# INLINE basicClear #-}
+  {-# INLINE basicUnsafeCopy #-}
+  {-# INLINE basicUnsafeMove #-}
+  {-# INLINE basicUnsafeGrow #-}
+  basicLength      = coerce $ VGM.basicLength      @VU.MVector @(a,a)
+  basicUnsafeSlice = coerce $ VGM.basicUnsafeSlice @VU.MVector @(a,a)
+  basicOverlaps    = coerce $ VGM.basicOverlaps    @VU.MVector @(a,a)
+  basicUnsafeNew   = coerce $ VGM.basicUnsafeNew   @VU.MVector @(a,a)
+  basicInitialize  = coerce $ VGM.basicInitialize  @VU.MVector @(a,a)
+  basicUnsafeCopy  = coerce $ VGM.basicUnsafeCopy  @VU.MVector @(a,a)
+  basicUnsafeMove  = coerce $ VGM.basicUnsafeMove  @VU.MVector @(a,a)
+  basicUnsafeGrow  = coerce $ VGM.basicUnsafeGrow  @VU.MVector @(a,a)
+  basicClear       = coerce $ VGM.basicClear       @VU.MVector @(a,a)
+  {-# INLINE basicUnsafeReplicate #-}
+  {-# INLINE basicUnsafeRead #-}
+  {-# INLINE basicUnsafeWrite #-}
+  {-# INLINE basicSet #-}
+  basicUnsafeReplicate n (x :+ y) = MV_Complex <$> VGM.basicUnsafeReplicate n (x,y)
+  basicUnsafeRead (MV_Complex v) i = uncurry (:+) <$> VGM.basicUnsafeRead v i
+  basicUnsafeWrite (MV_Complex v) i (x :+ y) = VGM.basicUnsafeWrite v i (x,y)
+  basicSet (MV_Complex v) (x :+ y) = VGM.basicSet v (x,y)
+
+instance (VU.Unbox a) => VG.Vector VU.Vector (Complex a) where
+  {-# INLINE basicUnsafeFreeze #-}
+  {-# INLINE basicUnsafeThaw #-}
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicUnsafeCopy #-}
+  basicUnsafeFreeze = coerce $ VG.basicUnsafeFreeze @VU.Vector @(a,a)
+  basicUnsafeThaw   = coerce $ VG.basicUnsafeThaw   @VU.Vector @(a,a)
+  basicLength       = coerce $ VG.basicLength       @VU.Vector @(a,a)
+  basicUnsafeSlice  = coerce $ VG.basicUnsafeSlice  @VU.Vector @(a,a)
+  basicUnsafeCopy   = coerce $ VG.basicUnsafeCopy   @VU.Vector @(a,a)
+  {-# INLINE basicUnsafeIndexM #-}
+  {-# INLINE elemseq #-}
+  basicUnsafeIndexM (V_Complex v) i = uncurry (:+) <$> VG.basicUnsafeIndexM v i
+  elemseq _ (x :+ y) z = VG.elemseq (undefined :: VU.Vector a) x
+                       $ VG.elemseq (undefined :: VU.Vector a) y z
+
+instance (VU.Unbox a) => VU.Unbox (Complex a)

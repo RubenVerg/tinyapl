@@ -18,6 +18,8 @@ import Control.Monad
 import Control.Monad.State (MonadIO)
 import Data.Ord (Down(..))
 import qualified Data.Matrix as M
+import qualified TinyAPL.Gamma.Gamma as Gamma
+import Debug.Trace
 
 -- * Functions
 
@@ -751,6 +753,39 @@ transpose :: MonadError Error m => Array -> m Array
 transpose arr = do
   r <- rank' arr >>= indexGenerator' >>= reverse'
   reorderAxes' r arr
+
+factorial :: MonadError Error m => ScalarValue -> m ScalarValue
+factorial (Number n) = case asInt (DomainError "") n of
+  Left _ -> pure $ Number $ Gamma.gamma $ n + 1
+  Right i
+    | i < 0 -> throwError $ DomainError "Factorial of a negative integer"
+    | otherwise-> pure $ Number $ Gamma.factorial i
+factorial _ = throwError expectedNumber
+
+factorial' :: MonadError Error m => Array -> m Array
+factorial' = scalarMonad factorial
+
+binomial :: MonadError Error m => ScalarValue -> ScalarValue -> m ScalarValue
+binomial (Number x) (Number y) = let
+  go :: MonadError Error m => Complex Double -> Complex Double -> m (Complex Double)
+  go n k = do
+    let ni = asInt (DomainError "") n :: Either Error Integer
+    let ki = asInt (DomainError "") k :: Either Error Integer
+    case (trace (show ni) ni, trace (show ki) ki) of
+      (Right n', Right k')
+        | n' < 0 && k' >= 0 -> (((-1) ^ k') *) <$> go (k - n - 1) k
+        | n' < 0 && k' <= n' -> (((-1) ^ (n' - k')) *) <$> go (-k - 1) (n - k)
+        | n' < 0 -> pure 0
+      (Right n', _) | n' < 0 -> throwError $ DomainError "If Choose left argument is a negative integer, the right argument must be an integer"
+      (Right n', Right k')
+        | k' < 0 || k' > n' -> pure 0
+        | otherwise -> pure $ Gamma.factorial n' / (Gamma.factorial k' * Gamma.factorial (n' - k'))
+      _ -> pure $ Gamma.gamma (n + 1) / (Gamma.gamma (k + 1) * Gamma.gamma (n - k + 1))
+  in Number <$> go y x
+binomial _ _ = throwError expectedNumber
+
+binomial' :: MonadError Error m => Array -> Array -> m Array
+binomial' = scalarDyad binomial
 
 -- * Operators
 

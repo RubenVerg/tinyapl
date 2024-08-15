@@ -36,6 +36,11 @@ library
                     , TinyAPL.Primitives
                     , TinyAPL.Random
                     , TinyAPL.Util
+                    , TinyAPL.Gamma.Factorial
+                    , TinyAPL.Gamma.Gamma
+                    , TinyAPL.Gamma.Gamma.Incomplete
+                    , TinyAPL.Gamma.Gamma.Lanczos
+                    , TinyAPL.Gamma.Gamma.Stirling
     -- other-modules:
 
     -- LANGUAGE extensions used by modules in this package.
@@ -45,7 +50,10 @@ library
                     , mtl ^>=2.3.1
                     , random ^>=1.2.1.2
                     , time ^>=1.14
-                    , matrix ^>= 0.3.6.3
+                    , matrix ^>=0.3.6.3
+                    , continued-fractions ^>=0.10.0.2
+                    , converge ^>=0.1.0.1
+                    , vector ^>=0.13.1.0
     hs-source-dirs:   src
     default-language: Haskell2010
 
@@ -77,7 +85,7 @@ executable tinyapl-js
     hs-source-dirs:   js/src
     default-language: Haskell2010
     
-    ghc-options:      -W -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=hs_start"
+    ghc-options:      -W -fexternal-interpreter -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=hs_start"
 
 test-suite tinyapl-tests
     import:           warnings

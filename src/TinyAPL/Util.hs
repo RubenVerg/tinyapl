@@ -1,13 +1,13 @@
 {-# LANGUAGE LambdaCase #-}
 
 module TinyAPL.Util where
+import TinyAPL.Complex
 import qualified TinyAPL.Glyphs as G
 
 import GHC.Float (floatToDigits)
 import GHC.Float.RealFracMethods (truncateDoubleInteger)
 import Data.Char (intToDigit)
-import TinyAPL.Complex
-import Data.List (sortOn, genericLength, genericIndex)
+import Data.List (genericLength, genericIndex)
 
 infixr 9 .:
 (.:) f g x y = f $ g x y
