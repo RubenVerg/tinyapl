@@ -121,10 +121,13 @@ export function validatePages(): void {
 	for (const { glyph, primitives } of Object.values(pages.glyphs))
 		for (const p of primitives)
 			if (!(p in pages.primitives)) throw new Error(`Primitive ${p} not found for glyph ${glyph}`);
-	const allGlyphs = [...Object.values(pages.glyphs).flatMap(g => g.glyph).join('')];
-	for (const { glyph, name } of Object.values(pages.primitives))
+	const allGlyphs = [...Object.values(pages.glyphs).map(g => g.glyph).join('')];
+	const allGlyphPrimitives = Object.values(pages.glyphs).flatMap(p => p.primitives);
+	for (const [p, { glyph, name }] of Object.entries(pages.primitives)) {
 		for (const g of [...glyph])
 			if (!allGlyphs.includes(g)) throw new Error(`Primitive ${name} has glyph ${g} which is not in the glyphs`);
+		if (!allGlyphPrimitives.includes(p)) throw new Error(`Primitive ${name} is not in the glyphs`);
+	}
 }
 
 try {
