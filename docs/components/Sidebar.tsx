@@ -41,6 +41,12 @@ function Sidebar({ id, pages }: SidebarProps) {
 						{[...Object.entries(pages.quads)].sort(([_ak, av], [_bk, bv]) => av.glyph.localeCompare(bv.glyph)).map(([id, quad]) => <li class='nav-item'><a class='nav-link' href={`/docs/quad/${id}`}><code>{quad.glyph}</code> {quad.name}</a></li>)}
 					</ul>
 				</li>
+				<li class='nav-item ms-2'>
+					Glyphs
+					<ul class={subNavClass}>
+						{[...Object.entries(pages.glyphs)].sort(([_ak, av], [_bk, bv]) => av.name.localeCompare(bv.name)).map(([id, glyph]) => <li class='nav-item'><a class='nav-link' href={`/docs/glyph/${id}`}><code>{glyph.glyph}</code> {glyph.name}</a></li>)}
+					</ul>
+				</li>
 			</ul>
 		</div>
 	</div>;

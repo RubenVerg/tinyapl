@@ -1,3 +1,10 @@
+export interface Glyph {
+	glyph: string;
+	name: string;
+	primitives: string[];
+	body: JSX.Element;
+}
+
 export interface Info {
 	name: string;
 	planned: boolean;
@@ -25,6 +32,7 @@ export interface Quad {
 
 export interface Pages {
 	index: JSX.Element;
+	glyphs: Record<string, Glyph>;
 	info: Record<string, Info>;
 	primitives: Record<string, Primitive>;
 	quads: Record<string, Quad>;
