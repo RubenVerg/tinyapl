@@ -1,13 +1,14 @@
 /** @jsx h */
 
+import GlyphPage from './components/GlyphPage.tsx';
 import InfoPage from './components/InfoPage.tsx';
 import PrimitivePage from './components/PrimitivePage.tsx';
 import QuadPage from './components/QuadPage.tsx';
 import FullPage from './components/FullPage.tsx';
 import Index from './components/Index.tsx';
 import RunInterpreter from './components/RunInterpreter.tsx';
-import { Info, Primitive, Quad, Pages } from './types.d.ts';
-import pages, { forcePages, loadPages } from './pages.ts';
+import { Info, Primitive, Quad, Pages, Glyph } from './types.d.ts';
+import pages, { forcePages, loadPages, validatePages } from './pages.ts';
 import interpreters from './interpreters.ts';
 
 import { serveDir } from './deps/std/http.ts';
@@ -36,6 +37,7 @@ const sharedOptions: Partial<HtmlOptions> = {
 	},
 }
 
+validatePages();
 await forcePages();
 
 async function render(page: JSX.Element, options: Partial<HtmlOptions>) {
@@ -62,11 +64,16 @@ const quadPage = (quad: Quad) => render(<FullPage pages={pages}><QuadPage quad={
 	title: `${quad.name} - TinyAPL`,
 });
 
+const glyphPage = (glyph: Glyph) => render(<FullPage pages={pages}><GlyphPage glyph={glyph} /></FullPage>, {
+	title: `${glyph.glyph} ${glyph.name} - TinyAPL`,
+});
+
 const runInterpreter = await render(<RunInterpreter pages={pages} interpreters={interpreters} />, {
 	title: 'Run Interpreter - TinyAPL',
 });
 
 const directories: Record<string, keyof typeof pages> = {
+	glyph: 'glyphs',
 	info: 'info',
 	primitive: 'primitives',
 	quad: 'quads',
@@ -74,6 +81,7 @@ const directories: Record<string, keyof typeof pages> = {
 
 const renderers = {
 	index: (_: unknown) => Promise.resolve(index),
+	glyphs: glyphPage,
 	info: infoPage,
 	primitives: primitivePage,
 	quads: quadPage,

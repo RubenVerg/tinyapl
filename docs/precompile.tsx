@@ -1,8 +1,9 @@
-import pages, { forcePages, loadPages } from './pages.ts';
+import pages, { forcePages, loadPages, validatePages } from './pages.ts';
 import interpreters, { loadInterpreters } from './interpreters.ts';
 import { JSXNode } from './deps/x/htm.ts';
 
 await loadPages();
+validatePages();
 await forcePages();
 await loadInterpreters();
 

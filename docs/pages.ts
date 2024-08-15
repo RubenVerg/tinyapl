@@ -1,4 +1,4 @@
-import { Info, Primitive, Quad, Pages } from './types.d.ts';
+import { Glyph, Info, Primitive, Quad, Pages } from './types.d.ts';
 import { readFrontmatter, renderMarkdown } from './markdown.ts';
 import { recordGetter } from './utils.ts';
 import { h, Fragment, JSXNode } from './deps/x/htm.ts';
@@ -16,6 +16,20 @@ const force = async (el: JSX.Element) => {
 	};
 	return el;
 };
+
+function readGlyph(path: string, src: string): Glyph {
+	const frontmatter = recordGetter(readFrontmatter(src));
+	const body = renderMarkdown(src);
+	const name = frontmatter.get<string>('name') ?? (console.warn(`No name for ${path}`), path);
+	const glyph = frontmatter.get<string>('glyph') ?? (console.warn(`No glyph for ${name}`), '');
+	const primitives = frontmatter.get<string[]>('primitives') ?? [];
+	return {
+		glyph,
+		name,
+		primitives,
+		body,
+	};
+}
 
 function readInfo(path: string, src: string): Info {
 	const frontmatter = recordGetter(readFrontmatter(src));
@@ -62,10 +76,17 @@ function readQuad(path: string, src: string): Quad {
 	};
 }
 
-let pages: Pages = { index: h(Fragment, {}), info: {}, primitives: {}, quads: {} };
+let pages: Pages = { index: h(Fragment, {}), glyphs: {}, info: {}, primitives: {}, quads: {} };
 
 export async function loadPages(): Promise<void> {
 	pages.index = renderMarkdown(await Deno.readTextFile('pages/index.mdx'));
+
+	for await (const file of Deno.readDir('pages/glyphs')) {
+		if (file.isFile && file.name.endsWith('.mdx')) {
+			const path = file.name.slice(0, -4);
+			pages.glyphs[path] = readGlyph(path, await Deno.readTextFile(`pages/glyphs/${file.name}`));
+		}
+	}
 
 	for await (const file of Deno.readDir('pages/info')) {
 		if (file.isFile && file.name.endsWith('.mdx')) {
@@ -94,6 +115,19 @@ export async function forcePages(): Promise<void> {
 	pages.info = Object.fromEntries(await Promise.all(Object.entries(pages.info).map(async ([k, v]) => [k, { ...v, body: await force(v.body) }])));
 	pages.primitives = Object.fromEntries(await Promise.all(Object.entries(pages.primitives).map(async ([k, v]) => [k, { ...v, body: await force(v.body) }])));
 	pages.quads = Object.fromEntries(await Promise.all(Object.entries(pages.quads).map(async ([k, v]) => [k, { ...v, body: await force(v.body) }])));
+}
+
+export function validatePages(): void {
+	for (const { glyph, primitives } of Object.values(pages.glyphs))
+		for (const p of primitives)
+			if (!(p in pages.primitives)) throw new Error(`Primitive ${p} not found for glyph ${glyph}`);
+	const allGlyphs = [...Object.values(pages.glyphs).map(g => g.glyph).join('')];
+	const allGlyphPrimitives = Object.values(pages.glyphs).flatMap(p => p.primitives);
+	for (const [p, { glyph, name }] of Object.entries(pages.primitives)) {
+		for (const g of [...glyph])
+			if (!allGlyphs.includes(g)) throw new Error(`Primitive ${name} has glyph ${g} which is not in the glyphs`);
+		if (!allGlyphPrimitives.includes(p)) throw new Error(`Primitive ${name} is not in the glyphs`);
+	}
 }
 
 try {
