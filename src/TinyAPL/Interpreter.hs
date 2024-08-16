@@ -127,15 +127,15 @@ eval (DefinedBranch cat statements) = evalDefined statements cat
 eval (GuardBranch _ _)              = throwError $ DomainError "Guards are not allowed outside of dfns"
 eval (ExitBranch _)                 = throwError $ DomainError "Exits are not allowed outside of dfns"
 eval (VectorBranch es)              = do
-  entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) es
-  return $ VArray $ vector $ box <$> entries
+  entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) $ reverse es
+  return $ VArray $ vector $ box <$> reverse entries
 eval (HighRankBranch es)            = do
-  entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) es
+  entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) $ reverse es
   case entries of
-    [] -> return $ VArray $ fromMajorCells entries
+    [] -> return $ VArray $ fromMajorCells []
     (e:es) ->
       if all ((== arrayShape e) . arrayShape) es
-      then return $ VArray $ fromMajorCells entries
+      then return $ VArray $ fromMajorCells $ reverse entries
       else throwError $ DomainError "High rank notation entries must be of the same shape"
 eval (TrainBranch cat es)           = evalTrain cat es
 eval (WrapBranch fn)                = VArray . scalar . Wrap <$> (eval fn >>= unwrapFunction (DomainError "Function required"))
@@ -548,8 +548,8 @@ evalTrain cat es = let
   in do
     us <- mapM (\case
       Nothing -> pure Nothing
-      Just x -> Just <$> eval x) es
-    t <- train $ reverse us
+      Just x -> Just <$> eval x) $ reverse es
+    t <- train us
     r <- withTrainRepr us t
     case (cat, r) of
       (CatArray, _) -> throwError $ DomainError "Array train?"
