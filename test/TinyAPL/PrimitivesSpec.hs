@@ -10,10 +10,13 @@ import qualified TinyAPL.Glyphs as G
 import qualified TinyAPL.Primitives as P
 
 import Test.Hspec
+import Data.IORef
+import System.IO.Unsafe
 
 spec :: Spec
 spec = do
-  let context = Context (Scope [("l", vector $ Character <$> ['a'..'z'])] [] [] [] Nothing) core undefined undefined undefined
+  let scope = unsafePerformIO $ newIORef $ Scope [] [] [] [] Nothing
+  let context = Context scope core undefined undefined undefined
 
   let m :: Function -> Array -> IO (Result Array)
       m fn y = runResult $ fst <$> runSt (callMonad fn y) context

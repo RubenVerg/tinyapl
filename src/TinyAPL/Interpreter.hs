@@ -65,7 +65,8 @@ makeValueAdverb :: (Value -> St Function) -> String -> Adverb
 makeValueAdverb a s = Adverb
   { adverbOnArray = Just $ \x -> a (VArray x)
   , adverbOnFunction = Just $ \f -> a (VFunction f)
-  , adverbRepr = s }
+  , adverbRepr = s
+  , adverbContext = Nothing }
 
 makeValueConjunction :: (Value -> Value -> St Function) -> String -> Conjunction
 makeValueConjunction a s = Conjunction
@@ -73,13 +74,16 @@ makeValueConjunction a s = Conjunction
   , conjOnArrayFunction = Just $ \x y -> a (VArray x) (VFunction y)
   , conjOnFunctionArray = Just $ \x y -> a (VFunction x) (VArray y)
   , conjOnFunctionFunction = Just $ \x y -> a (VFunction x) (VFunction y)
-  , conjRepr = s } 
+  , conjRepr = s
+  , conjContext = Nothing }
 
-scopeLookup :: String -> Scope -> Maybe Value
-scopeLookup name sc = (VArray <$> scopeLookupArray name sc)
-                  <|> (VFunction <$> scopeLookupFunction name sc)
-                  <|> (VAdverb <$> scopeLookupAdverb name sc)
-                  <|> (VConjunction <$> scopeLookupConjunction name sc)
+scopeLookup :: String -> Scope -> St (Maybe Value)
+scopeLookup name sc = do
+  a <- scopeLookupArray name sc
+  f <- scopeLookupFunction name sc
+  adv <- scopeLookupAdverb name sc
+  conj <- scopeLookupConjunction name sc
+  pure $ (VArray <$> a) <|> (VFunction <$> f) <|> (VAdverb <$> adv) <|> (VConjunction <$> conj)
 
 scopeUpdate :: String -> Value -> Scope -> Scope
 scopeUpdate name (VArray val) sc       = scopeUpdateArray name val sc
@@ -87,10 +91,10 @@ scopeUpdate name (VFunction val) sc    = scopeUpdateFunction name val sc
 scopeUpdate name (VAdverb val) sc      = scopeUpdateAdverb name val sc
 scopeUpdate name (VConjunction val) sc = scopeUpdateConjunction name val sc
 
-inChildScope :: Monad m => [(String, Value)] -> StateT Context m a -> Context -> m a
-inChildScope vals x parent = let
-  child = parent{ contextScope = foldr (\(name, val) sc -> scopeUpdate name val sc) (Scope [] [] [] [] (Just $ contextScope parent)) vals }
-  in evalStateT x child
+inChildScope :: [(String, Value)] -> St a -> Context -> St a
+inChildScope vals x parent = do
+  ref <- createRef $ foldr (\(name, val) sc -> scopeUpdate name val sc) (Scope [] [] [] [] (Just $ contextScope parent)) vals
+  runWithContext parent{ contextScope = ref } x
 
 interpret :: Tree -> Context -> ResultIO (Value, Context)
 interpret tree = runSt (eval tree)
@@ -172,7 +176,7 @@ evalLeaf (TokenArrayName name _)
         Nothing -> throwError $ SyntaxError $ "Quad name " ++ name ++ " cannot be accessed"
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                          =
-    gets contextScope >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray . scopeLookupArray name)
+    gets contextScope >>= readRef >>= scopeLookupArray name >>=(lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray)
 evalLeaf (TokenFunctionName name _)
   | head name == G.quad                = do
     quads <- gets contextQuads
@@ -181,7 +185,7 @@ evalLeaf (TokenFunctionName name _)
       Just x -> return $ VFunction x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                          =
-    gets contextScope >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VFunction . scopeLookupFunction name)
+    gets contextScope >>= readRef >>= scopeLookupFunction name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VFunction)
 evalLeaf (TokenAdverbName name _)
   | head name == G.quad                = do
     quads <- gets contextQuads
@@ -190,7 +194,7 @@ evalLeaf (TokenAdverbName name _)
       Just x -> return $ VAdverb x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                          =
-    gets contextScope >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VAdverb . scopeLookupAdverb name)
+    gets contextScope >>= readRef >>= scopeLookupAdverb name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VAdverb)
 evalLeaf (TokenConjunctionName name _)
   | head name == G.quad                = do
     quads <- gets contextQuads
@@ -199,7 +203,7 @@ evalLeaf (TokenConjunctionName name _)
       Just x -> return $ VConjunction x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                          =
-    gets contextScope >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VConjunction . scopeLookupConjunction name)
+    gets contextScope >>= readRef >>= scopeLookupConjunction name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VConjunction)
 evalLeaf _                             = throwError $ DomainError "Invalid leaf type in evaluation"
 
 evalMonadCall :: Value -> Value -> St Value
@@ -208,7 +212,7 @@ evalMonadCall _ _                         = throwError $ DomainError "Invalid ar
 
 evalDyadCall :: Value -> Value -> St Value
 evalDyadCall (VArray arr) (VFunction f) =
-  return $ VFunction $ Function { functionMonad = Just $ callDyad f arr, functionDyad = Nothing, functionRepr = "(" ++ show arr ++ show f ++ ")" }
+  return $ VFunction $ Function { functionMonad = Just $ callDyad f arr, functionDyad = Nothing, functionRepr = "(" ++ show arr ++ show f ++ ")", functionContext = functionContext f }
 evalDyadCall _ _                        = throwError $ DomainError "Invalid arguments to dyad call evaluation"
 
 evalAdverbCall :: Value -> Value -> St Value
@@ -218,14 +222,14 @@ evalAdverbCall _ _                         = throwError $ DomainError "Invalid a
 
 evalConjunctionCall :: Value -> Value -> St Value
 evalConjunctionCall (VConjunction conj) (VArray r)    =
-  return $ VAdverb $ Adverb { adverbOnArray = Just (\x -> callOnArrayAndArray conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndArray conj x r), adverbRepr = "(" ++ show conj ++ show r ++ ")" }
+  return $ VAdverb $ Adverb { adverbOnArray = Just (\x -> callOnArrayAndArray conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndArray conj x r), adverbRepr = "(" ++ show conj ++ show r ++ ")", adverbContext = conjContext conj }
 evalConjunctionCall (VConjunction conj) (VFunction r) =
-  return $ VAdverb $ Adverb { adverbOnArray = Just (\x -> callOnArrayAndFunction conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndFunction conj x r), adverbRepr = "(" ++ show conj ++ show r ++ ")" }
+  return $ VAdverb $ Adverb { adverbOnArray = Just (\x -> callOnArrayAndFunction conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndFunction conj x r), adverbRepr = "(" ++ show conj ++ show r ++ ")", adverbContext = conjContext conj }
 evalConjunctionCall _ _                               = throwError $ DomainError "Invalid arguments to conjunction call evaluation"
 
 evalAssign :: String -> Value -> St Value
 evalAssign name val
-  | name == [G.quad]      = do
+  | name == [G.quad] = do
     arr <- unwrapArray (DomainError "Cannot print non-array") val
     out <- gets contextOut
     out $ show arr ++ "\n"
@@ -235,7 +239,7 @@ evalAssign name val
     err <- gets contextErr
     err $ show arr
     return val
-  | head name == G.quad   = do
+  | head name == G.quad = do
     arr <- unwrapArray (DomainError "Cannot set quad name to non-array") val
     quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads
@@ -247,8 +251,7 @@ evalAssign name val
         Nothing -> throwError $ SyntaxError $ "Quad name " ++ name ++ " cannot be set"
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise = do
-    sc <- gets contextScope
-    putScope $ scopeUpdate name val sc
+    gets contextScope >>= flip modifyRef (scopeUpdate name val)
     return val
 
 evalDefined :: [Tree] -> Category -> St Value
@@ -268,22 +271,25 @@ evalDefined statements cat = let
     (v, r) <- ev x
     if r then return v else runDefined xs
 
-  run xs sc = lift (inChildScope xs (runDefined statements) sc) >>= unwrapArray (DomainError "Dfn must return an array")
+  run xs sc = inChildScope xs (runDefined statements) sc >>= unwrapArray (DomainError "Dfn must return an array")
   in do
     sc <- get
     case cat of
       CatFunction -> let
         dfn = VFunction (Function
           { functionRepr = "{...}"
+          , functionContext = Just $ sc
           , functionMonad = Just $ \x -> run [([G.omega], VArray x), ([G.del], dfn)] sc
           , functionDyad = Just $ \x y -> run [([G.alpha], VArray x), ([G.omega], VArray y), ([G.del], dfn)] sc } )
         in return dfn
       CatAdverb -> let
         dadv = VAdverb (Adverb
           { adverbRepr = "_{...}"
+          , adverbContext = Just $ sc
           , adverbOnArray = Just $ \a -> let
             dfn = (Function
               { functionRepr = "(" ++ show a ++ ")_{...}"
+              , functionContext = Just $ sc
               , functionMonad = Just $ \x -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omega], VArray x)
@@ -299,6 +305,7 @@ evalDefined statements cat = let
           , adverbOnFunction = Just $ \a -> let
             dfn = (Function
               { functionRepr = "(" ++ show a ++ ")_{...}"
+              , functionContext = Just $ sc
               , functionMonad = Just $ \x -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omega], VArray x)
@@ -315,9 +322,11 @@ evalDefined statements cat = let
       CatConjunction -> let
         dconj = VConjunction (Conjunction
           { conjRepr = "_{...}_"
+          , conjContext = Just $ sc
           , conjOnArrayArray = Just $ \a b -> let
             dfn = (Function
               { functionRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
+              , functionContext = Just $ sc
               , functionMonad = Just $ \x -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omega, G.omega], VArray b)
@@ -335,6 +344,7 @@ evalDefined statements cat = let
           , conjOnArrayFunction = Just $ \a b -> let
             dfn = (Function
               { functionRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
+              , functionContext = Just $ sc
               , functionMonad = Just $ \x -> run
                 [ ([G.alpha, G.alpha], VArray a)
                 , ([G.omegaBar, G.omegaBar], VFunction b)
@@ -352,6 +362,7 @@ evalDefined statements cat = let
           , conjOnFunctionArray = Just $ \a b -> let
             dfn = (Function
               { functionRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
+              , functionContext = Just $ sc
               , functionMonad = Just $ \x -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omega, G.omega], VArray b)
@@ -369,6 +380,7 @@ evalDefined statements cat = let
           , conjOnFunctionFunction = Just $ \a b -> let
             dfn = (Function
               { functionRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
+              , functionContext = Just $ sc
               , functionMonad = Just $ \x -> run
                 [ ([G.alphaBar, G.alphaBar], VFunction a)
                 , ([G.omegaBar, G.omegaBar], VFunction b)
@@ -389,25 +401,25 @@ evalDefined statements cat = let
 evalTrain :: Category -> [Maybe Tree] -> St Value
 evalTrain cat es = let
   atop :: Function -> Function -> Function
-  atop f g = Function { functionMonad = Just $ F.compose (callMonad f) (callMonad g), functionDyad = Just $ F.atop (callMonad f) (callDyad g), functionRepr = "" }
+  atop f g = Function { functionMonad = Just $ F.compose (callMonad f) (callMonad g), functionDyad = Just $ F.atop (callMonad f) (callDyad g), functionRepr = "", functionContext = Nothing }
 
   fork :: Function -> Function -> Function -> Function
-  fork f g h = Function { functionMonad = Just $ F.fork1 (callMonad f) (callDyad g) (callMonad h), functionDyad = Just $ F.fork2 (callDyad g) (callDyad f) (callDyad h), functionRepr = "" }
+  fork f g h = Function { functionMonad = Just $ F.fork1 (callMonad f) (callDyad g) (callMonad h), functionDyad = Just $ F.fork2 (callDyad g) (callDyad f) (callDyad h), functionRepr = "", functionContext = Nothing }
 
   bindLeft :: Function -> Array -> Function
-  bindLeft f x = Function { functionMonad = Just $ \y -> callDyad f x y, functionDyad = Nothing, functionRepr = "" }
+  bindLeft f x = Function { functionMonad = Just $ \y -> callDyad f x y, functionDyad = Nothing, functionRepr = "", functionContext = Nothing }
 
   bindRight :: Function -> Array -> Function
-  bindRight f y = Function { functionMonad = Just $ \x -> callDyad f x y, functionDyad = Nothing, functionRepr = "" }
+  bindRight f y = Function { functionMonad = Just $ \x -> callDyad f x y, functionDyad = Nothing, functionRepr = "", functionContext = Nothing }
 
   train1 :: Value -> St Value
-  train1 (VArray x) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "" }
+  train1 (VArray x) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "", functionContext = Nothing }
   train1 o = pure $ o
 
   train2 :: Value -> Value -> St Value
-  train2 (VArray x) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "" }
-  train2 (VArray x) (VFunction g) = pure $ VFunction $ Function { functionMonad = Just $ \y -> callDyad g x y, functionDyad = Nothing, functionRepr = ""}
-  train2 (VFunction f) (VArray y) = pure $ VFunction $ Function { functionMonad = Just $ \x -> callDyad f x y, functionDyad = Nothing, functionRepr = "" }
+  train2 (VArray x) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "", functionContext = Nothing }
+  train2 (VArray x) (VFunction g) = pure $ VFunction $ Function { functionMonad = Just $ \y -> callDyad g x y, functionDyad = Nothing, functionRepr = "", functionContext = Nothing}
+  train2 (VFunction f) (VArray y) = pure $ VFunction $ Function { functionMonad = Just $ \x -> callDyad f x y, functionDyad = Nothing, functionRepr = "", functionContext = Nothing }
   train2 (VFunction f) (VFunction g) = pure $ VFunction $ atop f g
   train2 (VArray x) (VAdverb a) = VFunction <$> callOnArray a x 
   train2 (VFunction f) (VAdverb a) = VFunction <$> callOnFunction a f
@@ -426,16 +438,16 @@ evalTrain cat es = let
   train2 x y = throwError $ DomainError $ "2-train with " ++ show x ++ " and " ++ show y ++ "?"
 
   train3 :: Value -> Value -> Value -> St Value
-  train3 (VArray _) (VArray y) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
-  train3 (VArray _) (VArray y) (VFunction _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
-  train3 (VFunction _) (VArray y) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
-  train3 (VFunction _) (VArray y) (VFunction _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "" }
+  train3 (VArray _) (VArray y) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
+  train3 (VArray _) (VArray y) (VFunction _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
+  train3 (VFunction _) (VArray y) (VArray _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
+  train3 (VFunction _) (VArray y) (VFunction _) = pure $ VFunction $ Function { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
   train3 (VFunction f) (VFunction g) (VFunction h) = pure $ VFunction $ fork f g h
   train3 (VArray x) (VFunction g) (VFunction h) = pure $ VFunction $ atop (bindLeft g x) h
   train3 (VFunction f) (VFunction g) (VArray z) = pure $ VFunction $ atop (bindRight g z) f
   train3 (VArray x) (VFunction g) (VArray z) = do
     r <- callDyad g x z
-    pure $ VFunction $ Function { functionMonad = Just $ F.constant1 r, functionDyad = Just $ F.constant2 r, functionRepr = "" }
+    pure $ VFunction $ Function { functionMonad = Just $ F.constant1 r, functionDyad = Just $ F.constant2 r, functionRepr = "", functionContext = Nothing }
   train3 (VArray x) (VConjunction c) (VArray z) = VFunction <$>callOnArrayAndArray c x z
   train3 (VArray x) (VConjunction c) (VFunction h) = VFunction <$> callOnArrayAndFunction c x h
   train3 (VFunction f) (VConjunction c) (VArray z) = VFunction <$> callOnFunctionAndArray c f z
