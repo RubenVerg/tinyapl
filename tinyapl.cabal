@@ -84,8 +84,8 @@ executable tinyapl-js
     
     hs-source-dirs:   js/src
     default-language: Haskell2010
-    
-    ghc-options:      -W -fexternal-interpreter -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=hs_start"
+   
+    ghc-options:      -W -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=hs_start"
 
 test-suite tinyapl-tests
     import:           warnings

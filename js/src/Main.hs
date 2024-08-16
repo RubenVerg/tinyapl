@@ -65,7 +65,7 @@ lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
     case l of
       Just (VFunction f) -> callDyad f x y
       _ -> throwError noLast
-  ) (quad : "Last")] [Adverb (Just $ \u -> do
+  ) (quad : "Last") Nothing] [Adverb (Just $ \u -> do
     l <- readLast
     case l of
       Just (VAdverb adv) -> callOnArray adv u
@@ -75,7 +75,7 @@ lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
     case l of
       Just (VAdverb adv) -> callOnFunction adv f
       _ -> throwError noLast
-  ) (quad : "_Last")] [Conjunction (Just $ \u v -> do
+  ) (quad : "_Last") Nothing] [Conjunction (Just $ \u v -> do
     l <- readLast
     case l of
       Just (VConjunction conj) -> callOnArrayAndArray conj u v
@@ -95,7 +95,7 @@ lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
     case l of
       Just (VConjunction conj) -> callOnFunctionAndFunction conj f g
       _ -> throwError noLast
-  ) (quad : "_Last_")]
+  ) (quad : "_Last_") Nothing]
 
 newContext :: JSVal -> JSVal -> JSVal -> JSVal -> IO Int
 newContext input output error quads = do
@@ -103,8 +103,9 @@ newContext input output error quads = do
   let qs = valToObject quads
   let nilads = filter (isLower . head . fst) qs
   let functions = filter (isUpper . head . fst) qs
+  emptyScope <- newIORef $ Scope [] [] [] [] Nothing
   modifyIORef contexts (++ [Context
-    { contextScope = Scope [] [] [] [] Nothing
+    { contextScope = emptyScope
     , contextQuads = core <> lastQuads l <>
       quadsFromReprs
         ((\(n, f) -> Nilad (Just $ do
@@ -124,7 +125,7 @@ newContext input output error quads = do
           r <- liftToSt $ fmap fromJSVal $ (jsCallDyad f `on` toJSVal) x y
           case r of
             Left err -> throwError err
-            Right res -> pure res) (quad : n)) <$> functions)
+            Right res -> pure res) (quad : n) Nothing) <$> functions)
         [] []
     , contextIn = liftToSt $ fromJSString <$> callInput input
     , contextOut = \str -> liftToSt $ callOutput output $ toJSString str

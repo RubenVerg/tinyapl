@@ -12,14 +12,17 @@ import Control.Monad (void)
 import System.IO
 import Data.Functor (($>))
 import Data.List (singleton)
+import Data.IORef
 
 main :: IO ()
 main = do
   hSetEncoding stdout utf8
   hSetEncoding stderr utf8
 
+  scope <- newIORef $ Scope [] [] [] [] Nothing
+
   let context = Context {
-      contextScope = Scope [] [] [] [] Nothing
+      contextScope = scope
     , contextQuads = core
     , contextIn = liftToSt getLine
     , contextOut = \str -> do

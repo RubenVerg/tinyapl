@@ -28,12 +28,12 @@ ts = Nilad (Just $ do
 
 exists = Function (Just $ \x -> do
   let var = show x
-  scope <- gets contextScope
-  case scopeLookup var scope of
+  v <- gets contextScope >>= readRef >>= scopeLookup var
+  case v of
     Just _ -> return $ scalar $ Number 1
     Nothing -> return $ scalar $ Number 0
-  ) Nothing (G.quad : "Exists")
-repr = Function (Just $ \x -> return $ vector $ Character <$> arrayRepr x) Nothing (G.quad : "Repr")
+  ) Nothing (G.quad : "Exists") Nothing
+repr = Function (Just $ \x -> return $ vector $ Character <$> arrayRepr x) Nothing (G.quad : "Repr") Nothing
 delay = Function (Just $ \x -> do
   let err = DomainError "Delay argument must be a nonnegative scalar number"
   n <- asScalar err x >>= asNumber err >>= asReal err
@@ -42,6 +42,6 @@ delay = Function (Just $ \x -> do
     liftToSt $ threadDelay $ floor $ n * 1000 * 1000
     end <- realToFrac <$> liftToSt getPOSIXTime
     pure $ scalar $ Number $ (end - start) :+ 0
-  ) Nothing (G.quad : "Delay")
+  ) Nothing (G.quad : "Delay") Nothing
 
 core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts ] [ exists, repr, delay ] [] []

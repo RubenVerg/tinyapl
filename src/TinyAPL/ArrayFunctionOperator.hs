@@ -10,11 +10,12 @@ import Data.List
 import Control.Monad
 import Data.Maybe (mapMaybe, fromJust)
 import Control.Monad.State
-import Control.Monad.Except (ExceptT, MonadError)
-import Control.Applicative (Alternative((<|>)))
+import Control.Monad.Except (ExceptT, MonadError, runExceptT)
 import Data.List.NonEmpty (NonEmpty, toList)
 import Data.Tuple (swap)
 import qualified Data.Matrix as M
+import qualified Data.IORef as IORef
+import Data.IORef (IORef)
 
 -- * Arrays
 
@@ -352,7 +353,8 @@ data Function
   = Function
     { functionMonad :: Maybe (Array -> St Array)
     , functionDyad  :: Maybe (Array -> Array -> St Array)
-    , functionRepr  :: String }
+    , functionRepr  :: String
+    , functionContext :: Maybe Context }
 
 makeAdverbRepr :: String -> Char -> String
 makeAdverbRepr l s = "(" ++ l ++ ")" ++ [s]
@@ -367,32 +369,37 @@ noMonad :: String -> Error
 noMonad str = DomainError $ "Function " ++ str ++ " cannot be called monadically"
 
 callMonad :: Function -> Array -> St Array
-callMonad (Function (Just f) _ _) x = f x
-callMonad f@(Function Nothing _ _) _ = throwError $ noMonad $ show f
+callMonad (Function (Just f) _ _ (Just ctx)) x = runWithContext ctx $ f x
+callMonad (Function (Just f) _ _ Nothing) x = f x
+callMonad f@(Function Nothing _ _ _) _ = throwError $ noMonad $ show f
 
 noDyad :: String -> Error
 noDyad str = DomainError $ "Function " ++ str ++ " cannot be called dyadically"
 
 callDyad :: Function -> Array -> Array -> St Array
-callDyad (Function _ (Just g) _) a b = g a b
-callDyad f@(Function _ Nothing _) _ _ = throwError $ noDyad $ show f
+callDyad (Function _ (Just g) _ (Just ctx)) a b = runWithContext ctx $ g a b
+callDyad (Function _ (Just g) _ Nothing) a b = g a b
+callDyad f@(Function _ Nothing _ _) _ _ = throwError $ noDyad $ show f
 
 -- * Operators
 
 data Adverb = Adverb
   { adverbOnArray    :: Maybe (Array    -> St Function)
   , adverbOnFunction :: Maybe (Function -> St Function)
-  , adverbRepr       :: String }
+  , adverbRepr       :: String
+  , adverbContext    :: Maybe Context }
 
 instance Show Adverb where
-  show (Adverb _ _ repr) = repr
+  show (Adverb _ _ repr _) = repr
 
 callOnArray :: Adverb -> Array -> St Function
-callOnArray (Adverb (Just op) _ _) x = op x
+callOnArray (Adverb (Just op) _ _ (Just ctx)) x = runWithContext ctx $ op x
+callOnArray (Adverb (Just op) _ _ Nothing) x = op x
 callOnArray adv _ = throwError $ DomainError $ "Operator " ++ show adv ++ " does not take array operands."
 
 callOnFunction :: Adverb -> Function -> St Function
-callOnFunction (Adverb _ (Just op) _) x = op x
+callOnFunction (Adverb _ (Just op) _ (Just ctx)) x = runWithContext ctx $ op x
+callOnFunction (Adverb _ (Just op) _ Nothing) x = op x
 callOnFunction adv _ = throwError $ DomainError $ "Operator " ++ show adv ++ " does not take functions operands."
 
 data Conjunction = Conjunction
@@ -400,25 +407,30 @@ data Conjunction = Conjunction
   , conjOnArrayFunction    :: Maybe (Array    -> Function -> St Function)
   , conjOnFunctionArray    :: Maybe (Function -> Array    -> St Function)
   , conjOnFunctionFunction :: Maybe (Function -> Function -> St Function)
-  , conjRepr               :: String }
+  , conjRepr               :: String
+  , conjContext            :: Maybe Context }
 
 instance Show Conjunction where
-  show (Conjunction _ _ _ _ repr) = repr
+  show (Conjunction _ _ _ _ repr _) = repr
 
 callOnArrayAndArray :: Conjunction -> Array -> Array -> St Function
-callOnArrayAndArray (Conjunction (Just op) _ _ _ _) x y = op x y
+callOnArrayAndArray (Conjunction (Just op) _ _ _ _ (Just ctx)) x y = runWithContext ctx $ op x y
+callOnArrayAndArray (Conjunction (Just op) _ _ _ _ Nothing) x y = op x y
 callOnArrayAndArray conj _ _ = throwError $ DomainError $ "Operator " ++ show conj ++ " cannot be applied to two arrays."
 
 callOnArrayAndFunction :: Conjunction -> Array -> Function -> St Function
-callOnArrayAndFunction (Conjunction _ (Just op) _ _ _) x y = op x y
+callOnArrayAndFunction (Conjunction _ (Just op) _ _ _ (Just ctx)) x y = runWithContext ctx $ op x y
+callOnArrayAndFunction (Conjunction _ (Just op) _ _ _ Nothing) x y = op x y
 callOnArrayAndFunction conj _ _ = throwError $ DomainError $ "Operator " ++ show conj ++ " cannot be applied to an array and a function."
 
 callOnFunctionAndArray :: Conjunction -> Function -> Array -> St Function
-callOnFunctionAndArray (Conjunction _ _ (Just op) _ _) x y = op x y
+callOnFunctionAndArray (Conjunction _ _ (Just op) _ _ (Just ctx)) x y = runWithContext ctx $ op x y
+callOnFunctionAndArray (Conjunction _ _ (Just op) _ _ Nothing) x y = op x y
 callOnFunctionAndArray conj _ _ = throwError $ DomainError $ "Operator " ++ show conj ++ " cannot be applied to a function and an array."
 
 callOnFunctionAndFunction :: Conjunction -> Function -> Function -> St Function
-callOnFunctionAndFunction (Conjunction _ _ _ (Just op) _) x y = op x y
+callOnFunctionAndFunction (Conjunction _ _ _ (Just op) _ (Just ctx)) x y = runWithContext ctx $ op x y
+callOnFunctionAndFunction (Conjunction _ _ _ (Just op) _ Nothing) x y = op x y
 callOnFunctionAndFunction conj _ _ = throwError $ DomainError $ "Operator " ++ show conj ++ " cannot be applied to two functions."
 
 -- * Quads
@@ -454,27 +466,43 @@ data Scope = Scope
   , scopeFunctions :: [(String, Function)]
   , scopeAdverbs :: [(String, Adverb)]
   , scopeConjunctions :: [(String, Conjunction)]
-  , scopeParent :: Maybe Scope }
-  deriving (Show)
+  , scopeParent :: Maybe (IORef Scope) }
+
+instance Show Scope where
+  show (Scope arr fn adv conj p) = "Scope { arrays = " ++ show arr ++ ", functions = " ++ show fn ++ ", adverbs = " ++ show adv ++ ", conjunctions = " ++ show conj ++ ", " ++ (case p of
+    Nothing -> "no parent"
+    Just _ -> "a parent") ++ " }"
 
 specialNames :: [String]
 specialNames = [[G.alpha], [G.omega], [G.alpha, G.alpha], [G.omega, G.omega], [G.alphaBar, G.alphaBar], [G.omegaBar, G.omegaBar], [G.del], [G.underscore, G.del], [G.underscore, G.del, G.underscore]]
 
-scopeLookupArray :: String -> Scope -> Maybe Array
-scopeLookupArray name sc =
-  lookup name (scopeArrays sc) <|> (if name `elem` specialNames then Nothing else scopeParent sc >>= scopeLookupArray name)
+scopeLookupArray :: String -> Scope -> St (Maybe Array)
+scopeLookupArray name sc = case lookup name (scopeArrays sc) of
+  Just x -> pure $ Just x
+  Nothing -> if name `elem` specialNames then pure Nothing else case scopeParent sc of
+    Nothing -> pure Nothing
+    Just p -> (liftToSt $ IORef.readIORef p) >>= scopeLookupArray name
 
-scopeLookupFunction :: String -> Scope -> Maybe Function
-scopeLookupFunction name sc =
-  lookup name (scopeFunctions sc) <|> (if name `elem` specialNames then Nothing else scopeParent sc >>= scopeLookupFunction name)
+scopeLookupFunction :: String -> Scope -> St (Maybe Function)
+scopeLookupFunction name sc = case lookup name (scopeFunctions sc) of
+  Just x -> pure $ Just x
+  Nothing -> if name `elem` specialNames then pure $ Nothing else case scopeParent sc of
+    Nothing -> pure $ Nothing
+    Just p -> (liftToSt $ IORef.readIORef p) >>= scopeLookupFunction name
 
-scopeLookupAdverb :: String -> Scope -> Maybe Adverb
-scopeLookupAdverb name sc =
-  lookup name (scopeAdverbs sc) <|> (if name `elem` specialNames then Nothing else scopeParent sc >>= scopeLookupAdverb name)
+scopeLookupAdverb :: String -> Scope -> St (Maybe Adverb)
+scopeLookupAdverb name sc = case lookup name (scopeAdverbs sc) of
+  Just x -> pure $ Just x
+  Nothing -> if name `elem` specialNames then pure $ Nothing else case scopeParent sc of
+    Nothing -> pure $ Nothing
+    Just p -> (liftToSt $ IORef.readIORef p) >>= scopeLookupAdverb name
 
-scopeLookupConjunction :: String -> Scope -> Maybe Conjunction
-scopeLookupConjunction name sc =
-  lookup name (scopeConjunctions sc) <|> (if name `elem` specialNames then Nothing else scopeParent sc >>= scopeLookupConjunction name)
+scopeLookupConjunction :: String -> Scope -> St (Maybe Conjunction)
+scopeLookupConjunction name sc = case lookup name (scopeConjunctions sc) of
+  Just x -> pure $ Just x
+  Nothing -> if name `elem` specialNames then pure $ Nothing else case scopeParent sc of
+    Nothing -> pure $ Nothing
+    Just p -> (liftToSt $ IORef.readIORef p) >>= scopeLookupConjunction name
 
 scopeUpdateArray :: String -> Array -> Scope -> Scope
 scopeUpdateArray name val sc = sc{ scopeArrays = update name val (scopeArrays sc) }
@@ -489,7 +517,7 @@ scopeUpdateConjunction :: String -> Conjunction -> Scope -> Scope
 scopeUpdateConjunction name val sc = sc{ scopeConjunctions = update name val (scopeConjunctions sc) }
 
 data Context = Context
-  { contextScope :: Scope
+  { contextScope :: IORef Scope
   , contextQuads :: Quads
   , contextIn :: St String
   , contextOut :: String -> St ()
@@ -500,10 +528,29 @@ type St = StateT Context (ExceptT Error IO)
 runSt :: St a -> Context -> ResultIO (a, Context)
 runSt = runStateT
 
+runWithContext :: Context -> St a -> St a
+runWithContext ctx f = do
+  r <- liftToSt $ runExceptT $ runSt f ctx
+  case r of
+    Left e -> throwError e
+    Right (x, _) -> pure x
+
 liftToSt :: IO a -> St a
 liftToSt = liftIO
 
-putScope :: Scope -> St ()
+putScope :: IORef Scope -> St ()
 putScope sc = do
   context <- get
   put $ context{ contextScope = sc }
+
+createRef :: a -> St (IORef a)
+createRef = liftToSt . IORef.newIORef
+
+readRef :: IORef a -> St a
+readRef = liftToSt . IORef.readIORef
+
+writeRef :: IORef a -> a -> St ()
+writeRef = liftToSt .: IORef.writeIORef
+
+modifyRef :: IORef a -> (a -> a) -> St ()
+modifyRef = liftToSt .: IORef.modifyIORef
