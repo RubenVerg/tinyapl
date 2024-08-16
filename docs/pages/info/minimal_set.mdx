@@ -1,0 +1,158 @@
+---
+name: Minimal Set
+---
+
+While TinyAPL is "tiny" in many ways, it is definitely not tiny in the amount of primitives it has. It might be interesting to find out what the *minimal* set of primitives is, i.e. the ones that can't be implemneted in terms of other primitives.
+
+## Aliases
+
+Some of the primitives are pretty much simple applications of other primitives:
+
+* <primitive key="arctangent" />&nbsp;is `∡⍤⊕⍨`
+* <primitive key="boxed" />&nbsp;is `⊂⍤F`
+* <primitive key="cartesian" />&nbsp;is `+∘(0ᴊ1∘×)`
+* <primitive key="ceiling" />&nbsp;is `-⍤⌈⍤-`
+* <primitive key="conjugate" />&nbsp;is `¯10∘○`
+* <primitive key="each" />&nbsp;is `Fᑣᑒ◠`
+* <primitive key="each_left" />&nbsp;is `F¨∘⊂`
+* <primitive key="each_right" />&nbsp;is `⊂⍛(F¨)`
+* <primitive key="from" />&nbsp;is `⌷⍨∘⊃⍨⍤0‿∞`
+* <primitive key="histogram" />&nbsp;is `(⍳⍤≢)⊸⋷`
+* <primitive key="imaginary_part" />&nbsp;is `11∘○`
+* <primitive key="laminate" />&nbsp;is `⍪⍥∧`
+* <primitive key="last" />&nbsp;is `⊃⍤⊖⍤,`
+* <primitive key="magnitude" />&nbsp;is `10∘○`
+* <primitive key="major_cells" />&nbsp;is `⊂⍤¯1`
+* <primitive key="mix" />&nbsp;is `⊃⍤0`
+* <primitive key="nand" />&nbsp;is `~⍤∧`
+* <primitive key="natural_logarithm" />&nbsp;is `(*1)∘⍟`
+* <primitive key="negate" />&nbsp;is `¯1∘×`
+* <primitive key="nor" />&nbsp;is `~⍤∨`
+* <primitive key="not" />&nbsp;is `1∘-`
+* <primitive key="on_cells" />&nbsp;is `F⍤¯1`
+* <primitive key="on_contents" />&nbsp;is `F⍥⊃`
+* <primitive key="on_scalars" />&nbsp;is `F⍤0`
+* <primitive key="on_simple_scalars" />&nbsp;is `F⍥0`
+* <primitive key="phase" />&nbsp;is `12∘○`
+* <primitive key="polar" />&nbsp;is `×∘(0ᴊ1∘×⍛*)`
+* <primitive key="pure_imaginary" />&nbsp;is `0∘⊕`
+* <primitive key="rank" />&nbsp;is `≠⍤⍴`
+* <primitive key="ravel_items" />&nbsp;is `,⍤¯1`
+* <primitive key="real_part" />&nbsp;is `9∘○`
+* <primitive key="reciprocal" />&nbsp;is `1∘÷`
+* <primitive key="root" />&nbsp;is `*∘÷⍨`
+* <primitive key="sort_down" />&nbsp;is `⍒⍨`
+* <primitive key="sort_up" />&nbsp;is `⍋⍨`
+* <primitive key="square_root" />&nbsp;is `2∘√`
+* <primitive key="unit_polar" />&nbsp;is `1∘⊗`
+* <primitive key="zilde" />&nbsp;is `⟨⟩`
+
+## Combinators
+
+All combinators can be rewritten using trains, as described in [Combinators ↔ Trains](/docs/info/combinators_trains).
+
+* <primitive key="right" />&nbsp;is `{⍵}`
+* <primitive key="left" />&nbsp;is `{⍵}⁖{⍺}`
+* <primitive key="atop" />&nbsp;is `⦅F⋄G⦆`
+* <primitive key="over" />&nbsp;is `⦅F⍤⊣⋄G⋄F⍤⊢⦆`
+* <primitive key="constant" />&nbsp;is `⦅n⦆`
+* <primitive key="commute" />&nbsp;and&nbsp;<primitive key="duplicate" />&nbsp;are `⦅⊢⋄F⋄⊣⦆`
+* <primitive key="left_hook" />&nbsp;is `⦅F⍤⊣⋄G⋄⊢⦆`
+* <primitive key="right_hook" />&nbsp;is `⦅⊣⋄F⋄G⍤⊢⦆`
+* <primitive key="left_fork" />&nbsp;is `⦅F⋄G⋄⊢⦆`
+* <primitive key="right_fork" />&nbsp;is `⦅⊣⋄F⋄G⦆`
+* <primitive key="mirror" />&nbsp;is `⦅G⍨⋄F⋄G⦆`
+* <primitive key="fork" />&nbsp;is `⦅F⋄G⋄H⦆`
+* <primitive key="after" />&nbsp;is `⦅F⋄G⦆⁖⦅⊣⋄F⋄G⍤⊢⦆`
+* <primitive key="before" />&nbsp;is `⦅G⋄F⦆⁖⦅F⍤⊣⋄G⋄⊢⦆`
+
+## Promote, Demote, Rerank
+
+<primitive key="promote" />&nbsp;is `{⍵⍴⍨1⍪⍴⍵}`.
+
+<primitive key="demote" />&nbsp;is
+
+```tinyapl
+{ 0=ϼ⍵: ■⍵
+⋄ 1=ϼ⍵: ■⊃⍵
+⋄ ⍵⍴⍨(×⍆2↑⍴⍵)⍪2↓⍴⍵ }
+```
+
+<primitive key="rerank" />&nbsp;is
+
+```tinyapl
+{ ⍺=ϼ⍵: ■⍵
+⋄ ⍺>ϼ⍵: ■⍺ ∇ ∧⍵
+⋄ ⍺ ∇ ∨⍵ }
+```
+
+## Set operations
+
+* <primitive key="unique" />&nbsp;is `≠⊸⌿`
+* <primitive key="union" />&nbsp;is `{⍺⍪⍵⌿⍨~⍵∊⍺}`
+* <primitive key="intersection" />&nbsp;is `{⍺⌿⍨⍺∊⍵}`
+* <primitive key="difference" />&nbsp;is `{⍺⌿⍨~⍺∊⍵}`
+* <primitive key="symmetric_difference" />&nbsp;is `∪«~»∩`
+
+## Comparisons
+
+All comparisons can be reconstructed from just&nbsp;<primitive key="equal_to" />&nbsp;and&nbsp;<primitive key="less_than_or_equal_to" />.
+
+* <primitive key="not_equal_to" />&nbsp;is `~⍤=`
+* <primitive key="less_than" />&nbsp;is `≤«∧»≠`
+* <primitive key="greater_than" />&nbsp;is `~⍤≤`
+* <primitive key="greater_than_or_equal_to" />&nbsp;is `~⍤<`
+
+Similarly, TAO comparisons can be reconstructed from&nbsp;<primitive key="identical" />&nbsp;and&nbsp;<primitive key="precedes_or_identical" />.
+
+* <primitive key="not_identical" />&nbsp;is `~⍤≡`
+* <primitive key="precedes" />&nbsp;is `⊴«∧»≢`
+* <primitive key="succeeds" />&nbsp;is `~⍤⊴`
+* <primitive key="precedes_or_identical" />&nbsp;is `~⍤⊲`
+
+But TAO comparisons can be reconstructed from grading:
+
+* <primitive key="identical" />&nbsp;is `⦅⍋⋄=ᑒ⋄⍒⦆⍤⍮`
+* <primitive key="precedes_or_identical" />&nbsp;is `⦅⍋⋄≤ᑒ⋄⍒⦆⍤⍮`
+
+Min/max are also easy:
+
+* <primitive key="minimal" />&nbsp;is `{⍺⊴⍵:■⍺⋄⍵}`
+* <primitive key="maximal" />&nbsp;is `{⍺⊳⍵:■⍺⋄⍵}`
+* <primitive key="minimum" />&nbsp;is `⇂⌓`
+* <primitive key="maximum" />&nbsp;is `↾⌓`
+
+## Floor and Round
+
+<primitive key="floor" />&nbsp;is "[complex floor](https://aplwiki.com/wiki/Complex_floor)":
+
+```tinyapl
+{ RealFloor←1∘|⊸-
+⋄ x←1|ℜ⍵
+⋄ y←1|ℑ⍵
+⋄ p←(ℜ⍵)⊕⍥RealFloorℑ⍵
+⋄ 1>x+y: ■p
+⋄ x≥y: ■p+1
+⋄ p+0ᴊ1 }
+```
+
+<primitive key="round" />&nbsp;is componentwise round: `⦅ℜ⋄⊕⍥(⌊⍤+∘0.5)⋄ℑ⦆`
+
+## Reduce
+
+Reductions are special cases of folds where the initial value is the first/last cell of the array.
+
+* <primitive key="reduce" />&nbsp;is `{(⊃↓⍵)⍺⍺⍆(1↓↓⍵)}`
+* <primitive key="reduce_back" />&nbsp;is `{(⊇↓⍵)⍺⍺⍆(¯1↓⍵)}`
+
+## GCD and LCM
+
+* <primitive key="gcd" />&nbsp;is `{ 0=⍺|⍵: ⍺⋄⍵ ∇⍨ ⍺|⍵ }`
+* <primitive key="lcm" />&nbsp;is `×«÷»∨`
+
+## Inner Product and Table
+
+* <primitive key="inner_product" />&nbsp;is `F⍤(G◠◡)⍤1‿∞`
+* <primitive key="table" />&nbsp;is `F◠⍤0‿∞`
+
+
