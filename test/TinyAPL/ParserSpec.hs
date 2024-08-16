@@ -87,6 +87,12 @@ spec = do
       tok "{3⋄1}" `shouldBe` pure [[TokenDfn [[TokenNumber [3] emptyPos], [TokenNumber [1] emptyPos]] emptyPos]]
       tok "_{3⋄1}" `shouldBe` pure [[TokenDadv [[TokenNumber [3] emptyPos], [TokenNumber [1] emptyPos]] emptyPos]]
       tok "_{3⋄1}_" `shouldBe` pure [[TokenDconj [[TokenNumber [3] emptyPos], [TokenNumber [1] emptyPos]] emptyPos]]
+
+    it "parses wraps" $ do
+      tok "(□+)" `shouldBe` pure [[TokenWrap [TokenPrimFunction '+' emptyPos] emptyPos]]
+
+    it "parses unwraps" $ do
+      tok "(⊏3)" `shouldBe` pure [[TokenUnwrap [TokenNumber [3] emptyPos] emptyPos]]
     
     it "parses guards" $ do
       tok "{1:2}" `shouldBe` pure [[TokenDfn [[TokenGuard [TokenNumber [1] emptyPos] [TokenNumber [2] emptyPos] emptyPos]] emptyPos]]
@@ -197,3 +203,17 @@ spec = do
       it "fails on arrays with non-array contents" $ do
         par "⟨+⟩" `shouldBe` Nothing
         par "[+]" `shouldBe` Nothing
+
+    describe "wraps" $ do
+      it "parses wraps of functions" $ do
+        par "(□+)" `shouldBe` pure [WrapBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
+
+      it "fails on wraps of non-functions" $ do
+        par "(□3)" `shouldBe` Nothing
+
+    describe "unwraps" $ do
+      it "parses unwraps of arrays" $ do
+        par "(⊏3)" `shouldBe` pure [UnwrapBranch (Leaf CatArray (TokenNumber [3] emptyPos))]
+
+      it "fails on unwraps of non-arrays" $ do
+        par "(⊏+)" `shouldBe` Nothing

@@ -138,6 +138,10 @@ eval (HighRankBranch es)            = do
       then return $ VArray $ fromMajorCells entries
       else throwError $ DomainError "High rank notation entries must be of the same shape"
 eval (TrainBranch cat es)           = evalTrain cat es
+eval (WrapBranch fn)                = VArray . scalar . Wrap <$> (eval fn >>= unwrapFunction (DomainError "Function required"))
+eval (UnwrapBranch fn)              = let 
+  err = DomainError "Wrap required"
+  in VFunction <$> (eval fn >>= unwrapArray err >>= asScalar err >>= asWrap err)
 
 evalLeaf :: Token -> St Value
 evalLeaf (TokenNumber [x] _)           = return $ VArray $ scalar $ Number x

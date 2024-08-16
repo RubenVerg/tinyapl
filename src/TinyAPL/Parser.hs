@@ -17,7 +17,6 @@ import Control.Applicative (liftA3, (<**>))
 import Data.Function (on)
 import Data.Bifunctor (Bifunctor(first))
 import Control.Monad ((>=>))
-import Data.Char (isSpace)
 import Data.Void (Void)
 import Data.List.NonEmpty (NonEmpty((:|)))
 
@@ -50,6 +49,8 @@ data Token
   | TokenTrain [Maybe [Token]] SourcePos
   | TokenAdverbTrain [Maybe [Token]] SourcePos
   | TokenConjunctionTrain [Maybe[Token]] SourcePos
+  | TokenWrap [Token] SourcePos
+  | TokenUnwrap [Token] SourcePos
 
 instance Eq Token where
   (TokenNumber x _) == (TokenNumber y _) = x == y
@@ -78,6 +79,8 @@ instance Eq Token where
   (TokenTrain x _) == (TokenTrain y _) = x == y
   (TokenAdverbTrain x _) == (TokenAdverbTrain y _) = x == y
   (TokenConjunctionTrain x _) == (TokenConjunctionTrain y _) = x == y
+  (TokenWrap x _) == (TokenWrap y _) = x == y
+  (TokenUnwrap x _) == (TokenUnwrap y _) = x == y
   _ == _ = False
 
 instance Show Token where
@@ -107,6 +110,8 @@ instance Show Token where
   show (TokenTrain xs _) = "(train " ++ [fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . maybe [""] (fmap show) <$> xs) ++ [snd G.train] ++ ")" where
   show (TokenAdverbTrain xs _) = "(adverb train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . maybe [""] (fmap show) <$> xs) ++ [snd G.train] ++ ")" where
   show (TokenConjunctionTrain xs _) = "(conjunction train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . maybe [""] (fmap show) <$> xs) ++ [snd G.train, G.underscore] ++ ")" where
+  show (TokenWrap xs _) = "(wrap " ++ [fst G.parens, G.wrap, ' '] ++ unwords (show <$> xs) ++ [snd G.parens] ++ ")"
+  show (TokenUnwrap xs _) = "(unwrap " ++ [fst G.parens, G.unwrap, ' '] ++ unwords (show <$> xs) ++ [snd G.parens] ++ ")"
 
 tokenPos :: Token -> SourcePos
 tokenPos (TokenNumber _ pos) = pos
@@ -135,6 +140,8 @@ tokenPos (TokenHighRank _ pos) = pos
 tokenPos (TokenTrain _ pos) = pos
 tokenPos (TokenAdverbTrain _ pos) = pos
 tokenPos (TokenConjunctionTrain _ pos) = pos
+tokenPos (TokenWrap _ pos) = pos
+tokenPos (TokenUnwrap _ pos) = pos
 
 emptyPos :: SourcePos
 emptyPos = SourcePos "<empty>" (mkPos 1) (mkPos 1)
@@ -182,7 +189,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   assign con name = withPos $ liftA2 con (lexeme name `commitOn` char G.assign) bits
 
   array :: Parser Token
-  array = number <|> charVec <|> str <|> arrayAssign <|> try (withPos $ TokenArrayName <$> arrayName) <|> vectorNotation <|> highRankNotation <|> primArray where
+  array = number <|> charVec <|> str <|> arrayAssign <|> try (withPos $ TokenArrayName <$> arrayName) <|> vectorNotation <|> highRankNotation <|> primArray <|> wrap where
     number :: Parser Token
     number = withPos $ TokenNumber <$> sepBy1 complex (lexeme $ char G.tie) where
       sign :: Parser Double
@@ -240,8 +247,11 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     arrayAssign :: Parser Token
     arrayAssign = assign TokenArrayAssign arrayName
 
+    wrap :: Parser Token
+    wrap = withPos $ TokenWrap <$> (string [fst G.parens, G.wrap] *> bits <* string [snd G.parens])
+
   function :: Parser Token
-  function = dfn <|> train <|>functionAssign <|> try (withPos $ TokenFunctionName <$> functionName) <|> primFunction where
+  function = dfn <|> train <|> functionAssign <|> try (withPos $ TokenFunctionName <$> functionName) <|> primFunction <|> unwrap where
     dfn :: Parser Token
     dfn = withPos $ TokenDfn <$> (string [fst G.braces] *> sepBy1 definedBits separator <* string [snd G.braces])
 
@@ -256,6 +266,9 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
 
     functionAssign :: Parser Token
     functionAssign = assign TokenFunctionAssign functionName
+
+    unwrap :: Parser Token
+    unwrap = withPos $ TokenUnwrap <$> (string [fst G.parens, G.unwrap] *> bits <* string [snd G.parens])
 
   adverb :: Parser Token
   adverb = try dadv <|> try adverbTrain <|> adverbAssign <|> try (withPos $ TokenAdverbName <$> adverbName) <|> primAdverb where
@@ -304,7 +317,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   separator = void $ char (G.separator)
 
   bit :: Parser Token
-  bit = lexeme (bracketed <|> conjunction <|> adverb <|> function <|> array)
+  bit = lexeme (conjunction <|> adverb <|> function <|> array <|> bracketed)
 
   bits :: Parser [Token]
   bits = spaceConsumer *> some bit
@@ -340,6 +353,8 @@ data Tree
   | VectorBranch { vectorEntries :: [Tree] }
   | HighRankBranch { highRankEntries :: [Tree] }
   | TrainBranch { trainBranchCategory :: Category, trainBranchStatements :: [Maybe Tree] }
+  | WrapBranch { wrapBranchValue :: Tree }
+  | UnwrapBranch { unwrapBranchValue :: Tree }
   deriving (Eq)
 
 instance Show Tree where
@@ -359,6 +374,8 @@ instance Show Tree where
       (VectorBranch es)           -> (indent ++ "⟨⟩") : concatMap (go (i + 1)) es
       (HighRankBranch es)         -> (indent ++ "[]") : concatMap (go (i + 1)) es
       (TrainBranch c ts)          -> (indent ++ (if c == CatFunction then "" else "_") ++ "⦅" ++ (if c == CatConjunction then "_" else "") ++ "⦆") : concatMap (maybe [""] (go (i + 1))) ts
+      (WrapBranch fn)             -> (indent ++ "□") : go (i + 1) fn
+      (UnwrapBranch fn)           -> (indent ++ "⊏") : go (i + 1) fn
 
 treeCategory :: Tree -> Category
 treeCategory (Leaf c _)                  = c
@@ -373,6 +390,8 @@ treeCategory (ExitBranch _)              = CatArray
 treeCategory (VectorBranch _)            = CatArray
 treeCategory (HighRankBranch _)          = CatArray
 treeCategory (TrainBranch c _)           = c
+treeCategory (WrapBranch _)              = CatArray
+treeCategory (UnwrapBranch _)            = CatFunction
 
 bindingMap :: [((Category, Category), (Int, Tree -> Tree -> Tree))]
 bindingMap =
@@ -469,6 +488,8 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   tokenToTree (TokenTrain fs pos)                  = train CatFunction fs pos
   tokenToTree (TokenAdverbTrain fs pos)            = train CatAdverb fs pos
   tokenToTree (TokenConjunctionTrain fs pos)       = train CatConjunction fs pos
+  tokenToTree (TokenWrap val _)                   = WrapBranch <$> (categorizeAndBind val >>= requireOfCategory CatFunction (\c -> makeSyntaxError (tokenPos $ head val) source $ "Invalid wrap of type " ++ show c ++ ", function required"))
+  tokenToTree (TokenUnwrap val _)                 = UnwrapBranch <$> (categorizeAndBind val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ head val) source $ "Invalid unwrap of type " ++ show c ++ ", array required"))
 
 parse :: String -> String -> Result [Tree]
 parse name = categorize name >=> mapM bindAll
