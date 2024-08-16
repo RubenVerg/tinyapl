@@ -11,9 +11,10 @@ export interface PrimitiveLinkProps {
 }
 
 function PrimitiveLink({ key, short, children }: PrimitiveLinkProps) {
+	const hasChildren = children !== undefined && (Array.isArray(children) ? !!children.length : true);
 	const primitive = pages.primitives[key];
 	if (primitive === undefined) throw new Error(`Primitive ${key} not found`);
-	return <a href={`/docs/primitive/${key}`} class='link-underline link-underline-opacity-0 link-underline-opacity-75-hover'><code>{primitive.glyph}</code>{short ? '' : children ? [' ', children] : [' ', primitive.name]}</a>;
+	return <a href={`/docs/primitive/${key}`} class='link-underline link-underline-opacity-0 link-underline-opacity-75-hover'><code>{primitive.glyph}</code>{short ? '' : hasChildren ? [' ', children] : [' ', primitive.name]}</a>;
 }
 
 export default PrimitiveLink;
