@@ -29,6 +29,7 @@ data ScalarValue
   = Number (Complex Double)
   | Character Char
   | Box Array
+  | Wrap Function
 
 data Array = Array
   { arrayShape :: [Natural]
@@ -130,8 +131,14 @@ instance Ord ScalarValue where
   (Character _) `compare` (Number _) = GT
   (Character a) `compare` (Character b) = a `compare` b
   (Character _) `compare` _ = LT
+  (Box _) `compare` (Number _) = GT
+  (Box _) `compare` (Character _) = GT
   (Box as) `compare` (Box bs) = as `compare` bs
-  (Box _) `compare` _ = GT
+  (Box _) `compare` _ = LT
+  (Wrap _) `compare` (Number _) = GT
+  (Wrap _) `compare` (Character _) = GT
+  (Wrap _) `compare` (Box _) = GT
+  (Wrap (Function { functionRepr = ar })) `compare` (Wrap (Function { functionRepr = br })) = ar `compare` br
 
 instance Eq Array where
   -- Two arrays are equal iff both their shapes and their ravels are equal.
@@ -155,6 +162,7 @@ instance Show ScalarValue where
   show (Number x) = showComplex x
   show (Character x) = [x]
   show (Box xs) = G.enclose : show xs
+  show (Wrap fn) = [fst G.parens, G.wrap] ++ show fn ++ [snd G.parens]
 
 instance Show Array where
   show (Array [] [s])                                                   = show s
@@ -174,6 +182,7 @@ scalarRepr (Character x) = case charRepr x of
   (e, True) -> [G.first, G.stringDelimiter] ++ e ++ [G.stringDelimiter]
   (c, False) -> [G.charDelimiter] ++ c ++ [G.charDelimiter]
 scalarRepr (Box xs) = G.enclose : arrayRepr xs
+scalarRepr (Wrap fn) = [fst G.parens, G.wrap] ++ show fn ++ [snd G.parens]
 
 stringRepr :: [Char] -> String
 stringRepr str = [G.stringDelimiter] ++ concatMap (fst . charRepr) str ++ [G.stringDelimiter]
@@ -190,6 +199,10 @@ arrayRepr arr = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (arrayRe
 boolToScalar :: Bool -> ScalarValue
 boolToScalar True = Number 1
 boolToScalar False = Number 0
+
+asWrap :: MonadError Error m => Error -> ScalarValue -> m Function
+asWrap _ (Wrap fn) = pure fn
+asWrap e _ = throwError e
 
 asBool :: MonadError Error m => Error -> ScalarValue -> m Bool
 asBool _ (Number 0) = pure False
