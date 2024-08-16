@@ -11,41 +11,41 @@ Some of the primitives are pretty much simple applications of other primitives:
 * <primitive key="arctangent" />&nbsp;is `∡⍤⊕⍨`
 * <primitive key="boxed" />&nbsp;is `⊂⍤F`
 * <primitive key="cartesian" />&nbsp;is `+∘(0ᴊ1∘×)`
-* <primitive key="ceiling" />&nbsp;is `-⍤⌈⍤-`
-* <primitive key="conjugate" />&nbsp;is `¯10∘○`
+* <primitive key="ceiling" />&nbsp;is `-⍤⌊⍤-`
 * <primitive key="each" />&nbsp;is `Fᑣᑒ◠`
 * <primitive key="each_left" />&nbsp;is `F¨∘⊂`
 * <primitive key="each_right" />&nbsp;is `⊂⍛(F¨)`
 * <primitive key="from" />&nbsp;is `⌷⍨∘⊃⍨⍤0‿∞`
-* <primitive key="histogram" />&nbsp;is `(⍳⍤≢)⊸⋷`
-* <primitive key="imaginary_part" />&nbsp;is `11∘○`
 * <primitive key="laminate" />&nbsp;is `⍪⍥∧`
 * <primitive key="last" />&nbsp;is `⊃⍤⊖⍤,`
-* <primitive key="magnitude" />&nbsp;is `10∘○`
 * <primitive key="major_cells" />&nbsp;is `⊂⍤¯1`
 * <primitive key="mix" />&nbsp;is `⊃⍤0`
 * <primitive key="nand" />&nbsp;is `~⍤∧`
-* <primitive key="natural_logarithm" />&nbsp;is `(*1)∘⍟`
-* <primitive key="negate" />&nbsp;is `¯1∘×`
 * <primitive key="nor" />&nbsp;is `~⍤∨`
 * <primitive key="not" />&nbsp;is `1∘-`
 * <primitive key="on_cells" />&nbsp;is `F⍤¯1`
 * <primitive key="on_contents" />&nbsp;is `F⍥⊃`
 * <primitive key="on_scalars" />&nbsp;is `F⍤0`
 * <primitive key="on_simple_scalars" />&nbsp;is `F⍥0`
-* <primitive key="phase" />&nbsp;is `12∘○`
 * <primitive key="polar" />&nbsp;is `×∘(0ᴊ1∘×⍛*)`
-* <primitive key="pure_imaginary" />&nbsp;is `0∘⊕`
 * <primitive key="rank" />&nbsp;is `≠⍤⍴`
 * <primitive key="ravel_items" />&nbsp;is `,⍤¯1`
-* <primitive key="real_part" />&nbsp;is `9∘○`
-* <primitive key="reciprocal" />&nbsp;is `1∘÷`
 * <primitive key="root" />&nbsp;is `*∘÷⍨`
 * <primitive key="sort_down" />&nbsp;is `⍒⍨`
 * <primitive key="sort_up" />&nbsp;is `⍋⍨`
+* <primitive key="zilde" />&nbsp;is `⟨⟩`
+
+## Default argument
+
+Some primitives' monadic case is related to the corresponding dyad by either binding an argument or using a hook.
+
+* <primitive key="natural_logarithm" />&nbsp;is `(*1)∘⍟`
+* <primitive key="negate" />&nbsp;is `0∘-`
+* <primitive key="pure_imaginary" />&nbsp;is `0∘⊕`
+* <primitive key="reciprocal" />&nbsp;is `1∘÷`
 * <primitive key="square_root" />&nbsp;is `2∘√`
 * <primitive key="unit_polar" />&nbsp;is `1∘⊗`
-* <primitive key="zilde" />&nbsp;is `⟨⟩`
+* <primitive key="histogram" />&nbsp;is `(⍳⍤≢)⊸⋷`
 
 ## Combinators
 
@@ -65,6 +65,24 @@ All combinators can be rewritten using trains, as described in [Combinators ↔ 
 * <primitive key="fork" />&nbsp;is `⦅F⋄G⋄H⦆`
 * <primitive key="after" />&nbsp;is `⦅F⋄G⦆⁖⦅⊣⋄F⋄G⍤⊢⦆`
 * <primitive key="before" />&nbsp;is `⦅G⋄F⦆⁖⦅F⍤⊣⋄G⋄⊢⦆`
+
+## Circular functions
+
+Some functions appear in the&nbsp;<primitive key="circular" />&nbsp;function that are available as other primitives or combinations of them.
+
+* `0∘○` is ⦅√⋄1⋄-⋄*∘2⦆`
+* `4∘○` is `⦅√⋄1⋄+⋄*∘2⦆`
+* `¯4∘○` is `⦅√⋄1⋄-⍨⋄*∘2⦆`
+* `8∘○` is `⦅√⍤-⋄1⋄+⋄*∘2⦆`
+* `¯8∘○` is `⦅-⍤√⍤-⋄1⋄+⋄*∘2⦆`
+* `9∘○` is&nbsp;<primitive key="real_part" />
+* `10∘○` is &nbsp;<primitive key="magnitude" />
+* `¯10∘○` is&nbsp;<primitive key="conjugate" />
+* `11∘○` is&nbsp;<primitive key="imaginary_part" />
+* `¯11∘○` is&nbsp;<primitive key="pure_imaginary" />
+* `12∘○` is&nbsp;<primitive key="phase" />
+* `¯12∘○` is&nbsp;<primitive key="unit_polar" />
+
 
 ## Promote, Demote, Rerank
 
@@ -142,12 +160,13 @@ Min/max are also easy:
 
 Reductions are special cases of folds where the initial value is the first/last cell of the array.
 
-* <primitive key="reduce" />&nbsp;is `{(⊃↓⍵)⍺⍺⍆(1↓↓⍵)}`
-* <primitive key="reduce_back" />&nbsp;is `{(⊇↓⍵)⍺⍺⍆(¯1↓⍵)}`
+* <primitive key="reduce" />&nbsp;is `_{(⊃↓⍵)⍶⍶⍆(1↓↓⍵)}`
+* <primitive key="reduce_back" />&nbsp;is `_{(⊇↓⍵)⍶⍶⍆(¯1↓⍵)}`
 
-## GCD and LCM
+## Remainder, GCD and LCM
 
-* <primitive key="gcd" />&nbsp;is `{ 0=⍺|⍵: ⍺⋄⍵ ∇⍨ ⍺|⍵ }`
+* <primitive key="remainder" />&nbsp;is `{ ⍺=0: ■⍵ ⋄ ⍵-⍺×⌊⍵÷⍺}⌓`
+* <primitive key="gcd" />&nbsp;is `{ 0=⍺|⍵: ⍺⋄⍵ ∇⍨ ⍺|⍵ }⌓`
 * <primitive key="lcm" />&nbsp;is `×«÷»∨`
 
 ## Inner Product and Table
@@ -155,4 +174,26 @@ Reductions are special cases of folds where the initial value is the first/last 
 * <primitive key="inner_product" />&nbsp;is `F⍤(G◠◡)⍤1‿∞`
 * <primitive key="table" />&nbsp;is `F◠⍤0‿∞`
 
+## Tally and Depth
 
+<primitive key="tally" />&nbsp;is `⦅⊃⋄0⋄⍪⍨⋄⍴⦆`
+
+<primitive key="depth" />&nbsp;is
+
+```tinyapl
+{ (0≡ϼ⍵)∧⍵≡⊂⍵: ■0
+⋄ 0≡ϼ⍵: ■1+∇⊃⍵
+⋄ 0∊⍴⍵:■1
+⋄ 1+⌈⍆∇ᑒ¨,⍵ }
+```
+
+## Repeat and Until
+
+Monadic&nbsp;<primitive key="repeat" />&nbsp;is `_{ 0=⍵⍵: ■⍵ ⋄ ⍶⍶ _∇_ (⍵⍵-1) ⍶⍶ ⍵ }_`; dyadic is an application of&nbsp;<primitive key="bind" />.
+
+Similarly, monadic&nbsp;<primitive key="until" />&nbsp;is `_{(⍶⍶ ⍵) ⍶⍶ _{ ⍺ ⍹⍹ ⍵: ■⍺ ⋄ (⍶⍶ ⍺) ⍶⍶ _∇_ ⍹⍹ ⍺ }_ ⍹⍹ ⍵}_`; dyadic as above.
+
+## Half Pair and Pair
+
+* <primitive key="half_pair" />&nbsp;is `{⟨⍵⟩}`
+* <primitive key="pair" />&nbsp;is `{⟨⍺⋄⍵⟩}`
