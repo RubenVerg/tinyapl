@@ -85,7 +85,7 @@ Marked features are supported, unmarked features are planned
 			* `1⍟y` is an error
 			* `x⍟0` is an error
 		* [x] `○` pi times
-		* [x] `○` circular
+		* [x] `○` circular (deprecated)
 			* `0○y` is $\sqrt{1 - y^2}$
 			* `1○y` is $\sin y$
 			* `¯1○y` is $\arcsin y$
@@ -286,6 +286,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⎕io` (constant) `1`
 		* [x] `⎕ct` (constant) `1⏨¯14`
 		* [x] `⎕seed` (set only) seed the random number generator
+		* [ ] `⎕math` math functions
 	* system functions
 		* [ ] `⎕File` read/write files
 		* [ ] `⎕DateTime` (or `⎕DT` maybe?) convert between time formats
