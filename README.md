@@ -259,7 +259,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⎕io` (constant) `1`
 		* [x] `⎕ct` (constant) `1⏨¯14`
 		* [x] `⎕seed` (set only) seed the random number generator
-		* [ ] `⎕math` math functions
+		* [x] `⎕math` math functions
 	* system functions
 		* [ ] `⎕File` read/write files
 		* [ ] `⎕DateTime` (or `⎕DT` maybe?) convert between time formats
