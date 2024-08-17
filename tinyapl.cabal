@@ -27,6 +27,7 @@ library
     exposed-modules:  TinyAPL.Glyphs
                     , TinyAPL.ArrayFunctionOperator
                     , TinyAPL.CoreQuads
+                    , TinyAPL.CoreQuads.Math
                     , TinyAPL.Complex
                     , TinyAPL.Error
                     , TinyAPL.Functions
