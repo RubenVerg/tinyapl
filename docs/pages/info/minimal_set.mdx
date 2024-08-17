@@ -165,8 +165,8 @@ Reductions are special cases of folds where the initial value is the first/last 
 
 ## Remainder, GCD and LCM
 
-* <primitive key="remainder" />&nbsp;is `{ ⍺=0: ■⍵ ⋄ ⍵-⍺×⌊⍵÷⍺}⌓`
-* <primitive key="gcd" />&nbsp;is `{ 0=⍺|⍵: ⍺⋄⍵ ∇⍨ ⍺|⍵ }⌓`
+* <primitive key="remainder" />&nbsp;is `{ ⍺=0: ■⍵ ⋄ ⍵-⍺×⌊⍵÷⍺ }⌓`
+* <primitive key="gcd" />&nbsp;is `{ 0=⍺|⍵: ⍺ ⋄ ⍵ ∇⍨ ⍺|⍵ }⌓`
 * <primitive key="lcm" />&nbsp;is `×«÷»∨`
 
 ## Inner Product and Table
