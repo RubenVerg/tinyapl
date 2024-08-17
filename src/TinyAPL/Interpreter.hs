@@ -15,6 +15,7 @@ import Data.Foldable (foldlM)
 import Control.Monad
 import Data.List
 import qualified TinyAPL.Functions as F
+import Data.Maybe (fromJust)
 
 data Value
   = VArray Array
@@ -154,23 +155,40 @@ eval (UnwrapBranch fn)              = do
     , functionDyad = Just $ \x y -> F.onScalars1 (\w -> asScalar err w >>= asWrap err >>= (\f -> callDyad f x y)) arr
     , functionRepr = [fst G.parens, G.unwrap] ++ show arr ++ [snd G.parens]
     , functionContext = Nothing }
+eval (StructBranch es)              = evalStruct es
+
+resolve :: [String] -> St Context
+resolve [] = get
+resolve (name:ns)
+  | head name == G.quad = do
+    quads <- gets contextQuads
+    let nilad = lookup name $ quadArrays quads
+    case nilad of
+      Just x -> case niladGet x of
+        Just g -> g >>= asScalar (DomainError "Names of a qualifid identifier should be structs") >>= asStruct (DomainError "Names of a qualified identifier should be structs")
+        Nothing -> throwError $ SyntaxError $ "Quad name " ++ name ++ " cannot be accessed"
+      Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
+  | otherwise = do
+    sc <- gets contextScope >>= readRef
+    arr <- scopeLookupArray name sc >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist"))
+    asScalar (DomainError "Names of a qualifid identifier should be structs") arr >>= asStruct (DomainError "Names of a qualified identifier should be structs")
 
 evalLeaf :: Token -> St Value
-evalLeaf (TokenNumber [x] _)           = return $ VArray $ scalar $ Number x
-evalLeaf (TokenNumber xs _)            = return $ VArray $ vector $ Number <$> xs
-evalLeaf (TokenChar [x] _)             = return $ VArray $ scalar $ Character x
-evalLeaf (TokenChar xs _)              = return $ VArray $ vector $ Character <$> xs
-evalLeaf (TokenString xs _)            = return $ VArray $ vector $ Character <$> xs
-evalLeaf (TokenPrimArray n _)          =
+evalLeaf (TokenNumber [x] _)              = return $ VArray $ scalar $ Number x
+evalLeaf (TokenNumber xs _)               = return $ VArray $ vector $ Number <$> xs
+evalLeaf (TokenChar [x] _)                = return $ VArray $ scalar $ Character x
+evalLeaf (TokenChar xs _)                 = return $ VArray $ vector $ Character <$> xs
+evalLeaf (TokenString xs _)               = return $ VArray $ vector $ Character <$> xs
+evalLeaf (TokenPrimArray n _)             =
   lift $ except $ maybeToEither (SyntaxError $ "Unknown primitive array " ++ [n]) $ VArray <$> lookup n P.arrays
-evalLeaf (TokenPrimFunction n _)       =
+evalLeaf (TokenPrimFunction n _)          =
   lift $ except $ maybeToEither (SyntaxError $ "Unknown primitive function " ++ [n]) $ VFunction <$> lookup n P.functions
-evalLeaf (TokenPrimAdverb n _)         =
+evalLeaf (TokenPrimAdverb n _)            =
   lift $ except $ maybeToEither (SyntaxError $ "Unknown primitive adverb " ++ [n]) $ VAdverb <$> lookup n P.adverbs
-evalLeaf (TokenPrimConjunction n _)    =
+evalLeaf (TokenPrimConjunction n _)       =
   lift $ except $ maybeToEither (SyntaxError $ "Unknown primitive conjunction " ++ [n]) $ VConjunction <$> lookup n P.conjunctions
-evalLeaf (TokenArrayName name _)
-  | name == [G.quad]                   = do
+evalLeaf (TokenArrayName [name] _)
+  | name == [G.quad]                      = do
     out <- gets contextOut
     input <- gets contextIn
     out $ G.quad : ": "
@@ -179,11 +197,11 @@ evalLeaf (TokenArrayName name _)
     (res, context') <- lift $ run [G.quad] code context
     put $ context'
     return res
-  | name == [G.quadQuote]              = do
+  | name == [G.quadQuote]                 = do
     input <- gets contextIn
     str <- input
     return $ VArray $ vector $ Character <$> str
-  | head name == G.quad                = do
+  | head name == G.quad                   = do
     quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads
     case nilad of
@@ -191,35 +209,51 @@ evalLeaf (TokenArrayName name _)
         Just g -> VArray <$> g
         Nothing -> throwError $ SyntaxError $ "Quad name " ++ name ++ " cannot be accessed"
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
-  | otherwise                          =
-    gets contextScope >>= readRef >>= scopeLookupArray name >>=(lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray)
-evalLeaf (TokenFunctionName name _)
-  | head name == G.quad                = do
+  | otherwise                             =
+    gets contextScope >>= readRef >>= scopeLookupArray name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray)
+evalLeaf (TokenArrayName names val)       = do
+  let (q, l) = fromJust $ unsnoc names
+  ctx <- resolve q
+  runWithContext ctx $ evalLeaf $ TokenArrayName [l] val
+evalLeaf (TokenFunctionName [name] _)
+  | head name == G.quad                   = do
     quads <- gets contextQuads
     let fn = lookup name $ quadFunctions quads
     case fn of
       Just x -> return $ VFunction x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
-  | otherwise                          =
+  | otherwise                             =
     gets contextScope >>= readRef >>= scopeLookupFunction name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VFunction)
-evalLeaf (TokenAdverbName name _)
-  | head name == G.quad                = do
+evalLeaf (TokenFunctionName names val)    = do
+  let (q, l) = fromJust $ unsnoc names
+  ctx <- resolve q
+  runWithContext ctx $ evalLeaf $ TokenFunctionName [l] val
+evalLeaf (TokenAdverbName [name] _)
+  | head name == G.quad                   = do
     quads <- gets contextQuads
     let adv = lookup name $ quadAdverbs quads
     case adv of
       Just x -> return $ VAdverb x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
-  | otherwise                          =
+  | otherwise                             =
     gets contextScope >>= readRef >>= scopeLookupAdverb name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VAdverb)
-evalLeaf (TokenConjunctionName name _)
-  | head name == G.quad                = do
+evalLeaf (TokenAdverbName names val)      = do
+  let (q, l) = fromJust $ unsnoc names
+  ctx <- resolve q
+  runWithContext ctx $ evalLeaf $ TokenAdverbName [l] val
+evalLeaf (TokenConjunctionName [name] _)
+  | head name == G.quad                   = do
     quads <- gets contextQuads
     let conj = lookup name $ quadConjunctions quads
     case conj of
       Just x -> return $ VConjunction x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
-  | otherwise                          =
+  | otherwise                             =
     gets contextScope >>= readRef >>= scopeLookupConjunction name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VConjunction)
+evalLeaf (TokenConjunctionName names val) = do
+  let (q, l) = fromJust $ unsnoc names
+  ctx <- resolve q
+  runWithContext ctx $ evalLeaf $ TokenConjunctionName [l] val
 evalLeaf _                             = throwError $ DomainError "Invalid leaf type in evaluation"
 
 evalMonadCall :: Value -> Value -> St Value
@@ -243,8 +277,8 @@ evalConjunctionCall (VConjunction conj) (VFunction r) =
   return $ VAdverb $ Adverb { adverbOnArray = Just (\x -> callOnArrayAndFunction conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndFunction conj x r), adverbRepr = "(" ++ show conj ++ show r ++ ")", adverbContext = conjContext conj }
 evalConjunctionCall _ _                               = throwError $ DomainError "Invalid arguments to conjunction call evaluation"
 
-evalAssign :: String -> Value -> St Value
-evalAssign name val
+evalAssign :: [String] -> Value -> St Value
+evalAssign [name] val
   | name == [G.quad] = do
     arr <- unwrapArray (DomainError "Cannot print non-array") val
     out <- gets contextOut
@@ -269,6 +303,10 @@ evalAssign name val
   | otherwise = do
     gets contextScope >>= flip modifyRef (scopeUpdate name val)
     return val
+evalAssign names val = do
+  let (q, l) = fromJust $ unsnoc names
+  ctx <- resolve q
+  runWithContext ctx $ evalAssign [l] val
 
 evalVectorAssign :: [String] -> Value -> St Value
 evalVectorAssign ns val =
@@ -591,3 +629,11 @@ evalTrain cat es = let
       (CatAdverb, r@(VAdverb _)) -> pure r
       (CatConjunction, r@(VConjunction _)) -> pure r
       (exp, g) -> throwError $ DomainError $ "Expected train of category " ++ show exp ++ ", got a " ++ show (valueCategory g)
+
+evalStruct :: [Tree] -> St Value
+evalStruct statements = do
+  ctx <- get
+  newScope <- createRef $ Scope [] [] [] [] (Just $ contextScope ctx)
+  let newContext = ctx{ contextScope = newScope }
+  mapM_ (runWithContext newContext . eval) statements
+  pure $ VArray $ scalar $ Struct newContext
