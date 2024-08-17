@@ -193,15 +193,21 @@ spec = do
       it "fails on exit statements with non-array results" $ do
         par "{■+}" `shouldBe` Nothing
 
-    describe "array notation" $ do
-      it "parses arrays with array contents" $ do
+    describe "vector notation" $ do
+      it "parses arrays with array or function contents" $ do
         par "⟨1⋄2⟩" `shouldBe` pure [VectorBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos)]]
+        par "⟨+⟩" `shouldBe` pure [VectorBranch [Leaf CatFunction (TokenPrimFunction '+' emptyPos)]]
         par "⟨⟩" `shouldBe` pure [VectorBranch []]
+      
+      it "fails on vector notation with non-array nor function contents" $ do
+        par "⟨¨⟩" `shouldBe` Nothing
+
+    describe "high rank notation" $ do
+      it "parses arrays with array contents" $ do
         par "[1⋄2]" `shouldBe` pure [HighRankBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos)]]
         par "[]" `shouldBe` pure [HighRankBranch []]
       
       it "fails on arrays with non-array contents" $ do
-        par "⟨+⟩" `shouldBe` Nothing
         par "[+]" `shouldBe` Nothing
 
     describe "wraps" $ do

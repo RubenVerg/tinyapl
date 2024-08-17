@@ -448,8 +448,14 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   assignment cat name ts pos = AssignBranch cat name <$> (categorizeAndBind ts >>=
     requireOfCategory cat (\c -> makeSyntaxError pos source $ "Invalid assignment of " ++ show c ++ " to " ++ show cat ++ " name"))
 
-  array :: ([Tree] -> Tree) -> [[Token]] -> SourcePos -> Result Tree
-  array t es _ = t <$> mapM (\x -> categorizeAndBind x >>=
+  vector :: [[Token]] -> SourcePos -> Result Tree
+  vector es _ = VectorBranch <$> mapM (\x -> categorizeAndBind x >>= \x' -> case treeCategory x' of
+    CatArray -> pure x'
+    CatFunction -> pure x'
+    _ -> throwError $ makeSyntaxError (tokenPos $ head x) source $ "Invalid vector entry of type " ++ show (treeCategory x') ++ ", array or function required") es
+
+  highRank :: [[Token]] -> SourcePos -> Result Tree
+  highRank es _ = HighRankBranch <$> mapM (\x -> categorizeAndBind x >>=
     requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ head x) source $ "Invalid array entry of type " ++ show c ++ ", array required")) es
 
   train :: Category -> [Maybe [Token]] -> SourcePos -> Result Tree
@@ -483,8 +489,8 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
     r <- categorizeAndBind result
     return $ GuardBranch c r
   tokenToTree (TokenExit result _)                 = ExitBranch <$> (categorizeAndBind result >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ head result) source $ "Invalid exit statement of type " ++ show c ++ ", array required"))
-  tokenToTree (TokenVector es pos)                 = array VectorBranch es pos
-  tokenToTree (TokenHighRank es pos)               = array HighRankBranch es pos
+  tokenToTree (TokenVector es pos)                 = vector es pos
+  tokenToTree (TokenHighRank es pos)               = highRank es pos
   tokenToTree (TokenTrain fs pos)                  = train CatFunction fs pos
   tokenToTree (TokenAdverbTrain fs pos)            = train CatAdverb fs pos
   tokenToTree (TokenConjunctionTrain fs pos)       = train CatConjunction fs pos

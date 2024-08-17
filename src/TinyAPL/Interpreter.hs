@@ -14,6 +14,7 @@ import Control.Monad.State
 import Data.Foldable (foldlM)
 import Control.Monad
 import Data.List
+import qualified TinyAPL.Functions as F
 
 data Value
   = VArray Array
@@ -127,8 +128,11 @@ eval (DefinedBranch cat statements) = evalDefined statements cat
 eval (GuardBranch _ _)              = throwError $ DomainError "Guards are not allowed outside of dfns"
 eval (ExitBranch _)                 = throwError $ DomainError "Exits are not allowed outside of dfns"
 eval (VectorBranch es)              = do
-  entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) $ reverse es
-  return $ VArray $ vector $ box <$> reverse entries
+  entries <- mapM (eval >=> \case
+    VArray x -> pure $ box x
+    VFunction f -> pure $ Wrap f
+    _ -> throwError $ DomainError "Vector notation entries must be arrays or functions") $ reverse es
+  return $ VArray $ vector $ reverse entries
 eval (HighRankBranch es)            = do
   entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) $ reverse es
   case entries of
@@ -139,9 +143,15 @@ eval (HighRankBranch es)            = do
       else throwError $ DomainError "High rank notation entries must be of the same shape"
 eval (TrainBranch cat es)           = evalTrain cat es
 eval (WrapBranch fn)                = VArray . scalar . Wrap <$> (eval fn >>= unwrapFunction (DomainError "Function required"))
-eval (UnwrapBranch fn)              = let 
-  err = DomainError "Wrap required"
-  in VFunction <$> (eval fn >>= unwrapArray err >>= asScalar err >>= asWrap err)
+eval (UnwrapBranch fn)              = do
+  let err = DomainError "Unwrap notation: array of wraps required"
+  arr <- eval fn >>= unwrapArray err
+  if null $ arrayShape arr then VFunction <$> asWrap err (head $ arrayContents arr)
+  else pure $ VFunction $ Function
+    { functionMonad = Just $ \x -> F.onScalars1 (\w -> asScalar err w >>= asWrap err >>= (\f -> callMonad f x)) arr
+    , functionDyad = Just $ \x y -> F.onScalars1 (\w -> asScalar err w >>= asWrap err >>= (\f -> callDyad f x y)) arr
+    , functionRepr = [fst G.parens, G.unwrap] ++ show arr ++ [snd G.parens]
+    , functionContext = Nothing }
 
 evalLeaf :: Token -> St Value
 evalLeaf (TokenNumber [x] _)           = return $ VArray $ scalar $ Number x
