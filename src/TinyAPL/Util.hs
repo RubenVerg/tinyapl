@@ -12,6 +12,10 @@ import Data.List (genericLength, genericIndex)
 infixr 9 .:
 (.:) f g x y = f $ g x y
 
+snoc :: [a] -> a -> [a]
+snoc [] x = [x]
+snoc (x:xs) y = x : snoc xs y
+
 showAplDouble :: Double -> String
 showAplDouble x 
   | isNaN x = "<NaN>"

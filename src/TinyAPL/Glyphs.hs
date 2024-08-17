@@ -25,6 +25,8 @@ tie = '‿'
 train = ('⦅', '⦆')
 wrap = '□'
 unwrap = '⊏'
+struct = ('⦃', '⦄')
+access = '→'
 
 syntax =
   [ TinyAPL.Glyphs.decimal
@@ -55,7 +57,10 @@ syntax =
   , fst TinyAPL.Glyphs.train
   , snd TinyAPL.Glyphs.train
   , TinyAPL.Glyphs.wrap
-  , TinyAPL.Glyphs.unwrap ]
+  , TinyAPL.Glyphs.unwrap
+  , fst TinyAPL.Glyphs.struct
+  , snd TinyAPL.Glyphs.struct
+  , TinyAPL.Glyphs.access ]
 
 escapes =
   [ (stringDelimiter, stringDelimiter)

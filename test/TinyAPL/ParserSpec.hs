@@ -57,31 +57,31 @@ spec = do
       mapM_ (\n -> tok [n] `shouldBe` pure [[TokenPrimConjunction n emptyPos]]) G.conjunctions
 
     it "parses array names" $ do
-      tok "abc ∆x" `shouldBe` pure [[TokenArrayName "abc" emptyPos, TokenArrayName "∆x" emptyPos]]
-      tok "⍺ ⍺⍺ ⍵ ⍵⍵ ⎕ ⍞" `shouldBe` pure [[TokenArrayName "⍺" emptyPos, TokenArrayName "⍺⍺" emptyPos, TokenArrayName "⍵" emptyPos, TokenArrayName "⍵⍵" emptyPos, TokenArrayName "⎕" emptyPos, TokenArrayName "⍞" emptyPos]]
-      tok "⎕io" `shouldBe` pure [[TokenArrayName "⎕io" emptyPos]]
+      tok "abc ∆x" `shouldBe` pure [[TokenArrayName ["abc"] emptyPos, TokenArrayName ["∆x"] emptyPos]]
+      tok "⍺ ⍺⍺ ⍵ ⍵⍵ ⎕ ⍞" `shouldBe` pure [[TokenArrayName ["⍺"] emptyPos, TokenArrayName ["⍺⍺"] emptyPos, TokenArrayName ["⍵"] emptyPos, TokenArrayName ["⍵⍵"] emptyPos, TokenArrayName ["⎕"] emptyPos, TokenArrayName ["⍞"] emptyPos]]
+      tok "⎕io" `shouldBe` pure [[TokenArrayName ["⎕io"] emptyPos]]
 
     it "parses function names" $ do
-      tok "Abc ⍙y" `shouldBe` pure [[TokenFunctionName "Abc" emptyPos, TokenFunctionName "⍙y" emptyPos]]
-      tok "⍶⍶ ⍹⍹ ∇" `shouldBe` pure [[TokenFunctionName "⍶⍶" emptyPos, TokenFunctionName "⍹⍹" emptyPos, TokenFunctionName "∇" emptyPos]]
-      tok "⎕C" `shouldBe` pure [[TokenFunctionName "⎕C" emptyPos]]
+      tok "Abc ⍙y" `shouldBe` pure [[TokenFunctionName ["Abc"] emptyPos, TokenFunctionName ["⍙y"] emptyPos]]
+      tok "⍶⍶ ⍹⍹ ∇" `shouldBe` pure [[TokenFunctionName ["⍶⍶"] emptyPos, TokenFunctionName ["⍹⍹"] emptyPos, TokenFunctionName ["∇"] emptyPos]]
+      tok "⎕C" `shouldBe` pure [[TokenFunctionName ["⎕C"] emptyPos]]
   
     it "parses adverb names" $ do
-      tok "_Abc _abc" `shouldBe` pure [[TokenAdverbName "_Abc" emptyPos, TokenAdverbName "_abc" emptyPos]]
-      tok "_∇" `shouldBe` pure [[TokenAdverbName "_∇" emptyPos]]
-      tok "⎕_BinFile" `shouldBe` pure [[TokenAdverbName "⎕_BinFile" emptyPos]]
+      tok "_Abc _abc" `shouldBe` pure [[TokenAdverbName ["_Abc"] emptyPos, TokenAdverbName ["_abc"] emptyPos]]
+      tok "_∇" `shouldBe` pure [[TokenAdverbName ["_∇"] emptyPos]]
+      tok "⎕_BinFile" `shouldBe` pure [[TokenAdverbName ["⎕_BinFile"] emptyPos]]
 
     it "parses conjunction names" $ do
-      tok "_Abc_ _abc_" `shouldBe` pure [[TokenConjunctionName "_Abc_" emptyPos, TokenConjunctionName "_abc_" emptyPos]]
-      tok "_∇_" `shouldBe` pure [[TokenConjunctionName "_∇_" emptyPos]]
-      tok "⎕_Whatever_" `shouldBe` pure [[TokenConjunctionName "⎕_Whatever_" emptyPos]]
+      tok "_Abc_ _abc_" `shouldBe` pure [[TokenConjunctionName ["_Abc_"] emptyPos, TokenConjunctionName ["_abc_"] emptyPos]]
+      tok "_∇_" `shouldBe` pure [[TokenConjunctionName ["_∇_"] emptyPos]]
+      tok "⎕_Whatever_" `shouldBe` pure [[TokenConjunctionName ["⎕_Whatever_"] emptyPos]]
 
     it "parses assignment" $ do
-      tok "abc←3" `shouldBe` pure [[TokenArrayAssign "abc" [TokenNumber [3] emptyPos] emptyPos]]
-      tok "Abc←3" `shouldBe` pure [[TokenFunctionAssign "Abc" [TokenNumber [3] emptyPos] emptyPos]]
-      tok "_Abc←3" `shouldBe` pure [[TokenAdverbAssign "_Abc" [TokenNumber [3] emptyPos] emptyPos]]
-      tok "_Abc_←3" `shouldBe` pure [[TokenConjunctionAssign "_Abc_" [TokenNumber [3] emptyPos] emptyPos]]
-      tok "⎕seed←3" `shouldBe` pure [[TokenArrayAssign "⎕seed" [TokenNumber [3] emptyPos] emptyPos]]
+      tok "abc←3" `shouldBe` pure [[TokenArrayAssign ["abc"] [TokenNumber [3] emptyPos] emptyPos]]
+      tok "Abc←3" `shouldBe` pure [[TokenFunctionAssign ["Abc"] [TokenNumber [3] emptyPos] emptyPos]]
+      tok "_Abc←3" `shouldBe` pure [[TokenAdverbAssign ["_Abc"] [TokenNumber [3] emptyPos] emptyPos]]
+      tok "_Abc_←3" `shouldBe` pure [[TokenConjunctionAssign ["_Abc_"] [TokenNumber [3] emptyPos] emptyPos]]
+      tok "⎕seed←3" `shouldBe` pure [[TokenArrayAssign ["⎕seed"] [TokenNumber [3] emptyPos] emptyPos]]
 
     it "parses dfns and dops" $ do
       tok "{3⋄1}" `shouldBe` pure [[TokenDfn [[TokenNumber [3] emptyPos], [TokenNumber [1] emptyPos]] emptyPos]]
@@ -121,6 +121,9 @@ spec = do
       tok "⟨a⋄b⟩←9" `shouldBe` pure [[TokenVectorAssign ["a", "b"] [TokenNumber [9] emptyPos] emptyPos]]
       tok "[a⋄b]←7" `shouldBe` pure [[TokenHighRankAssign ["a", "b"] [TokenNumber [7] emptyPos] emptyPos]]
 
+    it "parses structs" $ do
+      tok "⦃1⋄2⋄3⦄" `shouldBe` pure [[TokenStruct [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos], [TokenNumber [3] emptyPos]] emptyPos]]
+
   describe "binder" $ do
     let e2m (Right x) = Just x
         e2m (Left _)  = Nothing
@@ -134,10 +137,10 @@ spec = do
       par "+" `shouldBe` pure [Leaf CatFunction (TokenPrimFunction '+' emptyPos)]
       par "⍨" `shouldBe` pure [Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos)]
       par "∘" `shouldBe` pure [Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos)]
-      par "abc" `shouldBe` pure [Leaf CatArray (TokenArrayName "abc" emptyPos)]
-      par "Abc" `shouldBe` pure [Leaf CatFunction (TokenFunctionName "Abc" emptyPos)]
-      par "_Abc" `shouldBe` pure [Leaf CatAdverb (TokenAdverbName "_Abc" emptyPos)]
-      par "_Abc_" `shouldBe` pure [Leaf CatConjunction (TokenConjunctionName "_Abc_" emptyPos)]
+      par "abc" `shouldBe` pure [Leaf CatArray (TokenArrayName ["abc"] emptyPos)]
+      par "Abc" `shouldBe` pure [Leaf CatFunction (TokenFunctionName ["Abc"] emptyPos)]
+      par "_Abc" `shouldBe` pure [Leaf CatAdverb (TokenAdverbName ["_Abc"] emptyPos)]
+      par "_Abc_" `shouldBe` pure [Leaf CatConjunction (TokenConjunctionName ["_Abc_"] emptyPos)]
     
     it "parses parens" $ do
       par "(1)" `shouldBe` pure [Leaf CatArray (TokenNumber [1] emptyPos)]
@@ -172,10 +175,10 @@ spec = do
     
     describe "assignment" $ do
       it "parses assignment to variables of the correct type" $ do
-        par "a←b" `shouldBe` pure [AssignBranch CatArray "a" (Leaf CatArray (TokenArrayName "b" emptyPos))]
-        par "A←B" `shouldBe` pure [AssignBranch CatFunction "A" (Leaf CatFunction (TokenFunctionName "B" emptyPos))]
-        par "_A←_B" `shouldBe` pure [AssignBranch CatAdverb "_A" (Leaf CatAdverb (TokenAdverbName "_B" emptyPos))]
-        par "_A_←_B_" `shouldBe` pure [AssignBranch CatConjunction "_A_" (Leaf CatConjunction (TokenConjunctionName "_B_" emptyPos))]
+        par "a←b" `shouldBe` pure [AssignBranch CatArray ["a"] (Leaf CatArray (TokenArrayName ["b"] emptyPos))]
+        par "A←B" `shouldBe` pure [AssignBranch CatFunction ["A"] (Leaf CatFunction (TokenFunctionName ["B"] emptyPos))]
+        par "_A←_B" `shouldBe` pure [AssignBranch CatAdverb ["_A"] (Leaf CatAdverb (TokenAdverbName ["_B"] emptyPos))]
+        par "_A_←_B_" `shouldBe` pure [AssignBranch CatConjunction ["_A_"] (Leaf CatConjunction (TokenConjunctionName ["_B_"] emptyPos))]
 
       it "fails on assignment to variables of the wrong type" $ do
         par "a←B" `shouldBe` Nothing
@@ -185,7 +188,7 @@ spec = do
     
     describe "guards" $ do
       it "parses guards with array conditions" $ do
-        par "{a:b}" `shouldBe` pure [DefinedBranch CatFunction [GuardBranch (Leaf CatArray (TokenArrayName "a" emptyPos)) (Leaf CatArray (TokenArrayName "b" emptyPos))]]
+        par "{a:b}" `shouldBe` pure [DefinedBranch CatFunction [GuardBranch (Leaf CatArray (TokenArrayName ["a"] emptyPos)) (Leaf CatArray (TokenArrayName ["b"] emptyPos))]]
       
       it "fails on guards with non-array conditions" $ do
         par "{A:b}" `shouldBe` Nothing
@@ -227,3 +230,7 @@ spec = do
 
       it "fails on unwraps of non-arrays" $ do
         par "(⊏+)" `shouldBe` Nothing
+
+    describe "structs" $ do
+      it "parses structs" $ do
+        par "⦃1⋄2⋄3⦄" `shouldBe` pure [StructBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos), Leaf CatArray (TokenNumber [3] emptyPos)]]

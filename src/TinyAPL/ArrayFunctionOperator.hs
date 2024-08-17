@@ -30,6 +30,7 @@ data ScalarValue
   | Character Char
   | Box Array
   | Wrap Function
+  | Struct Context
 
 data Array = Array
   { arrayShape :: [Natural]
@@ -139,6 +140,12 @@ instance Ord ScalarValue where
   (Wrap _) `compare` (Character _) = GT
   (Wrap _) `compare` (Box _) = GT
   (Wrap (Function { functionRepr = ar })) `compare` (Wrap (Function { functionRepr = br })) = ar `compare` br
+  (Wrap _) `compare` _ = LT
+  (Struct _) `compare` (Number _) = GT
+  (Struct _) `compare` (Character _) = GT
+  (Struct _) `compare` (Box _) = GT
+  (Struct _) `compare` (Wrap _) = GT
+  (Struct _) `compare` (Struct _) = LT
 
 instance Eq Array where
   -- Two arrays are equal iff both their shapes and their ravels are equal.
@@ -163,6 +170,7 @@ instance Show ScalarValue where
   show (Character x) = [x]
   show (Box xs) = G.enclose : show xs
   show (Wrap fn) = [fst G.parens, G.wrap] ++ show fn ++ [snd G.parens]
+  show (Struct _) = [fst G.struct] ++ "..." ++ [snd G.struct]
 
 instance Show Array where
   show (Array [] [s])                                                   = show s
@@ -183,6 +191,7 @@ scalarRepr (Character x) = case charRepr x of
   (c, False) -> [G.charDelimiter] ++ c ++ [G.charDelimiter]
 scalarRepr (Box xs) = G.enclose : arrayRepr xs
 scalarRepr (Wrap fn) = [fst G.parens, G.wrap] ++ show fn ++ [snd G.parens]
+scalarRepr (Struct _) = [fst G.struct] ++ "..." ++ [snd G.struct]
 
 stringRepr :: [Char] -> String
 stringRepr str = [G.stringDelimiter] ++ concatMap (fst . charRepr) str ++ [G.stringDelimiter]
@@ -203,6 +212,10 @@ boolToScalar False = Number 0
 asWrap :: MonadError Error m => Error -> ScalarValue -> m Function
 asWrap _ (Wrap fn) = pure fn
 asWrap e _ = throwError e
+
+asStruct :: MonadError Error m => Error -> ScalarValue -> m Context
+asStruct _ (Struct ctx) = pure ctx
+asStruct e _ = throwError e
 
 asBool :: MonadError Error m => Error -> ScalarValue -> m Bool
 asBool _ (Number 0) = pure False
