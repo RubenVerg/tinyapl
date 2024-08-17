@@ -54,7 +54,7 @@ export const { register: rCreateImage, done: dCreateImage, fn: qCreateImage } = 
 		console.error(ex);
 		return { code: tinyapl.errors.user, message: (ex as Error).message };
 	}
-	return { shape: [], contents: [[id, 0]] };
+	return { type: 'array', shape: [], contents: [[id, 0]] };
 });
 
 export const { register: rDisplayImage, done: dDisplayImage, fn: qDisplayImage } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr, tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [number | undefined, ImageData]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
@@ -72,7 +72,7 @@ export const { register: rDisplayImage, done: dDisplayImage, fn: qDisplayImage }
 		console.error(ex);
 		return { code: tinyapl.errors.user, message: (ex as Error).message };
 	}
-	return { shape: [0], contents: [] };
+	return { type: 'array', shape: [0], contents: [] };
 });
 
 export const { register: rPlayAnimation, done: dPlayAnimation, fn: qPlayAnimation } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr, tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [number, ImageData[]]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
@@ -90,7 +90,7 @@ export const { register: rPlayAnimation, done: dPlayAnimation, fn: qPlayAnimatio
 	const len = arr.shape.slice(1).reduce((a, b) => a * b, 1);
 	const datas: ImageData[] = [];
 	for (let idx = 0; idx < frames; idx++) {
-		const d = toImageData({ shape: arr.shape.slice(1), contents: arr.contents.slice(idx * len).slice(0, len) }, '⎕PlayAnimation');
+		const d = toImageData({ type: 'array', shape: arr.shape.slice(1), contents: arr.contents.slice(idx * len).slice(0, len) }, '⎕PlayAnimation');
 		if ('code' in d) return d;
 		datas.push(d);
 	}
@@ -100,7 +100,7 @@ export const { register: rPlayAnimation, done: dPlayAnimation, fn: qPlayAnimatio
 		console.error(ex);
 		return { code: tinyapl.errors.user, message: (ex as Error).message };
 	}
-	return { shape: [0], contents: [] };
+	return { type: 'array', shape: [0], contents: [] };
 });
 
 export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr, tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [number[][], number[][], string]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
@@ -137,7 +137,7 @@ export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = 
 		console.error(ex);
 		return { code: tinyapl.errors.user, message: (ex as Error).message };
 	}
-	return { shape: [0], contents: [] };
+	return { type: 'array', shape: [0], contents: [] };
 });
 
 export const { register: rPlayAudio, done: dPlayAudio, fn: qPlayAudio } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr, tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [ArrayBuffer]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
@@ -163,7 +163,7 @@ export const { register: rPlayAudio, done: dPlayAudio, fn: qPlayAudio } = makeFu
 		console.error(ex);
 		return { code: tinyapl.errors.user, message: (ex as Error).message };
 	}
-	return { shape: [0], contents: [] };
+	return { type: 'array', shape: [0], contents: [] };
 });
 
 export async function qFetch(x: tinyapl.Arr, y?: tinyapl.Arr): Promise<tinyapl.Arr | tinyapl.Err> {
@@ -244,9 +244,9 @@ export async function qFetch(x: tinyapl.Arr, y?: tinyapl.Arr): Promise<tinyapl.A
 				for (let i = 0; i < view.byteLength; i += 8) result.push(view.getFloat64(i, false));
 				break;
 		}
-		return { shape: [result.length], contents: result.map(r => [r, 0]) };
+		return { type: 'array', shape: [result.length], contents: result.map(r => [r, 0]) };
 	} else {
 		const text = await response.text();
-		return { shape: [text.length], contents: await tinyapl.splitString(text) };
+		return { type: 'array', shape: [text.length], contents: await tinyapl.splitString(text) };
 	}
 }

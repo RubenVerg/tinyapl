@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Main (main) where
 
 import JSBridge
@@ -151,6 +153,38 @@ runCodeJS :: Int -> JSString -> IO JSVal
 runCodeJS contextId code = do
   (r, s) <- runCode contextId $ fromJSString code
   return $ toJSVal (r, s)
+
+getGlobals :: Int -> IO [String]
+getGlobals contextId = do
+  context <- (!! contextId) <$> readIORef contexts
+  scope <- readIORef $ contextScope context
+  return $ (fst <$> scopeArrays scope) ++ (fst <$> scopeFunctions scope) ++ (fst <$> scopeAdverbs scope) ++ (fst <$> scopeConjunctions scope)
+
+foreign export javascript "tinyapl_getGlobals" getGlobalsJS :: Int -> IO JSArray
+
+getGlobalsJS :: Int -> IO JSArray
+getGlobalsJS contextId = do
+  globals <- getGlobals contextId
+  return $ fromJSVal $ toJSVal $ map toJSString globals
+
+foreign export javascript "tinyapl_getGlobal" getGlobal :: Int -> JSString -> IO JSVal
+
+getGlobal :: Int -> JSString -> IO JSVal
+getGlobal contextId name = do
+  context <- (!! contextId) <$> readIORef contexts
+  toJSVal . fmap fst <$> (runResult $ runSt (readRef (contextScope context) >>= scopeLookup (fromJSString name) >>= (\case
+    Just x -> toJSValSt x
+    Nothing -> throwError $ DomainError $ "Global " ++ fromJSString name ++ " not found")) context)
+
+foreign export javascript "tinyapl_setGlobal" setGlobal :: Int -> JSString -> JSVal -> IO JSVal
+
+setGlobal :: Int -> JSString -> JSVal -> IO JSVal
+setGlobal contextId name val = do
+  context <- (!! contextId) <$> readIORef contexts
+  toJSVal . fmap fst <$> (runResult $ runSt (do
+    ref <- readRef (contextScope context)
+    v <- fromJSValSt val
+    writeRef (contextScope context) $ scopeUpdate (fromJSString name) v ref) context)
   
 foreign export javascript "tinyapl_glyphsSyntax" glyphsSyntaxJS :: JSArray
 foreign export javascript "tinyapl_glyphsIdentifiers" glyphsIdentifiersJS :: JSArray

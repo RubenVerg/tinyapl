@@ -564,6 +564,15 @@ runWithContext ctx f = do
 liftToSt :: IO a -> St a
 liftToSt = liftIO
 
+getContext :: St Context
+getContext = get
+
+getsContext :: (Context -> a) -> St a
+getsContext = gets
+
+putContext :: Context -> St ()
+putContext = put
+
 putScope :: IORef Scope -> St ()
 putScope sc = do
   context <- get
