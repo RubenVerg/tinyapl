@@ -5,12 +5,14 @@ module JSBridge(IsJS(..), IsJSSt(..), JSArray(..), jsToString, jsNil, (++#), jsH
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.Error
 import TinyAPL.Interpreter
+import TinyAPL.Util
 
 import GHC.Wasm.Prim
 import Numeric.Natural
 import TinyAPL.Complex
 import Data.List
 import Data.Bifunctor
+import Data.Foldable
 
 class IsJS a where
   fromJSVal :: JSVal -> a
@@ -83,6 +85,16 @@ instance IsJS a => IsJS [a] where
   fromJSVal = arrayToList . fromJSVal
   toJSVal = toJSVal . listToArray
 
+listToArraySt :: IsJSSt a => [a] -> St JSArray
+listToArraySt xs = foldlM (\arr x -> jsPush arr <$> toJSValSt x) (jsNil_ $ bamboozle xs) xs
+
+arrayToListSt :: IsJSSt a => JSArray -> St [a]
+arrayToListSt arr = mapM (fromJSValSt . jsAt arr) [0..jsLength arr-1]
+
+instance IsJSSt a => IsJSSt [a] where
+  fromJSValSt = arrayToListSt . fromJSVal
+  toJSValSt = fmap toJSVal . listToArraySt
+
 foreign import javascript unsafe "return undefined;" jsUndefined :: JSVal
 foreign import javascript unsafe "return $1 === undefined;" jsIsUndefined :: JSVal -> Bool
 
@@ -128,6 +140,13 @@ instance (IsJS a, IsJS b) => IsJS (a, b) where
   fromJSVal xy = (fromJSVal $ jsFst xy, fromJSVal $ jsSnd xy)
   toJSVal (x, y) = jsPair (toJSVal x) (toJSVal y)
 
+instance (IsJSSt a, IsJSSt b) => IsJSSt (a, b) where
+  fromJSValSt xy = liftA2 (,) (fromJSValSt $ jsFst xy) (fromJSValSt $ jsSnd xy)
+  toJSValSt (x, y) = do
+    x' <- toJSValSt x
+    y' <- toJSValSt y
+    pure $ jsPair x' y'
+
 foreign import javascript unsafe "return Object.entries($1);" jsEntries :: JSVal -> JSArray
 foreign import javascript unsafe "return Object.fromEntries($1);" jsFromEntries :: JSArray -> JSVal
 
@@ -146,11 +165,30 @@ instance IsJS ScalarValue where
     "string" -> Character $ head $ fromJSVal v
     "object" ->
       if jsIsArray v then Number $ fromJSVal v
-      else Box $ fromJSVal v
+      else if fromJSVal (jsLookup v $ toJSString "type") == "array" then Box $ fromJSVal v
+      else error "fromJSVal ScalarValue: wrong or unsupported type"
     _ -> error "fromJSVal ScalarValue: wrong type"
   toJSVal (Number x) = toJSVal x
   toJSVal (Character x) = toJSVal x
   toJSVal (Box xs) = toJSVal xs
+  toJSVal _ = error "toJSVal ScalarValue: unsupported type"
+
+instance IsJSSt ScalarValue where
+  fromJSValSt v = case fromJSString $ jsTypeOf v of
+    "number" -> pure $ Number $ fromJSVal v :+ 0
+    "string" -> pure $ Character $ head $ fromJSVal v
+    "object" ->
+      if jsIsArray v then pure $ Number $ fromJSVal v
+      else pure $ Box $ fromJSVal v
+    _ -> throwError $ DomainError "fromJSValSt ScalarValue: wrong type"
+  toJSValSt (Number x) = pure $ toJSVal x
+  toJSValSt (Character x) = pure $ toJSVal x
+  toJSValSt (Box xs) = pure $ toJSVal xs
+  toJSValSt (Wrap fn) = toJSValSt fn
+  toJSValSt (Struct ctx) = do
+    scope <- readRef $ contextScope ctx
+    entries <- mapM (secondM toJSValSt) $ scopeEntries scope
+    pure $ objectToVal [("type", toJSVal $ toJSString "struct"), ("entries", objectToVal entries)]
 
 foreign import javascript unsafe "return $1[$2];" jsLookup :: JSVal -> JSString -> JSVal
 
@@ -162,6 +200,18 @@ instance IsJS Array where
       in Array shape contents
     | otherwise = error "fromJSVal Array: not an array"
   toJSVal (Array shape contents) = objectToVal [("type", toJSVal $ toJSString "array"), ("shape", toJSVal shape), ("contents", toJSVal contents)]
+
+instance IsJSSt Array where
+  fromJSValSt v
+    | fromJSVal (jsLookup v $ toJSString "type") == "array" = do
+      let shape = arrayToList $ fromJSVal $ jsLookup v $ toJSString "shape"
+      contents <- arrayToListSt $ fromJSVal $ jsLookup v $ toJSString "contents"
+      pure $ Array shape contents
+    | otherwise = throwError $ DomainError "fromJSValSt Array: not an array"
+  toJSValSt (Array shape contents) = do
+    let shape' = toJSVal shape
+    contents' <- toJSValSt contents
+    pure $ objectToVal [("type", toJSVal $ toJSString "array"), ("shape", shape'), ("contents", contents')]
 
 instance IsJS Error where
   fromJSVal v = let
@@ -210,9 +260,9 @@ instance IsJSSt Function where
 
 instance IsJSSt Value where
   fromJSValSt v
-    | fromJSVal (jsLookup v $ toJSString "type") == "array" = pure $ VArray $ fromJSVal v
+    | fromJSVal (jsLookup v $ toJSString "type") == "array" = VArray <$> fromJSValSt v
     | fromJSVal (jsLookup v $ toJSString "type") == "function" = VFunction <$> fromJSValSt v
     | otherwise = throwError $ DomainError "fromJSValSt Value: unknown type"
-  toJSValSt (VArray arr) = pure $ toJSVal arr
+  toJSValSt (VArray arr) = toJSValSt arr
   toJSValSt (VFunction f) = toJSValSt f
   toJSValSt _ = throwError $ DomainError "toJSValSt Value: unsupported type"

@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, TupleSections #-}
 
 module TinyAPL.Util where
 import TinyAPL.Complex
@@ -160,3 +160,9 @@ whileM_ p f = go where
 distinct :: Eq a => [a] -> Bool
 distinct [] = True
 distinct (x:xs) = x `notElem` xs && distinct xs
+
+firstM :: Functor m => (a -> m a') -> (a, b) -> m (a', b)
+firstM f (a, b) = (, b) <$> f a
+
+secondM :: Functor m => (b -> m b') -> (a, b) -> m (a, b')
+secondM f (a, b) = (a, ) <$> f b

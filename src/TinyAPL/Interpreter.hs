@@ -16,6 +16,7 @@ import Control.Monad
 import Data.List
 import qualified TinyAPL.Functions as F
 import Data.Maybe (fromJust)
+import Data.Bifunctor
 
 data Value
   = VArray Array
@@ -78,6 +79,9 @@ makeValueConjunction a s = Conjunction
   , conjOnFunctionFunction = Just $ \x y -> a (VFunction x) (VFunction y)
   , conjRepr = s
   , conjContext = Nothing }
+
+scopeEntries :: Scope -> [(String, Value)]
+scopeEntries sc = (second VArray <$> scopeArrays sc) ++ (second VFunction <$> scopeFunctions sc) ++ (second VAdverb <$> scopeAdverbs sc) ++ (second VConjunction <$> scopeConjunctions sc)
 
 scopeLookup :: String -> Scope -> St (Maybe Value)
 scopeLookup name sc = do
