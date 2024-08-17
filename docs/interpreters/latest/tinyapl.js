@@ -31,12 +31,32 @@ export async function newContext(input, output, error, quads) {
 /**
  * Run code in a context
  * @param context Context ID
- * @param code
  * @returns A pair containing the result of the code or the error and whether running succeeded
  */
 export async function runCode(context, code) {
     const [result, success] = await exports.tinyapl_runCode(context, code);
     return [await joinString(result), Boolean(success)];
+}
+/**
+ * List of all global names
+ * @param context Context ID
+ */
+export async function getGlobals(context) {
+    return await exports.tinyapl_getGlobals(context);
+}
+/**
+ * Access a global by name
+ * @param context Context ID
+ */
+export async function getGlobal(context, name) {
+    return await exports.tinyapl_getGlobal(context, name);
+}
+/**
+ * Set a global by name
+ * @param context Context ID
+ */
+export async function setGlobal(context, name, val) {
+    return await exports.tinyapl_setGlobal(context, name, val);
 }
 /**
  * Higlight a piece of code

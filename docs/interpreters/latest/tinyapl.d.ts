@@ -6,8 +6,15 @@ declare global {
 export type Complex = [number, number];
 export type ScalarValue = Complex | string | Arr;
 export interface Arr {
+    type: 'array';
     shape: number[];
     contents: ScalarValue[];
+}
+export interface Fun {
+    type: 'function';
+    repr: string;
+    monad(y: Arr): PromiseLike<Err | Arr>;
+    dyad(x: Arr, y: Arr): PromiseLike<Err | Arr>;
 }
 export interface Err {
     code: number;
@@ -29,10 +36,24 @@ export declare function newContext(input: () => PromiseLike<string>, output: (wh
 /**
  * Run code in a context
  * @param context Context ID
- * @param code
  * @returns A pair containing the result of the code or the error and whether running succeeded
  */
 export declare function runCode(context: number, code: string): Promise<[string, boolean]>;
+/**
+ * List of all global names
+ * @param context Context ID
+ */
+export declare function getGlobals(context: number): Promise<string[]>;
+/**
+ * Access a global by name
+ * @param context Context ID
+ */
+export declare function getGlobal(context: number, name: string): Promise<Err | Arr | Fun>;
+/**
+ * Set a global by name
+ * @param context Context ID
+ */
+export declare function setGlobal(context: number, name: string, val: Arr | Fun): Promise<Err | void>;
 /**
  * Higlight a piece of code
  */

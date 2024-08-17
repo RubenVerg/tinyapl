@@ -1,9 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module JSBridge(IsJS(..), JSArray(..), jsNil, (++#), jsHead, jsTail, jsLength, jsUndefined, valToObject, objectToVal) where
+module JSBridge(IsJS(..), IsJSSt(..), JSArray(..), jsToString, jsNil, (++#), jsHead, jsTail, jsLength, jsUndefined, valToObject, objectToVal) where
 
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.Error
+import TinyAPL.Interpreter
 
 import GHC.Wasm.Prim
 import Numeric.Natural
@@ -15,9 +16,17 @@ class IsJS a where
   fromJSVal :: JSVal -> a
   toJSVal :: a -> JSVal
 
+class IsJSSt a where
+  fromJSValSt :: JSVal -> St a
+  toJSValSt :: a -> St JSVal
+
 instance IsJS JSVal where
   fromJSVal = id
   toJSVal = id
+
+instance IsJS () where
+  fromJSVal = const ()
+  toJSVal = const jsUndefined
 
 foreign import javascript unsafe "return $1;" valToString :: JSVal -> JSString
 foreign import javascript unsafe "return $1;" stringToVal :: JSString -> JSVal
@@ -43,6 +52,14 @@ foreign import javascript unsafe "return $1.slice(1);" jsTail :: JSArray -> JSAr
 foreign import javascript unsafe "return $1.length;" jsLength :: JSArray -> Int
 foreign import javascript unsafe "return $1[$2];" jsAt :: JSArray -> Int -> JSVal
 foreign import javascript unsafe "$1.push($2); return $1;" jsPush :: JSArray -> JSVal -> JSArray
+
+foreign import javascript unsafe "return $1.toString();" jsToString_ :: JSVal -> JSString
+
+jsToString :: IsJS a => a -> String
+jsToString = fromJSString . jsToString_ . toJSVal
+
+instance Show JSVal where
+  show = jsToString
 
 bamboozle :: [a] -> Bool
 bamboozle [] = False
@@ -138,11 +155,13 @@ instance IsJS ScalarValue where
 foreign import javascript unsafe "return $1[$2];" jsLookup :: JSVal -> JSString -> JSVal
 
 instance IsJS Array where
-  fromJSVal v = let
-    shape = arrayToList $ fromJSVal $ jsLookup v $ toJSString "shape"
-    contents = arrayToList $ fromJSVal $ jsLookup v $ toJSString "contents"
-    in Array shape contents
-  toJSVal (Array shape contents) = objectToVal [("shape", toJSVal shape), ("contents", toJSVal contents)]
+  fromJSVal v
+    | fromJSVal (jsLookup v $ toJSString "type") == "array" = let
+      shape = arrayToList $ fromJSVal $ jsLookup v $ toJSString "shape"
+      contents = arrayToList $ fromJSVal $ jsLookup v $ toJSString "contents"
+      in Array shape contents
+    | otherwise = error "fromJSVal Array: not an array"
+  toJSVal (Array shape contents) = objectToVal [("type", toJSVal $ toJSString "array"), ("shape", toJSVal shape), ("contents", toJSVal contents)]
 
 instance IsJS Error where
   fromJSVal v = let
@@ -153,7 +172,47 @@ instance IsJS Error where
 
 foreign import javascript unsafe "return $1 in $2;" jsIn :: JSString -> JSVal -> Bool
 
-instance IsJS (Either Error Array) where
+instance IsJS a => IsJS (Either Error a) where
   fromJSVal v = if jsIn (toJSString "code") v then Left $ fromJSVal v else Right $ fromJSVal v
   toJSVal (Left err) = toJSVal err
   toJSVal (Right x) = toJSVal x
+
+instance IsJSSt a => IsJSSt (Either Error a) where
+  fromJSValSt v = if jsIn (toJSString "code") v then pure $ Left $ fromJSVal v else Right <$> fromJSValSt v
+  toJSValSt (Left err) = pure $ toJSVal err
+  toJSValSt (Right x) = toJSValSt x
+
+foreign import javascript safe "return await $1($2);" jsCall1 :: JSVal -> JSVal -> IO JSVal
+foreign import javascript safe "return await $1($2, $3);" jsCall2 :: JSVal -> JSVal -> JSVal -> IO JSVal
+
+foreign import javascript unsafe "wrapper" jsWrap1 :: (JSVal -> IO JSVal) -> IO JSVal
+foreign import javascript unsafe "wrapper" jsWrap2 :: (JSVal -> JSVal -> IO JSVal) -> IO JSVal
+
+instance IsJSSt Function where
+  fromJSValSt v
+    | fromJSVal (jsLookup v $ toJSString "type") == "function" = do
+      let repr = fromJSString $ fromJSVal $ jsLookup v $ toJSString "repr"
+      let monad = jsLookup v $ toJSString "monad"
+      let dyad = jsLookup v $ toJSString "dyad"
+      sc <- createRef $ Scope [] [] [] [] Nothing
+      ctx <- getContext
+      pure $ Function {
+        functionRepr = repr,
+        functionContext = Just $ ctx{ contextScope = sc },
+        functionMonad = if jsIsUndefined monad then Nothing else Just $ (\x -> liftToSt $ fromJSVal <$> jsCall1 monad (toJSVal x)),
+        functionDyad = if jsIsUndefined dyad then Nothing else Just $ (\x y -> liftToSt $ fromJSVal <$> jsCall2 dyad (toJSVal x) (toJSVal y)) }
+    | otherwise = throwError $ DomainError "fromJSValSt Function: not a function"
+  toJSValSt f = do
+    ctx <- getContext
+    monad <- liftToSt $ jsWrap1 $ \x -> toJSVal . second fst <$> (runResult $ runSt (callMonad f (fromJSVal x)) ctx)
+    dyad <- liftToSt $ jsWrap2 $ \x y -> toJSVal . second fst <$> (runResult $ runSt (callDyad f (fromJSVal x) (fromJSVal y)) ctx)
+    pure $ objectToVal [("type", toJSVal $ toJSString "function"), ("repr", toJSVal $ toJSString $ functionRepr f), ("monad", monad), ("dyad", dyad)]
+
+instance IsJSSt Value where
+  fromJSValSt v
+    | fromJSVal (jsLookup v $ toJSString "type") == "array" = pure $ VArray $ fromJSVal v
+    | fromJSVal (jsLookup v $ toJSString "type") == "function" = VFunction <$> fromJSValSt v
+    | otherwise = throwError $ DomainError "fromJSValSt Value: unknown type"
+  toJSValSt (VArray arr) = pure $ toJSVal arr
+  toJSValSt (VFunction f) = toJSValSt f
+  toJSValSt _ = throwError $ DomainError "toJSValSt Value: unsupported type"
