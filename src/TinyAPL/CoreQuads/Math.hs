@@ -8,6 +8,9 @@ import qualified TinyAPL.Glyphs as G
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.State (MonadState(get))
 
+piA :: Array
+piA = scalar $ Number $ pi
+
 complementaryS :: MonadError Error m => ScalarValue -> m ScalarValue
 complementaryS (Number y) = pure $ Number $ sqrt $ 1 - y * y
 complementaryS _ = throwError $ DomainError "Complementary argument must be a number"
@@ -100,7 +103,7 @@ artanhF :: Function
 artanhF = Function (Just $ scalarMonad artanhS) Nothing "Artanh" Nothing
 
 math = Nilad (Just $ do
-  scope <- createRef (Scope [] ((\n -> (functionRepr n, n)) <$>
+  scope <- createRef (Scope [("pi", piA)] ((\n -> (functionRepr n, n)) <$>
     [ complementaryF
     , sinF
     , arcsinF
