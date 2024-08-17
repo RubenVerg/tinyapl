@@ -124,6 +124,8 @@ eval (ConjunctionCallBranch l r)    = do
   l' <- eval l
   evalConjunctionCall l' r'
 eval (AssignBranch _ n val)         = eval val >>= evalAssign n
+eval (VectorAssignBranch ns val)    = eval val >>= evalVectorAssign ns
+eval (HighRankAssignBranch ns val)  = eval val >>= evalHighRankAssign ns
 eval (DefinedBranch cat statements) = evalDefined statements cat
 eval (GuardBranch _ _)              = throwError $ DomainError "Guards are not allowed outside of dfns"
 eval (ExitBranch _)                 = throwError $ DomainError "Exits are not allowed outside of dfns"
@@ -267,6 +269,28 @@ evalAssign name val
   | otherwise = do
     gets contextScope >>= flip modifyRef (scopeUpdate name val)
     return val
+
+evalVectorAssign :: [String] -> Value -> St Value
+evalVectorAssign ns val =
+  if any (\(n:_) -> n == G.quad || n == G.quadQuote) ns then throwError $ DomainError "Vector assignment: cannot assign to quad names"
+  else do
+    es <- fmap fromScalar <$> (unwrapArray (DomainError "Vector assign: not a vector") val >>= asVector (DomainError "Vector assignment: not a vector"))
+    if length ns /= length es then throwError $ DomainError "Vector assignment: wrong number of names"
+    else do
+      scope <- gets contextScope
+      modifyRef scope $ (\sc -> foldr (\(n, e) sc' -> scopeUpdateArray n e sc') sc $ zip ns es)
+      return val
+
+evalHighRankAssign :: [String] -> Value -> St Value
+evalHighRankAssign ns val =
+  if any (\(n:_) -> n == G.quad || n == G.quadQuote) ns then throwError $ DomainError "High rank assignment: cannot assign to quad names"
+  else do
+    es <- majorCells <$> unwrapArray (DomainError "High rank assign: not an array") val
+    if length ns /= length es then throwError $ DomainError "High rank assignment: wrong number of names"
+    else do
+      scope <- gets contextScope
+      modifyRef scope $ (\sc -> foldr (\(n, e) sc' -> scopeUpdateArray n e sc') sc $ zip ns es)
+      return val
 
 evalDefined :: [Tree] -> Category -> St Value
 evalDefined statements cat = let

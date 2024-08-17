@@ -117,6 +117,10 @@ spec = do
       tok "_⦅1⋄2⋄3⦆" `shouldBe` pure [[TokenAdverbTrain [Just $ [TokenNumber [1] emptyPos], Just $ [TokenNumber [2] emptyPos], Just $ [TokenNumber [3] emptyPos]] emptyPos]]
       tok "_⦅1⋄2⋄3⦆_" `shouldBe` pure [[TokenConjunctionTrain [Just $ [TokenNumber [1] emptyPos], Just $ [TokenNumber [2] emptyPos], Just $ [TokenNumber [3] emptyPos]] emptyPos]]
 
+    it "parses destructuring assignment" $ do
+      tok "⟨a⋄b⟩←9" `shouldBe` pure [[TokenVectorAssign ["a", "b"] [TokenNumber [9] emptyPos] emptyPos]]
+      tok "[a⋄b]←7" `shouldBe` pure [[TokenHighRankAssign ["a", "b"] [TokenNumber [7] emptyPos] emptyPos]]
+
   describe "binder" $ do
     let e2m (Right x) = Just x
         e2m (Left _)  = Nothing
