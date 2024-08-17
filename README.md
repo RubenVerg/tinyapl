@@ -84,33 +84,6 @@ Marked features are supported, unmarked features are planned
 			* `1⍟1` is `1`
 			* `1⍟y` is an error
 			* `x⍟0` is an error
-		* [x] `○` pi times
-		* [x] `○` circular
-			* `0○y` is $\sqrt{1 - y^2}$
-			* `1○y` is $\sin y$
-			* `¯1○y` is $\arcsin y$
-			* `2○y` is $\cos y$
-			* `¯2○y` is  $\arccos y$
-			* `3○y` is $\tan y$
-			* `¯3○y` is $\arctan y$
-			* `4○y` is $\sqrt{1 + y^2}$
-			* `¯4○y` is $\sqrt{y^2 - 1}$
-			* `5○y` is $\sinh y$
-			* `¯5○y` is $\mathop{\text{arsinh}} y$
-			* `6○y` is $\cosh y$
-			* `¯6○y` is $\mathop{\text{arcosh}} y$
-			* `7○y` is $\tanh y$
-			* `¯7○y` is $\mathop{\text{artanh}} y$
-			* `8○y` is $\sqrt{-1 - y^2}$
-			* `¯8○y` is $-\sqrt{-1 - y^2}$
-			* `9○y` is $\mathop{\text{Re}} y$
-			* `¯9○y` is $y$
-			* `10○y` is $\left|y\right|$
-			* `¯10○y` is $\overline y$ (conjugate of $y$)
-			* `11○y` is $\mathop{\text{Im}} y$
-			* `¯11○y` is $iy$
-			* `12○y` is $\mathop{\text{Arg}} y$
-			* `¯12○y` is $e^{iy}$
 		* [x] `√` square root
 		* [x] `√` root
 		* [x] `⌊` floor
@@ -286,6 +259,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⎕io` (constant) `1`
 		* [x] `⎕ct` (constant) `1⏨¯14`
 		* [x] `⎕seed` (set only) seed the random number generator
+		* [ ] `⎕math` math functions
 	* system functions
 		* [ ] `⎕File` read/write files
 		* [ ] `⎕DateTime` (or `⎕DT` maybe?) convert between time formats

@@ -170,45 +170,6 @@ matrixDivide' = atRank2 (\x y -> do
   y' <- asMatrix (DomainError "") y >>= mapM (asNumber (DomainError "Matrix divide arguments must be numeric")) 
   matrix . fmap Number <$> matrixDivide x' y') (2, 2)
 
-piTimes :: MonadError Error m => ScalarValue -> m ScalarValue
-piTimes (Number y) = pure $ Number $ pi * y
-piTimes _ = throwError expectedNumber
-
-piTimes' :: MonadError Error m => Array -> m Array
-piTimes' = scalarMonad piTimes
-
-circular :: MonadError Error m => ScalarValue -> ScalarValue -> m ScalarValue
-circular (Number 0) (Number y) = pure $ Number $ sqrt $ 1 - y * y
-circular (Number 1) (Number y) = pure $ Number $ sin y
-circular (Number -1) (Number y) = pure $ Number $ asin y
-circular (Number 2) (Number y) = pure $ Number $ cos y
-circular (Number -2) (Number y) = pure $ Number $ acos y
-circular (Number 3) (Number y) = pure $ Number $ tan y
-circular (Number -3) (Number y) = pure $ Number $ atan y
-circular (Number 4) (Number y) = pure $ Number $ sqrt $ 1 + y * y
-circular (Number -4) (Number y) = pure $ Number $ sqrt $ y * y - 1
-circular (Number 5) (Number y) = pure $ Number $ sinh y
-circular (Number -5) (Number y) = pure $ Number $ asinh y
-circular (Number 6) (Number y) = pure $ Number $ cosh y
-circular (Number -6) (Number y) = pure $ Number $ acosh y
-circular (Number 7) (Number y) = pure $ Number $ tanh y
-circular (Number -7) (Number y) = pure $ Number $ atanh y
-circular (Number 8) (Number y) = pure $ Number $ sqrt $ negate $ 1 + y * y
-circular (Number -8) (Number y) = pure $ Number $ negate $ sqrt $ negate $ 1 + y * y
-circular (Number 9) (Number y) = pure $ Number $ Cx.realPart y :+ 0
-circular (Number -9) (Number y) = pure $ Number y
-circular (Number 10) (Number y) = pure $ Number $ Prelude.abs y
-circular (Number -10) (Number y) = pure $ Number $ Cx.conjugate y
-circular (Number 11) (Number y) = pure $ Number $ Cx.imagPart y :+ 0
-circular (Number -11) (Number y) = pure $ Number $ y * i
-circular (Number 12) (Number y) = pure $ Number $ Cx.phase y :+ 0
-circular (Number -12) (Number y) = pure $ Number $ exp $ y * i
-circular (Number _) (Number _) = throwError $ DomainError "Invalid left argument to circular"
-circular _ _ = throwError expectedNumber
-
-circular' :: MonadError Error m => Array -> Array -> m Array
-circular' = scalarDyad circular
-
 floor :: MonadError Error m => ScalarValue -> m ScalarValue
 floor (Number y) = pure $ Number $ complexFloor y
 floor _ = throwError expectedNumber

@@ -108,7 +108,6 @@ times = '×'
 divide = '÷'
 power = '*'
 logarithm = '⍟'
-circle = '○'
 root = '√'
 floor = '⌊'
 ceil = '⌈'
@@ -173,7 +172,6 @@ functions =
   , TinyAPL.Glyphs.divide
   , TinyAPL.Glyphs.power
   , TinyAPL.Glyphs.logarithm
-  , TinyAPL.Glyphs.circle
   , TinyAPL.Glyphs.root
   , TinyAPL.Glyphs.floor
   , TinyAPL.Glyphs.ceil

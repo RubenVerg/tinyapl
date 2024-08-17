@@ -20,7 +20,6 @@ times = Function (Just F.sign') (Just F.times') [G.times] Nothing
 divide = Function (Just F.reciprocal') (Just F.divide') [G.divide] Nothing
 power = Function (Just F.ePow') (Just F.pow') [G.power] Nothing
 logarithm = Function (Just F.ln') (Just F.log') [G.logarithm] Nothing
-circle = Function (Just F.piTimes') (Just F.circular') [G.circle] Nothing
 root = Function (Just F.squareRoot') (Just F.root') [G.root] Nothing
 floor = Function (Just F.floor') (Just F.min') [G.floor] Nothing
 ceil = Function (Just F.ceil') (Just F.max') [G.ceil] Nothing
@@ -85,7 +84,6 @@ functions = (\x -> (head $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.divide
   , TinyAPL.Primitives.power
   , TinyAPL.Primitives.logarithm
-  , TinyAPL.Primitives.circle
   , TinyAPL.Primitives.root
   , TinyAPL.Primitives.floor
   , TinyAPL.Primitives.ceil

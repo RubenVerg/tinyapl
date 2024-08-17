@@ -1,6 +1,7 @@
 module TinyAPL.CoreQuads where
 
 import TinyAPL.ArrayFunctionOperator
+import TinyAPL.CoreQuads.Math
 import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
 import TinyAPL.Interpreter
@@ -44,4 +45,4 @@ delay = Function (Just $ \x -> do
     pure $ scalar $ Number $ (end - start) :+ 0
   ) Nothing (G.quad : "Delay") Nothing
 
-core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts ] [ exists, repr, delay ] [] []
+core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay ] [] []
