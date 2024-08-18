@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -Wno-all #-}
 
 module TinyAPL.Gamma.Factorial
   ( Factorial (..) ) where

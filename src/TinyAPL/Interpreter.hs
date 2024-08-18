@@ -14,7 +14,6 @@ import Control.Monad.State
 import Data.Foldable (foldlM)
 import Control.Monad
 import Data.List
-import qualified TinyAPL.Functions as F
 import Data.Maybe (fromJust)
 import Data.Bifunctor
 
@@ -153,7 +152,7 @@ eval (WrapBranch fn)                = VArray . scalar . Wrap <$> (eval fn >>= un
 eval (UnwrapBranch fn)              = do
   let err = DomainError "Unwrap notation: array of wraps required"
   arr <- eval fn >>= unwrapArray err
-  if null $ arrayShape arr then VFunction <$> asWrap err (head $ arrayContents arr)
+  if null $ arrayShape arr then VFunction <$> asWrap err (headPromise $ arrayContents arr)
   else pure $ VFunction $ Function
     { functionMonad = Just $ \x -> F.onScalars1 (\w -> asScalar err w >>= asWrap err >>= (\f -> callMonad f x)) arr
     , functionDyad = Just $ \x y -> F.onScalars1 (\w -> asScalar err w >>= asWrap err >>= (\f -> callDyad f x y)) arr
@@ -163,8 +162,8 @@ eval (StructBranch es)              = evalStruct es
 
 resolve :: [String] -> St Context
 resolve [] = get
-resolve (name:ns)
-  | head name == G.quad = do
+resolve (name:_)
+  | isPrefixOf [G.quad] name = do
     quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads
     case nilad of
@@ -205,7 +204,7 @@ evalLeaf (TokenArrayName [name] _)
     input <- gets contextIn
     str <- input
     return $ VArray $ vector $ Character <$> str
-  | head name == G.quad                   = do
+  | isPrefixOf [G.quad] name              = do
     quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads
     case nilad of
@@ -220,7 +219,7 @@ evalLeaf (TokenArrayName names val)       = do
   ctx <- resolve q
   runWithContext ctx $ evalLeaf $ TokenArrayName [l] val
 evalLeaf (TokenFunctionName [name] _)
-  | head name == G.quad                   = do
+  | isPrefixOf [G.quad] name              = do
     quads <- gets contextQuads
     let fn = lookup name $ quadFunctions quads
     case fn of
@@ -233,7 +232,7 @@ evalLeaf (TokenFunctionName names val)    = do
   ctx <- resolve q
   runWithContext ctx $ evalLeaf $ TokenFunctionName [l] val
 evalLeaf (TokenAdverbName [name] _)
-  | head name == G.quad                   = do
+  | isPrefixOf [G.quad] name              = do
     quads <- gets contextQuads
     let adv = lookup name $ quadAdverbs quads
     case adv of
@@ -246,7 +245,7 @@ evalLeaf (TokenAdverbName names val)      = do
   ctx <- resolve q
   runWithContext ctx $ evalLeaf $ TokenAdverbName [l] val
 evalLeaf (TokenConjunctionName [name] _)
-  | head name == G.quad                   = do
+  | isPrefixOf [G.quad] name              = do
     quads <- gets contextQuads
     let conj = lookup name $ quadConjunctions quads
     case conj of
@@ -293,7 +292,7 @@ evalAssign [name] val
     err <- gets contextErr
     err $ show arr
     return val
-  | head name == G.quad = do
+  | isPrefixOf [G.quad] name = do
     arr <- unwrapArray (DomainError "Cannot set quad name to non-array") val
     quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads

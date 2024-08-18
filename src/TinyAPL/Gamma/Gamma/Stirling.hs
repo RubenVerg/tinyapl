@@ -1,4 +1,6 @@
 {-# LANGUAGE ParallelListComp #-}
+{-# OPTIONS_GHC -Wno-all #-}
+
 -- |Stirling's approximation to the gamma function and utility functions for
 -- selecting coefficients.
 module TinyAPL.Gamma.Gamma.Stirling

@@ -14,6 +14,8 @@ data Error
   | AssertionError String
   deriving (Eq, Ord)
 
+unreachable = AssertionError "Unreachable code reached!"
+
 errorCode :: Error -> Int
 errorCode (UserError _) = 1
 errorCode (DomainError _) = 2

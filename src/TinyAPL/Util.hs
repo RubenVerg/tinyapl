@@ -7,7 +7,8 @@ import qualified TinyAPL.Glyphs as G
 import GHC.Float (floatToDigits)
 import GHC.Float.RealFracMethods (truncateDoubleInteger)
 import Data.Char (intToDigit)
-import Data.List (genericLength, genericIndex)
+import Data.List (genericLength, genericIndex, unsnoc)
+import Data.Vector.Internal.Check (HasCallStack)
 
 infixr 9 .:
 (.:) f g x y = f $ g x y
@@ -15,6 +16,32 @@ infixr 9 .:
 snoc :: [a] -> a -> [a]
 snoc [] x = [x]
 snoc (x:xs) y = x : snoc xs y
+
+headMaybe :: [a] -> Maybe a
+headMaybe [] = Nothing
+headMaybe (x:_) = Just x
+
+tailMaybe :: [a] -> Maybe [a]
+tailMaybe [] = Nothing
+tailMaybe (_:xs) = Just xs
+
+initMaybe :: [a] -> Maybe [a]
+initMaybe xs = case unsnoc xs of
+  Nothing -> Nothing
+  Just (ys, _) -> Just ys
+
+lastMaybe :: [a] -> Maybe a
+lastMaybe xs = case unsnoc xs of
+  Nothing -> Nothing
+  Just (_, y) -> Just y
+
+headPromise :: HasCallStack => [a] -> a
+headPromise [] = error "headIPromise: empty list"
+headPromise (x:_) = x
+
+tailPromise :: HasCallStack => [a] -> [a]
+tailPromise [] = error "tailPromise: empty list"
+tailPromise (_:xs) = xs
 
 showAplDouble :: Double -> String
 showAplDouble x 

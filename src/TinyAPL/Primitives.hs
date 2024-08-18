@@ -4,6 +4,7 @@ import TinyAPL.ArrayFunctionOperator
 import TinyAPL.Error
 import qualified TinyAPL.Functions as F
 import qualified TinyAPL.Glyphs as G
+import TinyAPL.Util (headPromise)
 
 -- * Primitive arrays
 
@@ -77,7 +78,7 @@ transpose = Function (Just F.transpose) (Just F.reorderAxes') [G.transpose] Noth
 matrixInverse = Function (Just F.matrixInverse') (Just F.matrixDivide') [G.matrixInverse] Nothing
 factorial = Function (Just F.factorial') (Just F.binomial') [G.factorial] Nothing
 
-functions = (\x -> (head $ functionRepr x, x)) <$>
+functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
   , TinyAPL.Primitives.minus
   , TinyAPL.Primitives.times
@@ -214,7 +215,7 @@ table = Adverb
   , adverbOnArray = Nothing
   , adverbOnFunction = Just $ \f -> pure $ Function Nothing (Just $ F.table (callDyad f)) (makeAdverbRepr (show f) G.table) Nothing }
 
-adverbs = (\x -> (head $ adverbRepr x, x)) <$>
+adverbs = (\x -> (headPromise $ adverbRepr x, x)) <$>
   [ TinyAPL.Primitives.selfie
   , TinyAPL.Primitives.reduce
   , TinyAPL.Primitives.reduceBack
@@ -324,7 +325,7 @@ innerProduct = Conjunction
   , conjOnFunctionArray = Nothing
   , conjOnFunctionFunction = Just $ \f g -> pure $ Function Nothing (Just $ F.innerProduct (callMonad f) (callDyad g)) (makeConjRepr (show f) G.innerProduct (show g)) Nothing }
 
-conjunctions = (\x -> (head $ conjRepr x, x)) <$>
+conjunctions = (\x -> (headPromise $ conjRepr x, x)) <$>
   [ TinyAPL.Primitives.atop
   , TinyAPL.Primitives.over
   , TinyAPL.Primitives.after

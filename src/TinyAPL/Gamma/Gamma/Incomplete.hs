@@ -1,4 +1,6 @@
 {-# LANGUAGE ParallelListComp #-}
+{-# OPTIONS_GHC -Wno-all #-}
+
 module TinyAPL.Gamma.Gamma.Incomplete
   ( lowerGammaCF, pCF
   , lowerGammaHypGeom, lnLowerGammaHypGeom, pHypGeom

@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-all #-}
+
 module TinyAPL.Gamma.Gamma where
 
 import TinyAPL.Gamma.Factorial

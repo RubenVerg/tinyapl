@@ -1,4 +1,6 @@
 {-# LANGUAGE ParallelListComp #-}
+{-# OPTIONS_GHC -Wno-all #-}
+
 -- |Lanczos' approximation to the gamma function, as described at
 -- http:\/\/en.wikipedia.org\/wiki\/Lanczos_approximation
 -- (fetched 11 June 2010).

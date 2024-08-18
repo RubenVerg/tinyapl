@@ -437,10 +437,11 @@ promote :: MonadError Error m => Array -> m Array
 promote arr = reshape (1 : map toInteger (arrayShape arr)) arr
 
 demote :: MonadError Error m => Array -> m Array
-demote arr = case toInteger <$> arrayShape arr of
-  [] -> pure arr
-  [_] -> pure $ scalar $ head $ arrayContents arr
-  (a:b:ss) -> reshape (a * b : ss) arr
+demote arr = case (toInteger <$> arrayShape arr, arrayContents arr) of
+  ([], _) -> pure arr
+  ([_], []) -> throwError $ DomainError "Demote empty vector to scalar"
+  ([_], c:_) -> pure $ scalar c
+  (a:b:ss, _) -> reshape (a * b : ss) arr
 
 rerank :: MonadError Error m => Natural -> Array -> m Array
 rerank n arr =
@@ -547,7 +548,7 @@ indexGenerator' :: MonadError Error m => Array -> m Array
 indexGenerator' arr = do
   let err = DomainError "Index Generator argument must be a natural scalar or vector"
   is <- asVector err arr >>= mapM (asNumber err >=> asNat err)
-  if isScalar arr then indexGenerator $ head is
+  if isScalar arr then indexGenerator $ headPromise is
   else indexGeneratorN is
 
 replicate :: MonadError Error m => [Natural] -> [a] -> m [a]
@@ -560,7 +561,7 @@ replicate' rs arr = do
   let err = DomainError "Replicate left argument must be a natural vector or scalar"
   rs' <- asVector err rs >>= mapM (asNumber err >=> asNat err)
   let cells = majorCells arr
-  let rs'' = if isScalar rs then Prelude.replicate (length cells) (head rs') else rs'
+  rs'' <- if isScalar rs then case rs' of [r] -> pure $ Prelude.replicate (length cells) r; _ -> throwError unreachable else pure rs'
   fromMajorCells <$> TinyAPL.Functions.replicate rs'' cells
 
 indices :: MonadError Error m => Array -> m Array
@@ -624,7 +625,7 @@ indexCells (i:is) xs
 
 indexDeep :: MonadError Error m => [[Integer]] -> Array -> m Array
 indexDeep [] arr = pure arr
-indexDeep (i:is) arr = indexCells i (majorCells arr) >>= (fmap (\x -> if length x == 1 then head x else fromMajorCells x) . mapM (indexDeep is))
+indexDeep (i:is) arr = indexCells i (majorCells arr) >>= (fmap (\case [x] -> x; xs -> fromMajorCells xs) . mapM (indexDeep is))
 
 indexScatter :: MonadError Error m => Array -> Array -> m Array
 indexScatter iarr carr = each1 (\i -> do
@@ -634,11 +635,14 @@ indexScatter iarr carr = each1 (\i -> do
 
 from :: MonadError Error m => Array -> Array -> m Array
 from iarr carr
-  | null (arrayShape iarr) && all (\case { Number _ -> True; _ -> False }) (arrayContents iarr) = do
+  | null (arrayShape iarr) && all isNumber (arrayContents iarr) = do
     let err = DomainError "From left argument must be an integer vector or an array of integer vectors"
     index <- asScalar err iarr >>= asNumber err >>= asInt err
-    head <$> indexCells [index] (majorCells carr)
-  | length (arrayShape iarr) == 1 && all (\case { Number _ -> True; _ -> False }) (arrayContents iarr) = do
+    res <- indexCells [index] (majorCells carr)
+    case res of
+      [x] -> pure x
+      _ -> throwError unreachable
+  | length (arrayShape iarr) == 1 && all isNumber (arrayContents iarr) = do
     let err = DomainError "From left argument must be an integer vector or an array of integer vectors"
     indices <- asVector err iarr >>= mapM (asNumber err >=> asInt err)
     fromMajorCells <$> indexCells indices (majorCells carr)
@@ -651,13 +655,13 @@ squad iarr carr = do
   indexDeep is carr
 
 catenate :: MonadError Error m => Array -> Array -> m Array
-catenate a@(Array ash acs) b@(Array bsh bcs) = 
+catenate a@(Array ash acs) b@(Array bsh bcs) =
   if arrayRank a == arrayRank b then
-    if (isScalar a && isScalar b) || (tail ash == tail bsh) then pure $ fromMajorCells $ majorCells a ++ majorCells b
+    if (isScalar a && isScalar b) || (tailMaybe ash == tailMaybe bsh) then pure $ fromMajorCells $ majorCells a ++ majorCells b
     else throwError $ LengthError "Incompatible shapes to Catenate"
-  else if isScalar a then catenate (fromJust $ arrayReshaped (1 : tail bsh) acs) b
-  else if isScalar b then catenate a (fromJust $ arrayReshaped (1 : tail ash) bcs)
-  else if arrayRank a == arrayRank b + 1 then promote b >>= (a `catenate`) 
+  else if isScalar a then catenate (fromJust $ arrayReshaped (1 : tailPromise bsh) acs) b
+  else if isScalar b then catenate a (fromJust $ arrayReshaped (1 : tailPromise ash) bcs)
+  else if arrayRank a == arrayRank b + 1 then promote b >>= (a `catenate`)
   else if arrayRank a + 1 == arrayRank b then promote a >>= (`catenate` b)
   else throwError $ RankError "Incompatible ranks to Catenate"
 
@@ -860,9 +864,9 @@ each1 f (Array sh cs) = Array sh <$> mapM (fmap box . f . fromScalar) cs
 
 each2 :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
 each2 f (Array ash acs) (Array bsh bcs)
-  | null ash && null bsh = scalar . box <$> f (fromScalar $ head acs) (fromScalar $ head bcs)
-  | null ash = Array bsh <$> mapM (fmap box . ((fromScalar $ head acs) `f`) . fromScalar) bcs
-  | null bsh = Array ash <$> mapM (fmap box . (`f` (fromScalar $ head bcs)) . fromScalar) acs
+  | null ash && null bsh = scalar . box <$> f (fromScalar $ headPromise acs) (fromScalar $ headPromise bcs)
+  | null ash = Array bsh <$> mapM (fmap box . ((fromScalar $ headPromise acs) `f`) . fromScalar) bcs
+  | null bsh = Array ash <$> mapM (fmap box . (`f` (fromScalar $ headPromise bcs)) . fromScalar) acs
   | ash == bsh = Array ash <$> zipWithM (fmap box .: f) (fromScalar <$> acs) (fromScalar <$> bcs)
   | length ash /= length bsh = throwError $ RankError "Incompatible ranks to Each"
   | otherwise = throwError $ LengthError "Incompatible shapes to Each"
@@ -1003,7 +1007,7 @@ under f g arr = do
   else do
     res <- atRank1 (compose first first) 0 rs >>= f
     if isScalar res then do
-      pure $ Array (arrayShape arr) $ zipWith (\num el -> if num `elem` (arrayContents nums') then head $ arrayContents res else el) (arrayContents nums) (arrayContents arr)
+      pure $ Array (arrayShape arr) $ zipWith (\num el -> if num `elem` (arrayContents nums') then headPromise $ arrayContents res else el) (arrayContents nums) (arrayContents arr)
     else if arrayShape nums' == arrayShape res then do
       let cs = zip (arrayContents nums') (arrayContents res)
       pure $ Array (arrayShape arr) $ zipWith (\num el -> case find (\(num', _) -> num == num') cs of
