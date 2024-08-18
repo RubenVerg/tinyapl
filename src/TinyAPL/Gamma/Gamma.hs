@@ -1,4 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -Wno-all #-}
+
 module TinyAPL.Gamma.Gamma
   ( Gamma(..)
   , Factorial(..)

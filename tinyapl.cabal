@@ -50,7 +50,7 @@ library
                     , megaparsec ^>=9.6.1
                     , mtl ^>=2.3.1
                     , random ^>=1.2.1.2
-                    , time ^>=1.14
+                    , time ^>=1.12
                     , matrix ^>=0.3.6.3
                     , continued-fractions ^>=0.10.0.2
                     , converge ^>=0.1.0.1
@@ -85,8 +85,12 @@ executable tinyapl-js
     
     hs-source-dirs:   js/src
     default-language: Haskell2010
-   
-    ghc-options:      -W -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=hs_start"
+    
+    if os(wasi)
+        ghc-options:  -W -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=hs_start"
+    else
+        build-depends:ghc-wasm-compat
+        ghc-options:  -W -fplugin GHC.Wasm.FFI.Plugin
 
 test-suite tinyapl-tests
     import:           warnings

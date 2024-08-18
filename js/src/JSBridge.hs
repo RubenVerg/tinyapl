@@ -38,7 +38,9 @@ instance IsJS JSString where
   toJSVal = stringToVal
 
 instance IsJS Char where
-  fromJSVal = head . fromJSString . fromJSVal
+  fromJSVal v = case fromJSString $ fromJSVal v of
+    [c] -> c
+    _ -> error "fromJSVal Char: not a character"
   toJSVal = toJSVal . toJSString . singleton
 
 newtype JSArray = JSArray { unJSArray :: JSVal }
@@ -162,7 +164,7 @@ foreign import javascript unsafe "return Array.isArray($1);" jsIsArray :: JSVal 
 instance IsJS ScalarValue where
   fromJSVal v = case fromJSString $ jsTypeOf v of
     "number" -> Number $ fromJSVal v :+ 0
-    "string" -> Character $ head $ fromJSVal v
+    "string" -> Character $ fromJSVal v
     "object" ->
       if jsIsArray v then Number $ fromJSVal v
       else if fromJSVal (jsLookup v $ toJSString "type") == "array" then Box $ fromJSVal v
@@ -176,14 +178,20 @@ instance IsJS ScalarValue where
 instance IsJSSt ScalarValue where
   fromJSValSt v = case fromJSString $ jsTypeOf v of
     "number" -> pure $ Number $ fromJSVal v :+ 0
-    "string" -> pure $ Character $ head $ fromJSVal v
+    "string" -> pure $ Character $ fromJSVal v
     "object" ->
       if jsIsArray v then pure $ Number $ fromJSVal v
-      else pure $ Box $ fromJSVal v
+      else if fromJSVal (jsLookup v $ toJSString "type") == "array" then Box <$> fromJSValSt v
+      else if fromJSVal (jsLookup v $ toJSString "type") == "function" then Wrap <$> fromJSValSt v
+      else if fromJSVal (jsLookup v $ toJSString "type") == "struct" then do
+        ctx <- getContext
+        scope <- foldrM (\(n, v) s -> flip (scopeUpdate n) s <$> fromJSValSt v) (Scope [] [] [] [] Nothing) (valToObject $ jsLookup v $ toJSString "entries") >>= createRef
+        pure $ Struct ctx{ contextScope = scope }
+      else throwError $ DomainError "fromJSValSt ScalarValue: wrong type"
     _ -> throwError $ DomainError "fromJSValSt ScalarValue: wrong type"
   toJSValSt (Number x) = pure $ toJSVal x
   toJSValSt (Character x) = pure $ toJSVal x
-  toJSValSt (Box xs) = pure $ toJSVal xs
+  toJSValSt (Box xs) = toJSValSt xs
   toJSValSt (Wrap fn) = toJSValSt fn
   toJSValSt (Struct ctx) = do
     scope <- readRef $ contextScope ctx

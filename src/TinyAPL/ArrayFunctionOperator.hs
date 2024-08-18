@@ -173,11 +173,11 @@ instance Show ScalarValue where
   show (Struct _) = [fst G.struct] ++ "..." ++ [snd G.struct]
 
 instance Show Array where
-  show (Array [] [s])                                                   = show s
+  show (Array [] [s])                     = show s
   show (Array [_] xs)
-    | not (null xs) && all (\case (Character _) -> True; _ -> False) xs = xs >>= show
-    | otherwise                                                         = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (show . fromScalar <$> xs) ++ [snd G.vector]
-  show arr                                                              = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (show <$> majorCells arr) ++ [snd G.highRank]
+    | not (null xs) && all isCharacter xs = xs >>= show
+    | otherwise                           = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (show . fromScalar <$> xs) ++ [snd G.vector]
+  show arr                                = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (show <$> majorCells arr) ++ [snd G.highRank]
 
 charRepr :: Char -> (String, Bool)
 charRepr c = case lookup c (swap <$> G.escapes) of
@@ -199,11 +199,19 @@ stringRepr str = [G.stringDelimiter] ++ concatMap (fst . charRepr) str ++ [G.str
 arrayRepr :: Array -> String
 arrayRepr (Array [] [s]) = scalarRepr s
 arrayRepr (Array [_] xs)
-  | not (null xs) && all (\case (Character _) -> True; _ -> False) xs = stringRepr $ (\case (Character c) -> c; _ -> undefined) <$> xs
+  | not (null xs) && all isCharacter xs = stringRepr $ asCharacter' <$> xs
   | otherwise = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (arrayRepr . fromScalar <$> xs) ++ [snd G.vector]
 arrayRepr arr = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (arrayRepr <$> majorCells arr) ++ [snd G.highRank]
 
 -- * Conversions
+
+isNumber :: ScalarValue -> Bool
+isNumber (Number _) = True
+isNumber _ = False
+
+isCharacter :: ScalarValue -> Bool
+isCharacter (Character _) = True
+isCharacter _ = False
 
 boolToScalar :: Bool -> ScalarValue
 boolToScalar True = Number 1
@@ -225,6 +233,14 @@ asBool e _ = throwError e
 asNumber :: MonadError Error m => Error -> ScalarValue -> m (Complex Double)
 asNumber _ (Number x) = pure x
 asNumber e _ = throwError e
+
+asCharacter :: MonadError Error m => Error -> ScalarValue -> m Char
+asCharacter _ (Character x) = pure x
+asCharacter e _ = throwError e
+
+asCharacter' :: ScalarValue -> Char
+asCharacter' (Character x) = x
+asCharacter' _ = error "asCharacter': not a character"
 
 asReal :: MonadError Error m => Error -> Complex Double -> m Double
 asReal e x
