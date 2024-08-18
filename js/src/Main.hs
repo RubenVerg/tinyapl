@@ -1,6 +1,42 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Main (main) where
+module Main
+  ( main
+  , newContext
+  , runCodeJS
+  , getGlobalsJS
+  , getGlobal
+  , setGlobal
+  , glyphsSyntaxJS
+  , glyphsIdentifiersJS
+  , glyphsArraysJS
+  , glyphsFunctionsJS
+  , glyphsAdverbsJS
+  , glyphsConjunctionsJS
+  , jsHighlight
+  , splitString
+  , joinString
+  , hlOther
+  , hlSyntax
+  , hlNumber
+  , hlString
+  , hlStringEscape
+  , hlArrayName
+  , hlPrimArray
+  , hlFunctionName
+  , hlPrimFunction
+  , hlAdverbName
+  , hlPrimAdverb
+  , hlConjunctionName
+  , hlPrimConjunction
+  , hlComment
+  , errUser
+  , errDomain
+  , errLength
+  , errRank
+  , errNYI
+  , errSyntax
+  , errAssertion) where  
 
 import JSBridge
 
@@ -15,15 +51,7 @@ import TinyAPL.Util
 import Data.IORef
 import GHC.Wasm.Prim
 import System.IO.Unsafe
-import Data.List
 import Data.Function
-import Data.Char
-
-toJSChar :: Char -> JSVal
-toJSChar = strToVal . toJSString . singleton
-
-foreign import javascript unsafe "return $1;" strToVal :: JSString -> JSVal
-foreign import javascript unsafe "return $1;" intToVal :: Int -> JSVal
 
 foreign export javascript "hs_start" main :: IO ()
 
@@ -103,8 +131,8 @@ newContext :: JSVal -> JSVal -> JSVal -> JSVal -> IO Int
 newContext input output error quads = do
   l <- length <$> readIORef contexts
   let qs = valToObject quads
-  let nilads = filter (isLower . head . fst) qs
-  let functions = filter (isUpper . head . fst) qs
+  let nilads = filter (isArrayName . fst) qs
+  let functions = filter (isFunctionName . fst) qs
   emptyScope <- newIORef $ Scope [] [] [] [] Nothing
   modifyIORef contexts (++ [Context
     { contextScope = emptyScope
@@ -193,17 +221,17 @@ foreign export javascript "tinyapl_glyphsFunctions" glyphsFunctionsJS :: JSArray
 foreign export javascript "tinyapl_glyphsAdverbs" glyphsAdverbsJS :: JSArray
 foreign export javascript "tinyapl_glyphsConjunctions" glyphsConjunctionsJS :: JSArray
 
-glyphsSyntaxJS = fromJSVal . toJSVal $ toJSChar <$> syntax
-glyphsIdentifiersJS = fromJSVal . toJSVal $ toJSChar <$> identifiers
-glyphsArraysJS = fromJSVal . toJSVal $ toJSChar <$> arrays
-glyphsFunctionsJS = fromJSVal . toJSVal $ toJSChar <$> functions
-glyphsAdverbsJS = fromJSVal . toJSVal $ toJSChar <$> adverbs
-glyphsConjunctionsJS = fromJSVal . toJSVal $ toJSChar <$> conjunctions
+glyphsSyntaxJS = fromJSVal $ toJSVal $ toJSVal <$> syntax :: JSArray
+glyphsIdentifiersJS = fromJSVal $ toJSVal $ toJSVal <$> identifiers :: JSArray
+glyphsArraysJS = fromJSVal $ toJSVal $ toJSVal <$> arrays :: JSArray 
+glyphsFunctionsJS = fromJSVal $ toJSVal $ toJSVal <$> functions :: JSArray
+glyphsAdverbsJS = fromJSVal $ toJSVal $ toJSVal <$> adverbs :: JSArray
+glyphsConjunctionsJS = fromJSVal $ toJSVal $ toJSVal <$> conjunctions :: JSArray
 
 foreign export javascript "tinyapl_highlight" jsHighlight :: JSString -> JSArray
 
 jsHighlight :: JSString -> JSArray
-jsHighlight = fromJSVal . toJSVal . map (intToVal . fromEnum). highlight . fromJSString
+jsHighlight = fromJSVal . toJSVal . map (toJSVal . fromEnum). highlight . fromJSString
 
 foreign export javascript "tinyapl_splitString" splitString :: JSString -> JSArray
 
