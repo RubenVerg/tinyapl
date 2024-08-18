@@ -111,6 +111,7 @@ run file src scope = do
 
 eval :: Tree -> St Value
 eval (Leaf _ tok)                   = evalLeaf tok
+eval (QualifiedBranch _ h ns)       = eval h >>= flip evalQualified ns
 eval (MonadCallBranch l r)          = do
   r' <- eval r
   l' <- eval l
@@ -128,6 +129,10 @@ eval (ConjunctionCallBranch l r)    = do
   l' <- eval l
   evalConjunctionCall l' r'
 eval (AssignBranch _ n val)         = eval val >>= evalAssign n
+eval (QualifiedAssignBranch _ h ns val) = do
+  rs <- eval val
+  head <- eval h
+  evalQualifiedAssign head ns rs
 eval (VectorAssignBranch ns val)    = eval val >>= evalVectorAssign ns
 eval (HighRankAssignBranch ns val)  = eval val >>= evalHighRankAssign ns
 eval (DefinedBranch cat statements) = evalDefined statements cat
@@ -160,21 +165,14 @@ eval (UnwrapBranch fn)              = do
     , functionContext = Nothing }
 eval (StructBranch es)              = evalStruct es
 
-resolve :: [String] -> St Context
-resolve [] = get
-resolve (name:_)
-  | isPrefixOf [G.quad] name = do
-    quads <- gets contextQuads
-    let nilad = lookup name $ quadArrays quads
-    case nilad of
-      Just x -> case niladGet x of
-        Just g -> g >>= asScalar (DomainError "Names of a qualifid identifier should be structs") >>= asStruct (DomainError "Names of a qualified identifier should be structs")
-        Nothing -> throwError $ SyntaxError $ "Quad name " ++ name ++ " cannot be accessed"
-      Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
-  | otherwise = do
-    sc <- gets contextScope >>= readRef
-    arr <- scopeLookupArray name sc >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist"))
-    asScalar (DomainError "Names of a qualifid identifier should be structs") arr >>= asStruct (DomainError "Names of a qualified identifier should be structs")
+resolve :: Context -> [String] -> St Context
+resolve ctx [] = pure ctx
+resolve ctx (name:ns) = do
+  sc <- readRef $ contextScope ctx
+  arr <- scopeLookupArray name sc >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist"))
+  asScalar (DomainError "Names of a qualifid identifier should be structs") arr
+    >>= asStruct (DomainError "Names of a qualified identifier should be structs")
+    >>= flip resolve ns
 
 evalLeaf :: Token -> St Value
 evalLeaf (TokenNumber [x] _)              = return $ VArray $ scalar $ Number x
@@ -190,7 +188,7 @@ evalLeaf (TokenPrimAdverb n _)            =
   lift $ except $ maybeToEither (SyntaxError $ "Unknown primitive adverb " ++ [n]) $ VAdverb <$> lookup n P.adverbs
 evalLeaf (TokenPrimConjunction n _)       =
   lift $ except $ maybeToEither (SyntaxError $ "Unknown primitive conjunction " ++ [n]) $ VConjunction <$> lookup n P.conjunctions
-evalLeaf (TokenArrayName [name] _)
+evalLeaf (TokenArrayName name _)
   | name == [G.quad]                      = do
     out <- gets contextOut
     input <- gets contextIn
@@ -214,11 +212,11 @@ evalLeaf (TokenArrayName [name] _)
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                             =
     gets contextScope >>= readRef >>= scopeLookupArray name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray)
-evalLeaf (TokenArrayName names val)       = do
-  let (q, l) = fromJust $ unsnoc names
-  ctx <- resolve q
-  runWithContext ctx $ evalLeaf $ TokenArrayName [l] val
-evalLeaf (TokenFunctionName [name] _)
+-- evalLeaf (TokenArrayName names val)       = do
+--   let (q, l) = fromJust $ unsnoc names
+--   ctx <- resolve q
+--   runWithContext ctx $ evalLeaf $ TokenArrayName [l] val
+evalLeaf (TokenFunctionName name _)
   | isPrefixOf [G.quad] name              = do
     quads <- gets contextQuads
     let fn = lookup name $ quadFunctions quads
@@ -227,11 +225,11 @@ evalLeaf (TokenFunctionName [name] _)
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                             =
     gets contextScope >>= readRef >>= scopeLookupFunction name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VFunction)
-evalLeaf (TokenFunctionName names val)    = do
-  let (q, l) = fromJust $ unsnoc names
-  ctx <- resolve q
-  runWithContext ctx $ evalLeaf $ TokenFunctionName [l] val
-evalLeaf (TokenAdverbName [name] _)
+-- evalLeaf (TokenFunctionName names val)    = do
+--   let (q, l) = fromJust $ unsnoc names
+--   ctx <- resolve q
+--   runWithContext ctx $ evalLeaf $ TokenFunctionName [l] val
+evalLeaf (TokenAdverbName name _)
   | isPrefixOf [G.quad] name              = do
     quads <- gets contextQuads
     let adv = lookup name $ quadAdverbs quads
@@ -240,11 +238,11 @@ evalLeaf (TokenAdverbName [name] _)
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                             =
     gets contextScope >>= readRef >>= scopeLookupAdverb name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VAdverb)
-evalLeaf (TokenAdverbName names val)      = do
-  let (q, l) = fromJust $ unsnoc names
-  ctx <- resolve q
-  runWithContext ctx $ evalLeaf $ TokenAdverbName [l] val
-evalLeaf (TokenConjunctionName [name] _)
+-- evalLeaf (TokenAdverbName names val)      = do
+--   let (q, l) = fromJust $ unsnoc names
+--   ctx <- resolve q
+--   runWithContext ctx $ evalLeaf $ TokenAdverbName [l] val
+evalLeaf (TokenConjunctionName name _)
   | isPrefixOf [G.quad] name              = do
     quads <- gets contextQuads
     let conj = lookup name $ quadConjunctions quads
@@ -253,11 +251,20 @@ evalLeaf (TokenConjunctionName [name] _)
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                             =
     gets contextScope >>= readRef >>= scopeLookupConjunction name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VConjunction)
-evalLeaf (TokenConjunctionName names val) = do
-  let (q, l) = fromJust $ unsnoc names
-  ctx <- resolve q
-  runWithContext ctx $ evalLeaf $ TokenConjunctionName [l] val
+-- evalLeaf (TokenConjunctionName names val) = do
+--   let (q, l) = fromJust $ unsnoc names
+--   ctx <- resolve q
+--   runWithContext ctx $ evalLeaf $ TokenConjunctionName [l] val
 evalLeaf _                             = throwError $ DomainError "Invalid leaf type in evaluation"
+
+evalQualified :: Value -> [String] -> St Value
+evalQualified head ns = do
+  let err = DomainError "Qualified name head should be a scalar struct"
+  let (q, l) = fromJust $ unsnoc ns
+  headCtx <- unwrapArray err head >>= asScalar err >>= asStruct err
+  ctx <- resolve headCtx q
+  scope <- readRef $ contextScope ctx
+  scopeLookup l scope >>= lift . except . maybeToEither (SyntaxError $ "Qualified variable " ++ l ++ " does not exist")
 
 evalMonadCall :: Value -> Value -> St Value
 evalMonadCall (VFunction fn) (VArray arr) = VArray <$> callMonad fn arr
@@ -280,8 +287,8 @@ evalConjunctionCall (VConjunction conj) (VFunction r) =
   return $ VAdverb $ Adverb { adverbOnArray = Just (\x -> callOnArrayAndFunction conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndFunction conj x r), adverbRepr = "(" ++ show conj ++ show r ++ ")", adverbContext = conjContext conj }
 evalConjunctionCall _ _                               = throwError $ DomainError "Invalid arguments to conjunction call evaluation"
 
-evalAssign :: [String] -> Value -> St Value
-evalAssign [name] val
+evalAssign :: String -> Value -> St Value
+evalAssign name val
   | name == [G.quad] = do
     arr <- unwrapArray (DomainError "Cannot print non-array") val
     out <- gets contextOut
@@ -306,10 +313,15 @@ evalAssign [name] val
   | otherwise = do
     gets contextScope >>= flip modifyRef (scopeUpdate name val)
     return val
-evalAssign names val = do
-  let (q, l) = fromJust $ unsnoc names
-  ctx <- resolve q
-  runWithContext ctx $ evalAssign [l] val
+
+evalQualifiedAssign head ns val = do
+  let err = DomainError "Qualified name head should be a scalar struct"
+  let (q, l) = fromJust $ unsnoc ns
+  headCtx <- unwrapArray err head >>= asScalar err >>= asStruct err
+  ctx <- resolve headCtx q
+  scope <- readRef $ contextScope ctx
+  scopeLookup l scope >>= lift . except . maybeToEither (SyntaxError $ "Qualified variable " ++ l ++ " does not exist")
+  runWithContext ctx $ evalAssign l val
 
 evalVectorAssign :: [String] -> Value -> St Value
 evalVectorAssign ns val =
