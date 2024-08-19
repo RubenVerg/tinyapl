@@ -257,14 +257,104 @@ instance IsJSSt Function where
       pure $ Function {
         functionRepr = repr,
         functionContext = Just $ ctx{ contextScope = sc },
-        functionMonad = if jsIsUndefined monad then Nothing else Just $ (\x -> liftToSt $ fromJSVal <$> jsCall1 monad (toJSVal x)),
-        functionDyad = if jsIsUndefined dyad then Nothing else Just $ (\x y -> liftToSt $ fromJSVal <$> jsCall2 dyad (toJSVal x) (toJSVal y)) }
+        functionMonad = if jsIsUndefined monad then Nothing else Just $ (\x -> toJSValSt x >>= liftToSt . jsCall1 monad >>= fromJSValSt),
+        functionDyad = if jsIsUndefined dyad then Nothing else Just $ (\x y -> do
+          x' <- toJSValSt x
+          y' <- toJSValSt y
+          liftToSt (jsCall2 dyad x' y') >>= fromJSValSt) }
     | otherwise = throwError $ DomainError "fromJSValSt Function: not a function"
   toJSValSt f = do
     ctx <- getContext
-    monad <- liftToSt $ jsWrap1 $ \x -> toJSVal . second fst <$> (runResult $ runSt (callMonad f (fromJSVal x)) ctx)
-    dyad <- liftToSt $ jsWrap2 $ \x y -> toJSVal . second fst <$> (runResult $ runSt (callDyad f (fromJSVal x) (fromJSVal y)) ctx)
+    monad <- liftToSt $ jsWrap1 $ \x -> do
+      x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
+      r <- second fst <$> (runResult $ runSt (callMonad f x') ctx)
+      fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
+    dyad <- liftToSt $ jsWrap2 $ \x y -> do
+      x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
+      y' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt y) ctx)
+      r <- second fst <$> (runResult $ runSt (callDyad f x' y') ctx)
+      fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
     pure $ objectToVal [("type", toJSVal $ toJSString "function"), ("repr", toJSVal $ toJSString $ functionRepr f), ("monad", monad), ("dyad", dyad)]
+
+instance IsJSSt Adverb where
+  fromJSValSt v
+    | fromJSVal (jsLookup v $ toJSString "type") == "adverb" = do
+      let repr = fromJSString $ fromJSVal $ jsLookup v $ toJSString "repr"
+      let onArray = jsLookup v $ toJSString "array"
+      let onFunction = jsLookup v $ toJSString "function"
+      sc <- createRef $ Scope [] [] [] [] Nothing
+      ctx <- getContext
+      pure $ Adverb {
+        adverbRepr = repr,
+        adverbContext = Just $ ctx{ contextScope = sc },
+        adverbOnArray = if jsIsUndefined onArray then Nothing else Just $ (\x -> toJSValSt x >>= liftToSt . jsCall1 onArray >>= fromJSValSt),
+        adverbOnFunction = if jsIsUndefined onFunction then Nothing else Just $ (\x -> toJSValSt x >>= liftToSt . jsCall1 onFunction >>= fromJSValSt) }
+    | otherwise = throwError $ DomainError "fromJSValSt Adverb: not an adverb"
+  toJSValSt a = do
+    ctx <- getContext
+    onArray <- liftToSt $ jsWrap1 $ \x -> do
+      x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
+      r <- second fst <$> (runResult $ runSt (callOnArray a x') ctx)
+      fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
+    onFunction <- liftToSt $ jsWrap1 $ \x -> do
+      x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
+      r <- second fst <$> (runResult $ runSt (callOnFunction a x') ctx)
+      fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
+    pure $ objectToVal [("type", toJSVal $ toJSString "adverb"), ("repr", toJSVal $ toJSString $ adverbRepr a), ("array", onArray), ("function", onFunction)]
+
+instance IsJSSt Conjunction where
+  fromJSValSt v
+    | fromJSVal (jsLookup v $ toJSString "type") == "conjunction" = do
+      let repr = fromJSString $ fromJSVal $ jsLookup v $ toJSString "repr"
+      let onArrayArray = jsLookup v $ toJSString "arrayArray"
+      let onArrayFunction = jsLookup v $ toJSString "arrayFunction"
+      let onFunctionArray = jsLookup v $ toJSString "functionArray"
+      let onFunctionFunction = jsLookup v $ toJSString "functionFunction"
+      sc <- createRef $ Scope [] [] [] [] Nothing
+      ctx <- getContext
+      pure $ Conjunction {
+        conjRepr = repr,
+        conjContext = Just $ ctx{ contextScope = sc },
+        conjOnArrayArray = if jsIsUndefined onArrayArray then Nothing else Just $ (\x y -> do
+          x' <- toJSValSt x
+          y' <- toJSValSt y
+          liftToSt (jsCall2 onArrayArray x' y') >>= fromJSValSt),
+        conjOnArrayFunction = if jsIsUndefined onArrayFunction then Nothing else Just $ (\x y -> do
+          x' <- toJSValSt x
+          y' <- toJSValSt y
+          liftToSt (jsCall2 onArrayFunction x' y') >>= fromJSValSt),
+        conjOnFunctionArray = if jsIsUndefined onFunctionArray then Nothing else Just $ (\x y -> do
+          x' <- toJSValSt x
+          y' <- toJSValSt y
+          liftToSt (jsCall2 onFunctionArray x' y') >>= fromJSValSt),
+        conjOnFunctionFunction = if jsIsUndefined onFunctionFunction then Nothing else Just $ (\x y -> do
+          x' <- toJSValSt x
+          y' <- toJSValSt y
+          liftToSt (jsCall2 onFunctionFunction x' y') >>= fromJSValSt) }
+    | otherwise = throwError $ DomainError "fromJSValSt Conjunction: not a conjunction"
+  toJSValSt c = do
+    ctx <- getContext
+    onArrayArray <- liftToSt $ jsWrap2 $ \x y -> do
+      x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
+      y' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt y) ctx)
+      r <- second fst <$> (runResult $ runSt (callOnArrayAndArray c x' y') ctx)
+      fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
+    onArrayFunction <- liftToSt $ jsWrap2 $ \x y -> do
+      x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
+      y' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt y) ctx)
+      r <- second fst <$> (runResult $ runSt (callOnArrayAndFunction c x' y') ctx)
+      fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
+    onFunctionArray <- liftToSt $ jsWrap2 $ \x y -> do
+      x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
+      y' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt y) ctx)
+      r <- second fst <$> (runResult $ runSt (callOnFunctionAndArray c x' y') ctx)
+      fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
+    onFunctionFunction <- liftToSt $ jsWrap2 $ \x y -> do
+      x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
+      y' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt y) ctx)
+      r <- second fst <$> (runResult $ runSt (callOnFunctionAndFunction c x' y') ctx)
+      fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
+    pure $ objectToVal [("type", toJSVal $ toJSString "conjunction"), ("repr", toJSVal $ toJSString $ conjRepr c), ("arrayArray", onArrayArray), ("arrayFunction", onArrayFunction), ("functionArray", onFunctionArray), ("functionFunction", onFunctionFunction)]
 
 instance IsJSSt Value where
   fromJSValSt v
@@ -273,4 +363,5 @@ instance IsJSSt Value where
     | otherwise = throwError $ DomainError "fromJSValSt Value: unknown type"
   toJSValSt (VArray arr) = toJSValSt arr
   toJSValSt (VFunction f) = toJSValSt f
-  toJSValSt _ = throwError $ DomainError "toJSValSt Value: unsupported type"
+  toJSValSt (VAdverb adv) = toJSValSt adv
+  toJSValSt (VConjunction conj) = toJSValSt conj
