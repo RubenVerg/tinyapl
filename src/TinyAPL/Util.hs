@@ -9,6 +9,7 @@ import GHC.Float.RealFracMethods (truncateDoubleInteger)
 import Data.Char (intToDigit)
 import Data.List (genericLength, genericIndex, unsnoc)
 import Data.Vector.Internal.Check (HasCallStack)
+import qualified Data.List.NonEmpty as NE
 
 infixr 9 .:
 (.:) f g x y = f $ g x y
@@ -16,6 +17,13 @@ infixr 9 .:
 snoc :: [a] -> a -> [a]
 snoc [] x = [x]
 snoc (x:xs) y = x : snoc xs y
+
+snocNE :: [a] -> a -> NE.NonEmpty a
+snocNE [] x = NE.singleton x
+snocNE (x:xs) y = x NE.:| snoc xs y
+
+unsnocNE :: NE.NonEmpty a -> ([a], a)
+unsnocNE xs = (NE.init xs, NE.last xs)
 
 headMaybe :: [a] -> Maybe a
 headMaybe [] = Nothing

@@ -1,4 +1,4 @@
-{-# LANGUAGE NegativeLiterals #-}
+{-# LANGUAGE NegativeLiterals, OverloadedLists #-}
 
 module TinyAPL.ParserSpec where
 
@@ -8,6 +8,7 @@ import TinyAPL.Parser
 import Test.Hspec
 
 import TinyAPL.Complex
+import Data.List.NonEmpty ()
 
 spec :: Spec
 spec = do
@@ -101,10 +102,10 @@ spec = do
       tok "_{3⋄1}_" `shouldBe` pure [[TokenDconj [[TokenNumber [3] emptyPos], [TokenNumber [1] emptyPos]] emptyPos]]
 
     it "parses wraps" $ do
-      tok "(□+)" `shouldBe` pure [[TokenWrap [TokenPrimFunction '+' emptyPos] emptyPos]]
+      tok "(⊏+)" `shouldBe` pure [[TokenWrap [TokenPrimFunction '+' emptyPos] emptyPos]]
 
     it "parses unwraps" $ do
-      tok "(⊏3)" `shouldBe` pure [[TokenUnwrap [TokenNumber [3] emptyPos] emptyPos]]
+      tok "(⊐3)" `shouldBe` pure [[TokenUnwrap [TokenNumber [3] emptyPos] emptyPos]]
     
     it "parses guards" $ do
       tok "{1:2}" `shouldBe` pure [[TokenDfn [[TokenGuard [TokenNumber [1] emptyPos] [TokenNumber [2] emptyPos] emptyPos]] emptyPos]]
@@ -123,11 +124,11 @@ spec = do
       tok "(1 2)" `shouldBe` pure [[TokenParens [TokenNumber [1] emptyPos, TokenNumber [2] emptyPos] emptyPos]]
 
     it "parses trains and modifier trains" $ do
-      tok "⦅1⋄2⦆" `shouldBe` pure [[TokenTrain [Just $ [TokenNumber [1] emptyPos], Just $ [TokenNumber [2] emptyPos]] emptyPos]]
-      tok "⦅1⋄2⋄3⦆" `shouldBe` pure [[TokenTrain [Just $ [TokenNumber [1] emptyPos], Just $ [TokenNumber [2] emptyPos], Just $ [TokenNumber [3] emptyPos]] emptyPos]]
-      tok "⦅1⋄⋄2⋄3⦆" `shouldBe` pure [[TokenTrain [Just $ [TokenNumber [1] emptyPos], Nothing, Just $ [TokenNumber [2] emptyPos], Just $ [TokenNumber [3] emptyPos]] emptyPos]]
-      tok "_⦅1⋄2⋄3⦆" `shouldBe` pure [[TokenAdverbTrain [Just $ [TokenNumber [1] emptyPos], Just $ [TokenNumber [2] emptyPos], Just $ [TokenNumber [3] emptyPos]] emptyPos]]
-      tok "_⦅1⋄2⋄3⦆_" `shouldBe` pure [[TokenConjunctionTrain [Just $ [TokenNumber [1] emptyPos], Just $ [TokenNumber [2] emptyPos], Just $ [TokenNumber [3] emptyPos]] emptyPos]]
+      tok "⦅1⋄2⦆" `shouldBe` pure [[TokenTrain [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos]] emptyPos]]
+      tok "⦅1⋄2⋄3⦆" `shouldBe` pure [[TokenTrain [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos], [TokenNumber [3] emptyPos]] emptyPos]]
+      tok "⦅1⋄⋄2⋄3⦆" `shouldBe` pure [[TokenTrain [[TokenNumber [1] emptyPos], [], [TokenNumber [2] emptyPos], [TokenNumber [3] emptyPos]] emptyPos]]
+      tok "_⦅1⋄2⋄3⦆" `shouldBe` pure [[TokenAdverbTrain [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos], [TokenNumber [3] emptyPos]] emptyPos]]
+      tok "_⦅1⋄2⋄3⦆_" `shouldBe` pure [[TokenConjunctionTrain [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos], [TokenNumber [3] emptyPos]] emptyPos]]
 
     it "parses destructuring assignment" $ do
       tok "⟨a⋄b⟩←9" `shouldBe` pure [[TokenVectorAssign ["a", "b"] [TokenNumber [9] emptyPos] emptyPos]]
@@ -231,17 +232,17 @@ spec = do
 
     describe "wraps" $ do
       it "parses wraps of functions" $ do
-        par "(□+)" `shouldBe` pure [WrapBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
+        par "(⊏+)" `shouldBe` pure [WrapBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
 
       it "fails on wraps of non-functions" $ do
-        par "(□3)" `shouldBe` Nothing
+        par "(⊏3)" `shouldBe` Nothing
 
     describe "unwraps" $ do
       it "parses unwraps of arrays" $ do
-        par "(⊏3)" `shouldBe` pure [UnwrapBranch (Leaf CatArray (TokenNumber [3] emptyPos))]
+        par "(⊐3)" `shouldBe` pure [UnwrapBranch (Leaf CatArray (TokenNumber [3] emptyPos))]
 
       it "fails on unwraps of non-arrays" $ do
-        par "(⊏+)" `shouldBe` Nothing
+        par "(⊐+)" `shouldBe` Nothing
 
     describe "structs" $ do
       it "parses structs" $ do
