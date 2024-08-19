@@ -119,4 +119,4 @@ math = Nilad (Just $ do
     , artanhF
     ]) [] [] Nothing)
   ctx <- get
-  pure $ scalar $ Struct $ ctx{ contextScope = scope } ) Nothing (G.quad : "math")
+  pure $ scalar $ Struct $ ctx{ contextScope = scope } ) Nothing (G.quad : "math") Nothing

@@ -13,6 +13,7 @@ import TinyAPL.Complex
 import Data.List
 import Data.Bifunctor
 import Data.Foldable
+import Control.Monad (void)
 
 class IsJS a where
   fromJSVal :: JSVal -> a
@@ -25,6 +26,10 @@ class IsJSSt a where
 instance IsJS JSVal where
   fromJSVal = id
   toJSVal = id
+
+instance IsJSSt JSVal where
+  fromJSValSt = pure
+  toJSValSt = pure
 
 instance IsJS () where
   fromJSVal = const ()
@@ -240,9 +245,11 @@ instance IsJSSt a => IsJSSt (Either Error a) where
   toJSValSt (Left err) = pure $ toJSVal err
   toJSValSt (Right x) = toJSValSt x
 
+foreign import javascript safe "return await $1();" jsCall0 :: JSVal -> IO JSVal
 foreign import javascript safe "return await $1($2);" jsCall1 :: JSVal -> JSVal -> IO JSVal
 foreign import javascript safe "return await $1($2, $3);" jsCall2 :: JSVal -> JSVal -> JSVal -> IO JSVal
 
+foreign import javascript unsafe "wrapper" jsWrap0 :: IO JSVal -> IO JSVal
 foreign import javascript unsafe "wrapper" jsWrap1 :: (JSVal -> IO JSVal) -> IO JSVal
 foreign import javascript unsafe "wrapper" jsWrap2 :: (JSVal -> JSVal -> IO JSVal) -> IO JSVal
 
@@ -365,3 +372,26 @@ instance IsJSSt Value where
   toJSValSt (VFunction f) = toJSValSt f
   toJSValSt (VAdverb adv) = toJSValSt adv
   toJSValSt (VConjunction conj) = toJSValSt conj
+
+instance IsJSSt Nilad where
+  fromJSValSt v = do
+    let repr = fromJSString $ fromJSVal $ jsLookup v $ toJSString "repr"
+    let get = jsLookup v $ toJSString "get"
+    let set = jsLookup v $ toJSString "set"
+    sc <- createRef $ Scope [] [] [] [] Nothing
+    ctx <- getContext
+    pure $ Nilad {
+      niladRepr = repr,
+      niladContext = Just $ ctx{ contextScope = sc },
+      niladGet = if jsIsUndefined get then Nothing else Just $ (liftToSt (jsCall0 get) >>= fromJSValSt),
+      niladSet = if jsIsUndefined set then Nothing else Just $ (\x -> void $ toJSValSt x >>= liftToSt . jsCall1 set) }
+  toJSValSt n = do
+    ctx <- getContext
+    get <- liftToSt $ jsWrap0 $ do
+      r <- second fst <$> (runResult $ runSt (getNilad n) ctx)
+      fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
+    set <- liftToSt $ jsWrap1 $ \x -> do
+      x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
+      r <- second (const jsUndefined) <$> (runResult $ runSt (setNilad n x') ctx)
+      fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
+    pure $ objectToVal [("type", toJSVal $ toJSString "nilad"), ("repr", toJSVal $ toJSString $ niladRepr n), ("get", get), ("set", set)]

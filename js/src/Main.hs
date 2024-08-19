@@ -85,7 +85,7 @@ lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
     case l of
       Just (VArray arr) -> return arr
       _ -> throwError noLast
-  ) Nothing (quad : "last")] [Function (Just $ \y -> do
+  ) Nothing (quad : "last") Nothing] [Function (Just $ \y -> do
     l <- readLast
     case l of
       Just (VFunction f) -> callMonad f y
@@ -146,7 +146,7 @@ newContext input output error quads = do
           r <- liftToSt $ fmap fromJSVal $ jsSetNilad f $ toJSVal y
           case r of
             Just err -> throwError err
-            Nothing -> pure ()) (quad : n)) <$> nilads)
+            Nothing -> pure ()) (quad : n) Nothing) <$> nilads)
         ((\(n, f) -> Function (Just $ \y -> do
           r <- liftToSt $ fmap fromJSVal $ jsCallMonad f $ toJSVal y
           case r of
