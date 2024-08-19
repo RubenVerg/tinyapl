@@ -23,8 +23,8 @@ comment = '⍝'
 inlineComment = ('⟃', '⟄')
 tie = '‿'
 train = ('⦅', '⦆')
-wrap = '□'
-unwrap = '⊏'
+wrap = '⊏'
+unwrap = '⊐'
 struct = ('⦃', '⦄')
 access = '→'
 

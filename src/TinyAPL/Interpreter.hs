@@ -14,8 +14,9 @@ import Control.Monad.State
 import Data.Foldable (foldlM)
 import Control.Monad
 import Data.List
-import Data.Maybe (fromJust)
 import Data.Bifunctor
+import Data.List.NonEmpty (NonEmpty((:|)))
+import qualified Data.List.NonEmpty as NE
 
 data Value
   = VArray Array
@@ -257,10 +258,10 @@ evalLeaf (TokenConjunctionName name _)
 --   runWithContext ctx $ evalLeaf $ TokenConjunctionName [l] val
 evalLeaf _                             = throwError $ DomainError "Invalid leaf type in evaluation"
 
-evalQualified :: Value -> [String] -> St Value
+evalQualified :: Value -> NonEmpty String -> St Value
 evalQualified head ns = do
   let err = DomainError "Qualified name head should be a scalar struct"
-  let (q, l) = fromJust $ unsnoc ns
+  let (q, l) = unsnocNE ns
   headCtx <- unwrapArray err head >>= asScalar err >>= asStruct err
   ctx <- resolve headCtx q
   scope <- readRef $ contextScope ctx
@@ -314,9 +315,10 @@ evalAssign name val
     gets contextScope >>= flip modifyRef (scopeUpdate name val)
     return val
 
+evalQualifiedAssign :: Value -> NonEmpty String -> Value -> St Value
 evalQualifiedAssign head ns val = do
   let err = DomainError "Qualified name head should be a scalar struct"
-  let (q, l) = fromJust $ unsnoc ns
+  let (q, l) = unsnocNE ns
   headCtx <- unwrapArray err head >>= asScalar err >>= asStruct err
   ctx <- resolve headCtx q
   scope <- readRef $ contextScope ctx
@@ -345,7 +347,7 @@ evalHighRankAssign ns val =
       modifyRef scope $ (\sc -> foldr (\(n, e) sc' -> scopeUpdateArray n e sc') sc $ zip ns es)
       return val
 
-evalDefined :: [Tree] -> Category -> St Value
+evalDefined :: NonEmpty Tree -> Category -> St Value
 evalDefined statements cat = let
   ev :: Tree -> St (Value, Bool)
   ev (GuardBranch check result) = do
@@ -355,12 +357,12 @@ evalDefined statements cat = let
   ev (ExitBranch result) = (, True) <$> eval result
   ev other = (, False) <$> eval other
 
-  runDefined :: [Tree] -> St Value
-  runDefined [] = throwError $ DomainError "Eval empty dfn/dadv/dconj"
-  runDefined [x] = fst <$> ev x
-  runDefined (x:xs) = do
-    (v, r) <- ev x
-    if r then return v else runDefined xs
+  runDefined :: NonEmpty Tree -> St Value
+  runDefined (x :| xs) = case NE.nonEmpty xs of
+    Nothing -> fst <$> ev x
+    Just xs -> do
+      (v, r) <- ev x
+      if r then return v else runDefined xs
 
   run xs sc = inChildScope xs (runDefined statements) sc >>= unwrapArray (DomainError "Dfn must return an array")
   in do
