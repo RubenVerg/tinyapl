@@ -20,9 +20,22 @@ import Control.Monad ((>=>))
 import Data.Void (Void)
 import Text.Parser.Combinators (sepByNonEmpty)
 import qualified Data.List.NonEmpty as NE
-import Data.List.NonEmpty (NonEmpty((:|)))
+import Data.List.NonEmpty (NonEmpty ((:|)))
 
 type Parser = Parsec Void String
+
+data AssignType
+  = AssignNormal
+  | AssignModify
+  deriving (Eq)
+
+instance Show AssignType where
+  show AssignNormal = "normal"
+  show AssignModify = "modify"
+
+assignTypeArrow :: AssignType -> Char
+assignTypeArrow AssignNormal = G.assign
+assignTypeArrow AssignModify = G.assignModify
 
 data Token
   = TokenNumber [(Complex Double)] SourcePos
@@ -43,10 +56,10 @@ data Token
   | TokenQualifiedFunctionName Token (NonEmpty String) SourcePos
   | TokenQualifiedAdverbName Token (NonEmpty String) SourcePos
   | TokenQualifiedConjunctionName Token (NonEmpty String) SourcePos
-  | TokenArrayAssign String (NonEmpty Token) SourcePos
-  | TokenFunctionAssign String (NonEmpty Token) SourcePos
-  | TokenAdverbAssign String (NonEmpty Token) SourcePos
-  | TokenConjunctionAssign String (NonEmpty Token) SourcePos
+  | TokenArrayAssign String AssignType (NonEmpty Token) SourcePos
+  | TokenFunctionAssign String AssignType (NonEmpty Token) SourcePos
+  | TokenAdverbAssign String AssignType (NonEmpty Token) SourcePos
+  | TokenConjunctionAssign String AssignType (NonEmpty Token) SourcePos
   | TokenQualifiedArrayAssign Token (NonEmpty String) (NonEmpty Token) SourcePos
   | TokenQualifiedFunctionAssign Token (NonEmpty String) (NonEmpty Token) SourcePos
   | TokenQualifiedAdverbAssign Token (NonEmpty String) (NonEmpty Token) SourcePos
@@ -84,10 +97,10 @@ instance Eq Token where
   (TokenQualifiedFunctionName x _ _) == (TokenQualifiedFunctionName y _ _) = x == y
   (TokenQualifiedAdverbName x _ _) == (TokenQualifiedAdverbName y _ _) = x == y
   (TokenQualifiedConjunctionName x _ _) == (TokenQualifiedConjunctionName y _ _) = x == y
-  (TokenArrayAssign xn x _) == (TokenArrayAssign yn y _) = xn == yn && x == y
-  (TokenFunctionAssign xn x _) == (TokenFunctionAssign yn y _) = xn == yn && x == y
-  (TokenAdverbAssign xn x _) == (TokenAdverbAssign yn y _) = xn == yn && x == y
-  (TokenConjunctionAssign xn x _) == (TokenConjunctionAssign yn y _) = xn == yn && x == y
+  (TokenArrayAssign xn xc x _) == (TokenArrayAssign yn yc y _) = xn == yn && xc == yc && x == y
+  (TokenFunctionAssign xn xc x _) == (TokenFunctionAssign yn yc y _) = xn == yn && xc == yc && x == y
+  (TokenAdverbAssign xn xc x _) == (TokenAdverbAssign yn yc y _) = xn == yn && xc == yc && x == y
+  (TokenConjunctionAssign xn xc x _) == (TokenConjunctionAssign yn yc y _) = xn == yn && xc == yc && x == y
   (TokenQualifiedArrayAssign xh xs xv _) == (TokenQualifiedArrayAssign yh ys yv _) = xh == yh && xs == ys && xv == yv
   (TokenQualifiedFunctionAssign xh xs xv _) == (TokenQualifiedFunctionAssign yh ys yv _) = xh == yh && xs == ys && xv == yv
   (TokenQualifiedAdverbAssign xh xs xv _) == (TokenQualifiedAdverbAssign yh ys yv _) = xh == yh && xs == ys && xv == yv
@@ -126,10 +139,10 @@ instance Show Token where
   show (TokenQualifiedFunctionName t ns _) = "(qualified function name " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ ")"
   show (TokenQualifiedAdverbName t ns _) = "(qualified adverb name " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ ")"
   show (TokenQualifiedConjunctionName t ns _) = "(qualified conjunction name " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ ")"
-  show (TokenArrayAssign x xs _) = "(array assign " ++ x ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
-  show (TokenFunctionAssign x xs _) = "(function assign " ++ x ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
-  show (TokenAdverbAssign x xs _) = "(adverb assign " ++ x ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
-  show (TokenConjunctionAssign x xs _) = "(conjunction assign " ++ x ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenArrayAssign x c xs _) = "(array assign " ++ x ++ [' ', assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenFunctionAssign x c xs _) = "(function assign " ++ x ++ [' ', assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenAdverbAssign x c xs _) = "(adverb assign " ++ x ++ [' ', assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenConjunctionAssign x c xs _) = "(conjunction assign " ++ x ++ [' ', assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenQualifiedArrayAssign t ns xs _) = "(qualified array assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenQualifiedFunctionAssign t ns xs _) = "(qualified function assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenQualifiedAdverbAssign t ns xs _) = "(qualified adverb assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
@@ -167,10 +180,10 @@ tokenPos (TokenQualifiedArrayName _ _ pos) = pos
 tokenPos (TokenQualifiedFunctionName _ _ pos) = pos
 tokenPos (TokenQualifiedAdverbName _ _ pos) = pos
 tokenPos (TokenQualifiedConjunctionName _ _ pos) = pos
-tokenPos (TokenArrayAssign _ _ pos) = pos
-tokenPos (TokenFunctionAssign _ _ pos) = pos
-tokenPos (TokenAdverbAssign _ _ pos) = pos
-tokenPos (TokenConjunctionAssign _ _ pos) = pos
+tokenPos (TokenArrayAssign _ _ _ pos) = pos
+tokenPos (TokenFunctionAssign _ _ _ pos) = pos
+tokenPos (TokenAdverbAssign _ _ _ pos) = pos
+tokenPos (TokenConjunctionAssign _ _ _ pos) = pos
 tokenPos (TokenQualifiedArrayAssign _ _ _ pos) = pos
 tokenPos (TokenQualifiedFunctionAssign _ _ _ pos) = pos
 tokenPos (TokenQualifiedAdverbAssign _ _ _ pos) = pos
@@ -239,6 +252,9 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   assign :: (a -> NonEmpty Token -> SourcePos -> b) -> Parser a -> Parser b
   assign con name = withPos $ liftA2 con (lexeme name `commitOn` char G.assign) bits
 
+  assign' :: (a -> AssignType -> NonEmpty Token -> SourcePos -> b) -> Parser a -> Parser b
+  assign' con name = withPos $ liftA2 ($) (commitOn' con (lexeme name) (char G.assign $> AssignNormal <|> char G.assignModify $> AssignModify)) bits
+
   arrayName :: Parser String
   arrayName = try (liftA3 (\x y z -> x : y : z) (char G.quad) (oneOf arrayStart) (many $ oneOf identifierRest)) <|> try (string [G.alpha, G.alpha]) <|> try (string [G.omega, G.omega]) <|> try (string [G.alpha]) <|> try (string [G.omega]) <|> try (string [G.quad]) <|> try (string [G.quadQuote]) <|> liftA2 (:) (oneOf arrayStart) (many $ oneOf identifierRest)
 
@@ -257,16 +273,16 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     pure $ make first $ snocNE middle last
 
   arrayAssign :: Parser Token
-  arrayAssign = assign TokenArrayAssign arrayName
+  arrayAssign = assign' TokenArrayAssign arrayName
 
   functionAssign :: Parser Token
-  functionAssign = assign TokenFunctionAssign functionName
+  functionAssign = assign' TokenFunctionAssign functionName
 
   adverbAssign :: Parser Token
-  adverbAssign = assign TokenAdverbAssign adverbName
+  adverbAssign = assign' TokenAdverbAssign adverbName
 
   conjunctionAssign :: Parser Token
-  conjunctionAssign = assign TokenConjunctionAssign conjunctionName
+  conjunctionAssign = assign' TokenConjunctionAssign conjunctionName
 
   vectorAssign :: Parser Token
   vectorAssign = assign TokenVectorAssign $ between (char $ fst G.vector) (char $ snd G.vector) (sepBy arrayName separator)
@@ -431,7 +447,7 @@ data Tree
   | DyadCallBranch { dyadCallBranchLeft :: Tree, dyadCallBranchRight :: Tree }
   | AdverbCallBranch { adverbCallBranchLeft :: Tree, adverbCallBranchRight :: Tree }
   | ConjunctionCallBranch { conjunctionCallBranchLeft :: Tree, conjunctionCallBranchRight :: Tree }
-  | AssignBranch { assignmentBranchCategory :: Category, assignmentName :: String, assignmentValue :: Tree }
+  | AssignBranch { assignmentBranchCategory :: Category, assignmentName :: String, assignBranchType :: AssignType, assignmentValue :: Tree }
   | QualifiedAssignBranch { qualifiedAssignBranchCategory :: Category, qualifiedAssignBranchHead :: Tree, qualifiedAssignBranchNames :: NonEmpty String, qualifiedAssignBranchValue :: Tree }
   | VectorAssignBranch { vectorAssignBranchNames :: [String], vectorAssignBranchValue :: Tree }
   | HighRankAssignBranch { highRankAssignBranchNames :: [String], highRankAssignBranchValue :: Tree }
@@ -457,7 +473,7 @@ instance Show Tree where
       (DyadCallBranch l r)             -> [indent ++ "dyad left call"] ++ go (i + 1) l ++ go (i + 1) r
       (AdverbCallBranch l r)           -> [indent ++ "adverb call"] ++ go (i + 1) l ++ go (i + 1) r
       (ConjunctionCallBranch l r)      -> [indent ++ "conjunction right call"] ++ go (i + 1) l ++ go (i + 1) r
-      (AssignBranch c n v)             -> (indent ++ show c ++ " " ++ n ++ " ←") : go (i + 1) v
+      (AssignBranch c n t v)           -> (indent ++ show c ++ " " ++ n ++ " " ++ [assignTypeArrow t] ++ "") : go (i + 1) v
       (QualifiedAssignBranch c h ns v) -> (indent ++ show c ++ " ..." ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ " ← ...") : go (i + 1) h ++ (indent ++ "←") : go (i + 1) v
       (VectorAssignBranch ns v)        -> (indent ++ "⟨⟩ " ++ unwords (show <$> ns) ++ " ←") : go (i + 1) v
       (HighRankAssignBranch ns v)      -> (indent ++ "[] " ++ unwords (show <$> ns) ++ " ←") : go (i + 1) v
@@ -478,7 +494,7 @@ treeCategory (MonadCallBranch _ _)           = CatArray
 treeCategory (DyadCallBranch _ _)            = CatAppliedFunction
 treeCategory (AdverbCallBranch _ _)          = CatFunction
 treeCategory (ConjunctionCallBranch _ _)     = CatAdverb
-treeCategory (AssignBranch c _ _)            = c
+treeCategory (AssignBranch c _ _ _)          = c
 treeCategory (QualifiedAssignBranch c _ _ _) = c
 treeCategory (VectorAssignBranch _ _)        = CatArray
 treeCategory (HighRankAssignBranch _ _)      = CatArray
@@ -546,8 +562,8 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
     else if treeCategory (NE.last ss) /= CatArray then throwError $ makeSyntaxError (tokenPos $ NE.head $ NE.last statements) source $ "Invalid " ++ name ++ ": last statement must be an array"
     else Right $ DefinedBranch cat ss
 
-  assignment :: Category -> String -> NonEmpty Token -> SourcePos -> Result Tree
-  assignment cat name ts pos = AssignBranch cat name <$> (categorizeAndBind ts >>=
+  assignment :: Category -> String -> AssignType -> NonEmpty Token -> SourcePos -> Result Tree
+  assignment cat name ty ts pos = AssignBranch cat name ty <$> (categorizeAndBind ts >>=
     requireOfCategory cat (\c -> makeSyntaxError pos source $ "Invalid assignment of " ++ show c ++ " to " ++ show cat ++ " name"))
 
   qualifiedAssignment :: Category -> Token -> NonEmpty String -> NonEmpty Token -> Result Tree
@@ -595,10 +611,10 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   tokenToTree (TokenQualifiedFunctionName h ns _)         = qualified CatFunction h ns
   tokenToTree (TokenQualifiedAdverbName h ns _)           = qualified CatAdverb h ns
   tokenToTree (TokenQualifiedConjunctionName h ns _)      = qualified CatConjunction h ns
-  tokenToTree (TokenArrayAssign name ts pos)              = assignment CatArray name ts pos
-  tokenToTree (TokenFunctionAssign name ts pos)           = assignment CatFunction name ts pos
-  tokenToTree (TokenAdverbAssign name ts pos)             = assignment CatAdverb name ts pos
-  tokenToTree (TokenConjunctionAssign name ts pos)        = assignment CatConjunction name ts pos
+  tokenToTree (TokenArrayAssign name c ts pos)            = assignment CatArray name c ts pos
+  tokenToTree (TokenFunctionAssign name c ts pos)         = assignment CatFunction name c ts pos
+  tokenToTree (TokenAdverbAssign name c ts pos)           = assignment CatAdverb name c ts pos
+  tokenToTree (TokenConjunctionAssign name c ts pos)      = assignment CatConjunction name c ts pos
   tokenToTree (TokenQualifiedArrayAssign h ns ts _)       = qualifiedAssignment CatArray h ns ts
   tokenToTree (TokenQualifiedFunctionAssign h ns ts _)    = qualifiedAssignment CatFunction h ns ts
   tokenToTree (TokenQualifiedAdverbAssign h ns ts _)      = qualifiedAssignment CatAdverb h ns ts

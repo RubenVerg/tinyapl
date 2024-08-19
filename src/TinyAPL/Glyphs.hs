@@ -17,6 +17,7 @@ highRank = ('[', ']')
 underscore = '_'
 separator = '⋄'
 assign = '←'
+assignModify = '↩'
 guard = ':'
 exit = '■'
 comment = '⍝'
@@ -48,6 +49,7 @@ syntax =
   , TinyAPL.Glyphs.underscore
   , TinyAPL.Glyphs.separator
   , TinyAPL.Glyphs.assign
+  , TinyAPL.Glyphs.assignModify
   , TinyAPL.Glyphs.guard
   , TinyAPL.Glyphs.exit
   , TinyAPL.Glyphs.comment
