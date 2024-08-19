@@ -17,6 +17,7 @@ import Data.List
 import Data.Bifunctor
 import Data.List.NonEmpty (NonEmpty((:|)))
 import qualified Data.List.NonEmpty as NE
+import Data.Functor
 
 data Value
   = VArray Array
@@ -207,9 +208,7 @@ evalLeaf (TokenArrayName name _)
     quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads
     case nilad of
-      Just x -> case niladGet x of
-        Just g -> VArray <$> g
-        Nothing -> throwError $ SyntaxError $ "Quad name " ++ name ++ " cannot be accessed"
+      Just x -> VArray <$> getNilad x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                             =
     gets contextScope >>= readRef >>= scopeLookupArray name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray)
@@ -305,11 +304,7 @@ evalAssign name val
     quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads
     case nilad of
-      Just x -> case niladSet x of
-        Just s -> do
-          s arr
-          return val
-        Nothing -> throwError $ SyntaxError $ "Quad name " ++ name ++ " cannot be set"
+      Just x -> setNilad x arr $> val
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise = do
     gets contextScope >>= flip modifyRef (scopeUpdate name val)

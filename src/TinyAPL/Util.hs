@@ -201,3 +201,7 @@ firstM f (a, b) = (, b) <$> f a
 
 secondM :: Functor m => (b -> m b') -> (a, b) -> m (a, b')
 secondM f (a, b) = (a, ) <$> f b
+
+fromRight' :: HasCallStack => Show a => Either a b -> b
+fromRight' (Left e) = error $ "fromRight': Left " ++ show e
+fromRight' (Right x) = x

@@ -12,20 +12,20 @@ import Control.Monad.State
 import Data.Time.Clock.POSIX
 import Control.Concurrent
 
-io = Nilad (Just $ pure $ scalar $ Number 1) Nothing (G.quad : "io")
-ct = Nilad (Just $ pure $ scalar $ Number $ comparisonTolerance :+ 0) Nothing (G.quad : "ct")
-u = Nilad (Just $ pure $ vector $ Character <$> ['A'..'Z']) Nothing (G.quad : "u")
-l = Nilad (Just $ pure $ vector $ Character <$> ['a'..'z']) Nothing (G.quad : "l")
-d = Nilad (Just $ pure $ vector $ Character <$> ['0'..'9']) Nothing (G.quad : "d")
+io = Nilad (Just $ pure $ scalar $ Number 1) Nothing (G.quad : "io") Nothing
+ct = Nilad (Just $ pure $ scalar $ Number $ comparisonTolerance :+ 0) Nothing (G.quad : "ct") Nothing
+u = Nilad (Just $ pure $ vector $ Character <$> ['A'..'Z']) Nothing (G.quad : "u") Nothing
+l = Nilad (Just $ pure $ vector $ Character <$> ['a'..'z']) Nothing (G.quad : "l") Nothing
+d = Nilad (Just $ pure $ vector $ Character <$> ['0'..'9']) Nothing (G.quad : "d") Nothing
 seed = Nilad Nothing (Just $ \x -> do
   let e = DomainError "Seed must be a scalar integer"
   s <- asScalar e x >>= asNumber e >>= asInt e
-  setSeed s) (G.quad : "seed")
-unix = Nilad (Just $ scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "unix")
+  setSeed s) (G.quad : "seed") Nothing
+unix = Nilad (Just $ scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "unix") Nothing
 ts = Nilad (Just $ do
   err <- gets contextErr
   err "Deprecation warning: ⎕ts has been replaced by ⎕unix and will be used for something else in a future version\n"
-  scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "ts")
+  scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "ts") Nothing
 
 exists = Function (Just $ \x -> do
   let var = show x

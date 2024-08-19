@@ -480,7 +480,18 @@ callOnFunctionAndFunction conj _ _ = throwError $ DomainError $ "Operator " ++ s
 data Nilad = Nilad
   { niladGet :: Maybe (St Array)
   , niladSet :: Maybe (Array -> St ())
-  , niladRepr :: String }
+  , niladRepr :: String
+  , niladContext :: Maybe Context }
+
+getNilad :: Nilad -> St Array
+getNilad (Nilad (Just g) _ _ (Just ctx)) = runWithContext ctx g
+getNilad (Nilad (Just g) _ _ Nothing) = g
+getNilad g@(Nilad Nothing _ _ _) = throwError $ DomainError $ "Nilad " ++ show g ++ " cannot be get"
+
+setNilad :: Nilad -> Array -> St ()
+setNilad (Nilad _ (Just s) _ (Just ctx)) x = runWithContext ctx $ s x
+setNilad (Nilad _ (Just s) _ Nothing) x = s x
+setNilad s@(Nilad _ Nothing _ _) _ = throwError $ DomainError $ "Nilad " ++ show s ++ " cannot be set"
 
 instance Show Nilad where 
   show (Nilad { niladRepr = r }) = r
