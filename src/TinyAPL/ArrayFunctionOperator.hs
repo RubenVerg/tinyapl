@@ -569,6 +569,34 @@ scopeUpdateAdverb name val sc = sc{ scopeAdverbs = update name val (scopeAdverbs
 scopeUpdateConjunction :: String -> Conjunction -> Scope -> Scope
 scopeUpdateConjunction name val sc = sc{ scopeConjunctions = update name val (scopeConjunctions sc) }
 
+scopeModifyArray :: String -> Array -> Scope -> St Scope
+scopeModifyArray name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeArrays sc) of
+  Just _ -> pure $ scopeUpdateArray name val sc
+  Nothing -> case scopeParent sc of
+    Nothing -> throwError $ DomainError "Modifying a non-existent variable"
+    Just p -> readRef p >>= scopeModifyArray name val >>= writeRef p >>= const (pure sc)
+
+scopeModifyFunction :: String -> Function -> Scope -> St Scope
+scopeModifyFunction name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeFunctions sc) of
+  Just _ -> pure $ scopeUpdateFunction name val sc
+  Nothing -> case scopeParent sc of
+    Nothing -> throwError $ DomainError "Modifying a non-existent variable"
+    Just p -> readRef p >>= scopeModifyFunction name val >>= writeRef p >>= const (pure sc)
+
+scopeModifyAdverb :: String -> Adverb -> Scope -> St Scope
+scopeModifyAdverb name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeAdverbs sc) of
+  Just _ -> pure $ scopeUpdateAdverb name val sc
+  Nothing -> case scopeParent sc of
+    Nothing -> throwError $ DomainError "Modifying a non-existent variable"
+    Just p -> readRef p >>= scopeModifyAdverb name val >>= writeRef p >>= const (pure sc)
+
+scopeModifyConjunction :: String -> Conjunction -> Scope -> St Scope
+scopeModifyConjunction name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeConjunctions sc) of
+  Just _ -> pure $ scopeUpdateConjunction name val sc
+  Nothing -> case scopeParent sc of
+    Nothing -> throwError $ DomainError "Modifying a non-existent variable"
+    Just p -> readRef p >>= scopeModifyConjunction name val >>= writeRef p >>= const (pure sc)
+
 data Context = Context
   { contextScope :: IORef Scope
   , contextQuads :: Quads

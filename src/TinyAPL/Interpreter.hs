@@ -98,6 +98,12 @@ scopeUpdate name (VFunction val) sc    = scopeUpdateFunction name val sc
 scopeUpdate name (VAdverb val) sc      = scopeUpdateAdverb name val sc
 scopeUpdate name (VConjunction val) sc = scopeUpdateConjunction name val sc
 
+scopeModify :: String -> Value -> Scope -> St Scope
+scopeModify name (VArray val) sc       = scopeModifyArray name val sc
+scopeModify name (VFunction val) sc    = scopeModifyFunction name val sc
+scopeModify name (VAdverb val) sc      = scopeModifyAdverb name val sc
+scopeModify name (VConjunction val) sc = scopeModifyConjunction name val sc
+
 inChildScope :: [(String, Value)] -> St a -> Context -> St a
 inChildScope vals x parent = do
   ref <- createRef $ foldr (\(name, val) sc -> scopeUpdate name val sc) (Scope [] [] [] [] (Just $ contextScope parent)) vals
@@ -130,7 +136,7 @@ eval (ConjunctionCallBranch l r)    = do
   r' <- eval r
   l' <- eval l
   evalConjunctionCall l' r'
-eval (AssignBranch _ n val)         = eval val >>= evalAssign n
+eval (AssignBranch _ n t val)       = eval val >>= evalAssign n t
 eval (QualifiedAssignBranch _ h ns val) = do
   rs <- eval val
   head <- eval h
@@ -287,28 +293,36 @@ evalConjunctionCall (VConjunction conj) (VFunction r) =
   return $ VAdverb $ Adverb { adverbOnArray = Just (\x -> callOnArrayAndFunction conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndFunction conj x r), adverbRepr = "(" ++ show conj ++ show r ++ ")", adverbContext = conjContext conj }
 evalConjunctionCall _ _                               = throwError $ DomainError "Invalid arguments to conjunction call evaluation"
 
-evalAssign :: String -> Value -> St Value
-evalAssign name val
-  | name == [G.quad] = do
+evalAssign :: String -> AssignType -> Value -> St Value
+evalAssign name ty val
+  | name == [G.quad] = if ty == AssignNormal then do
     arr <- unwrapArray (DomainError "Cannot print non-array") val
     out <- gets contextOut
     out $ show arr ++ "\n"
-    return val
-  | name == [G.quadQuote] = do
+    return val 
+    else throwError $ DomainError "Can only assign normally to quads"
+  | name == [G.quadQuote] = if ty == AssignNormal then do
     arr <- unwrapArray (DomainError "Cannot print non-array") val
     err <- gets contextErr
     err $ show arr
     return val
-  | isPrefixOf [G.quad] name = do
+    else throwError $ DomainError "Can only assign normally to quads"
+  | isPrefixOf [G.quad] name = if ty == AssignNormal then do
     arr <- unwrapArray (DomainError "Cannot set quad name to non-array") val
     quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads
     case nilad of
       Just x -> setNilad x arr $> val
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
-  | otherwise = do
+    else throwError $ DomainError "Can only assign normally to quads"
+  | ty == AssignNormal = do
     gets contextScope >>= flip modifyRef (scopeUpdate name val)
     return val
+  | ty == AssignModify = do
+    sc <- gets contextScope
+    readRef sc >>= scopeModify name val >>= writeRef sc
+    return val
+  | otherwise = throwError unreachable
 
 evalQualifiedAssign :: Value -> NonEmpty String -> Value -> St Value
 evalQualifiedAssign head ns val = do
@@ -318,7 +332,7 @@ evalQualifiedAssign head ns val = do
   ctx <- resolve headCtx q
   scope <- readRef $ contextScope ctx
   scopeLookup l scope >>= lift . except . maybeToEither (SyntaxError $ "Qualified variable " ++ l ++ " does not exist")
-  runWithContext ctx $ evalAssign l val
+  runWithContext ctx $ evalAssign l AssignNormal val
 
 evalVectorAssign :: [String] -> Value -> St Value
 evalVectorAssign ns val =

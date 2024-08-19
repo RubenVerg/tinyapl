@@ -84,11 +84,15 @@ spec = do
       tok "a→b→_C_" `shouldBe` pure [[TokenQualifiedConjunctionName (TokenArrayName "a" emptyPos) ["b", "_C_"] emptyPos]]
 
     it "parses assignment" $ do
-      tok "abc←3" `shouldBe` pure [[TokenArrayAssign "abc" [TokenNumber [3] emptyPos] emptyPos]]
-      tok "Abc←3" `shouldBe` pure [[TokenFunctionAssign "Abc" [TokenNumber [3] emptyPos] emptyPos]]
-      tok "_Abc←3" `shouldBe` pure [[TokenAdverbAssign "_Abc" [TokenNumber [3] emptyPos] emptyPos]]
-      tok "_Abc_←3" `shouldBe` pure [[TokenConjunctionAssign "_Abc_" [TokenNumber [3] emptyPos] emptyPos]]
-      tok "⎕seed←3" `shouldBe` pure [[TokenArrayAssign "⎕seed" [TokenNumber [3] emptyPos] emptyPos]]
+      tok "abc←3" `shouldBe` pure [[TokenArrayAssign "abc" AssignNormal [TokenNumber [3] emptyPos] emptyPos]]
+      tok "Abc←3" `shouldBe` pure [[TokenFunctionAssign "Abc" AssignNormal [TokenNumber [3] emptyPos] emptyPos]]
+      tok "_Abc←3" `shouldBe` pure [[TokenAdverbAssign "_Abc" AssignNormal [TokenNumber [3] emptyPos] emptyPos]]
+      tok "_Abc_←3" `shouldBe` pure [[TokenConjunctionAssign "_Abc_" AssignNormal [TokenNumber [3] emptyPos] emptyPos]]
+      tok "⎕seed←3" `shouldBe` pure [[TokenArrayAssign "⎕seed" AssignNormal [TokenNumber [3] emptyPos] emptyPos]]
+      tok "abc↩3" `shouldBe` pure [[TokenArrayAssign "abc" AssignModify [TokenNumber [3] emptyPos] emptyPos]]
+      tok "Abc↩3" `shouldBe` pure [[TokenFunctionAssign "Abc" AssignModify [TokenNumber [3] emptyPos] emptyPos]]
+      tok "_Abc↩3" `shouldBe` pure [[TokenAdverbAssign "_Abc" AssignModify [TokenNumber [3] emptyPos] emptyPos]]
+      tok "_Abc_↩3" `shouldBe` pure [[TokenConjunctionAssign "_Abc_" AssignModify [TokenNumber [3] emptyPos] emptyPos]]
 
     it "parses qualified assignment" $ do
       tok "a→b→c←3" `shouldBe` pure [[TokenQualifiedArrayAssign (TokenArrayName "a" emptyPos) ["b", "c"] [TokenNumber [3] emptyPos] emptyPos]]
@@ -188,10 +192,10 @@ spec = do
     
     describe "assignment" $ do
       it "parses assignment to variables of the correct type" $ do
-        par "a←b" `shouldBe` pure [AssignBranch CatArray "a" (Leaf CatArray (TokenArrayName "b" emptyPos))]
-        par "A←B" `shouldBe` pure [AssignBranch CatFunction "A" (Leaf CatFunction (TokenFunctionName "B" emptyPos))]
-        par "_A←_B" `shouldBe` pure [AssignBranch CatAdverb "_A" (Leaf CatAdverb (TokenAdverbName "_B" emptyPos))]
-        par "_A_←_B_" `shouldBe` pure [AssignBranch CatConjunction "_A_" (Leaf CatConjunction (TokenConjunctionName "_B_" emptyPos))]
+        par "a←b" `shouldBe` pure [AssignBranch CatArray "a" AssignNormal (Leaf CatArray (TokenArrayName "b" emptyPos))]
+        par "A←B" `shouldBe` pure [AssignBranch CatFunction "A" AssignNormal (Leaf CatFunction (TokenFunctionName "B" emptyPos))]
+        par "_A←_B" `shouldBe` pure [AssignBranch CatAdverb "_A" AssignNormal (Leaf CatAdverb (TokenAdverbName "_B" emptyPos))]
+        par "_A_←_B_" `shouldBe` pure [AssignBranch CatConjunction "_A_" AssignNormal (Leaf CatConjunction (TokenConjunctionName "_B_" emptyPos))]
 
       it "fails on assignment to variables of the wrong type" $ do
         par "a←B" `shouldBe` Nothing
