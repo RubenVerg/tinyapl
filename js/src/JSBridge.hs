@@ -374,17 +374,19 @@ instance IsJSSt Value where
   toJSValSt (VConjunction conj) = toJSValSt conj
 
 instance IsJSSt Nilad where
-  fromJSValSt v = do
-    let repr = fromJSString $ fromJSVal $ jsLookup v $ toJSString "repr"
-    let get = jsLookup v $ toJSString "get"
-    let set = jsLookup v $ toJSString "set"
-    sc <- createRef $ Scope [] [] [] [] Nothing
-    ctx <- getContext
-    pure $ Nilad {
-      niladRepr = repr,
-      niladContext = Just $ ctx{ contextScope = sc },
-      niladGet = if jsIsUndefined get then Nothing else Just $ (liftToSt (jsCall0 get) >>= fromJSValSt),
-      niladSet = if jsIsUndefined set then Nothing else Just $ (\x -> void $ toJSValSt x >>= liftToSt . jsCall1 set) }
+  fromJSValSt v
+    | fromJSVal (jsLookup v $ toJSString "type") == "nilad" = do
+      let repr = fromJSString $ fromJSVal $ jsLookup v $ toJSString "repr"
+      let get = jsLookup v $ toJSString "get"
+      let set = jsLookup v $ toJSString "set"
+      sc <- createRef $ Scope [] [] [] [] Nothing
+      ctx <- getContext
+      pure $ Nilad {
+        niladRepr = repr,
+        niladContext = Just $ ctx{ contextScope = sc },
+        niladGet = if jsIsUndefined get then Nothing else Just $ (liftToSt (jsCall0 get) >>= fromJSValSt),
+        niladSet = if jsIsUndefined set then Nothing else Just $ (\x -> void $ toJSValSt x >>= liftToSt . jsCall1 set) }
+    | otherwise = throwError $ DomainError "fromJSValSt Nilad: not a nilad"
   toJSValSt n = do
     ctx <- getContext
     get <- liftToSt $ jsWrap0 $ do
