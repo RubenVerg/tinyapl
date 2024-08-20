@@ -245,7 +245,7 @@ async function runCode(code) {
         const d = div('plot', '');
         output.appendChild(d);
         // @ts-expect-error Plotly global not typed
-        Plotly.newPlot(d, traces, { showlegend: false }, { responsive: true });
+        Plotly.newPlot(d, traces, { font: { family: 'var(--font-mono)' }, showlegend: false }, { responsive: true });
         newDiv();
     });
     quads.rGraph(async (data, labels) => {
@@ -255,7 +255,7 @@ async function runCode(code) {
         const d = div('plot', '');
         output.appendChild(d);
         // @ts-expect-error Plotly global not typed
-        Plotly.newPlot(d, traces, { showlegend: true }, { responsive: true });
+        Plotly.newPlot(d, traces, { font: { family: 'var(--font-mono)' }, showlegend: true }, { responsive: true });
         newDiv();
     });
     quads.rPlayAudio(async (buf) => {
