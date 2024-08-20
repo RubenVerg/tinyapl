@@ -59,7 +59,7 @@ const keyboard = [
     ['KeyV', 'v', 'V', '∪', '⁖', undefined, undefined],
     ['KeyB', 'b', 'B', '⊥', undefined, undefined, undefined],
     ['KeyN', 'n', 'N', '⊤', undefined, undefined, undefined],
-    ['KeyM', 'm', 'M', '«', '»', undefined, undefined],
+    ['KeyM', 'm', 'M', '«', '»', '↩', undefined],
     ['Comma', ',', '<', '⍪', 'ᑈ', '⊲', undefined],
     ['Period', '.', '>', '∙', 'ᐵ', '⊳', undefined],
     ['Slash', '/', '?', '⌿', undefined, undefined, undefined],
