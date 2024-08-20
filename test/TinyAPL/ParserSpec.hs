@@ -106,10 +106,12 @@ spec = do
       tok "_{3⋄1}_" `shouldBe` pure [[TokenDconj [[TokenNumber [3] emptyPos], [TokenNumber [1] emptyPos]] emptyPos]]
 
     it "parses wraps" $ do
-      tok "(⊏+)" `shouldBe` pure [[TokenWrap [TokenPrimFunction '+' emptyPos] emptyPos]]
+      tok "⊏+" `shouldBe` pure [[TokenWrap (TokenPrimFunction '+' emptyPos) emptyPos]]
 
     it "parses unwraps" $ do
-      tok "(⊐3)" `shouldBe` pure [[TokenUnwrap [TokenNumber [3] emptyPos] emptyPos]]
+      tok "⊐3" `shouldBe` pure [[TokenUnwrap (TokenNumber [3] emptyPos) emptyPos]]
+      tok "_⊐3" `shouldBe` pure [[TokenUnwrapAdverb (TokenNumber [3] emptyPos) emptyPos]]
+      tok "_⊐_3" `shouldBe` pure [[TokenUnwrapConjunction (TokenNumber [3] emptyPos) emptyPos]]
     
     it "parses guards" $ do
       tok "{1:2}" `shouldBe` pure [[TokenDfn [[TokenGuard [TokenNumber [1] emptyPos] [TokenNumber [2] emptyPos] emptyPos]] emptyPos]]
@@ -236,17 +238,21 @@ spec = do
 
     describe "wraps" $ do
       it "parses wraps of functions" $ do
-        par "(⊏+)" `shouldBe` pure [WrapBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
+        par "⊏+" `shouldBe` pure [WrapBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
 
       it "fails on wraps of non-functions" $ do
-        par "(⊏3)" `shouldBe` Nothing
+        par "⊏3" `shouldBe` Nothing
 
     describe "unwraps" $ do
       it "parses unwraps of arrays" $ do
-        par "(⊐3)" `shouldBe` pure [UnwrapBranch (Leaf CatArray (TokenNumber [3] emptyPos))]
+        par "⊐3" `shouldBe` pure [UnwrapBranch CatFunction (Leaf CatArray (TokenNumber [3] emptyPos))]
+        par "_⊐3" `shouldBe` pure [UnwrapBranch CatAdverb (Leaf CatArray (TokenNumber [3] emptyPos))]
+        par "_⊐_3" `shouldBe` pure [UnwrapBranch CatConjunction (Leaf CatArray (TokenNumber [3] emptyPos))]
 
       it "fails on unwraps of non-arrays" $ do
-        par "(⊐+)" `shouldBe` Nothing
+        par "⊐+" `shouldBe` Nothing
+        par "_⊐+" `shouldBe` Nothing
+        par "_⊐_+" `shouldBe` Nothing
 
     describe "structs" $ do
       it "parses structs" $ do
