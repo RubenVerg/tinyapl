@@ -6,6 +6,7 @@ import PrimitivePage from './components/PrimitivePage.tsx';
 import QuadPage from './components/QuadPage.tsx';
 import FullPage from './components/FullPage.tsx';
 import Index from './components/Index.tsx';
+import Data from './components/Data.tsx';
 import RunInterpreter from './components/RunInterpreter.tsx';
 import { Info, Primitive, Quad, Pages, Glyph } from './types.d.ts';
 import pages, { forcePages, loadPages, validatePages } from './pages.ts';
@@ -72,6 +73,10 @@ const runInterpreter = await render(<RunInterpreter pages={pages} interpreters={
 	title: 'Run Interpreter - TinyAPL',
 });
 
+const data = await render(<FullPage pages={pages}><Data pages={pages} /></FullPage>, {
+	title: 'Data - TinyAPL',
+});
+
 const directories: Record<string, keyof typeof pages> = {
 	glyph: 'glyphs',
 	info: 'info',
@@ -104,6 +109,10 @@ async function handler(req: Request) {
 	
 	if (pathname === '/') {
 		return index;
+	}
+
+	if (pathname === '/data' || pathname === '/data/') {
+		return data;
 	}
 
 	if (pathname === '/run' || pathname === '/run/') {
