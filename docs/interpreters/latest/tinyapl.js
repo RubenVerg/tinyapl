@@ -88,3 +88,9 @@ export const glyphs = {
 export const colors = Object.fromEntries(await Promise.all(Object.entries(instance.exports).filter(([k]) => k.startsWith('tinyapl_hl')).map(async ([k, v]) => [k['tinyapl_hl'.length].toLowerCase() + k.slice('tinyapl_hl'.length + 1), await v()])));
 export const colorsInv = Object.fromEntries(Object.entries(colors).map(([k, v]) => [v, k]));
 export const errors = Object.fromEntries(await Promise.all(Object.entries(instance.exports).filter(([k]) => k.startsWith('tinyapl_err')).map(async ([k, v]) => [k['tinyapl_err'.length].toLowerCase() + k.slice('tinyapl_err'.length + 1), await v()])));
+/**
+ * Turn a `Value` into a string
+ */
+export async function show(o) {
+    return await exports.tinyapl_show(o);
+}

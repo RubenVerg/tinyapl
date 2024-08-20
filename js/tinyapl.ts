@@ -10,27 +10,48 @@ declare global {
 }
 
 export type Complex = [number, number];
-export type ScalarValue = Complex | string | Arr;
+export interface Struct {
+	type: 'struct';
+	entries: Record<string, Value>;
+}
+export type ScalarValue = Complex | string | Arr | Fun | Struct;
 export interface Arr {
 	type: 'array';
 	shape: number[];
 	contents: ScalarValue[];
 }
+export interface Nilad {
+	type: 'nilad';
+	repr: string;
+	get?: () => PromiseLike<Err | Arr>;
+	set?: (arr: Arr) => PromiseLike<Err | void>;
+}
 export interface Fun {
 	type: 'function';
 	repr: string;
-	monad(y: Arr): PromiseLike<Err | Arr>;
-	dyad(x: Arr, y: Arr): PromiseLike<Err | Arr>;
+	monad?: (y: Arr) => PromiseLike<Err | Arr>;
+	dyad?: (x: Arr, y: Arr) => PromiseLike<Err | Arr>;
 }
+export interface Adv {
+	type: 'adverb';
+	repr: string;
+	array?: (n: Arr) => PromiseLike<Err | Fun>;
+	function?: (f: Fun) => PromiseLike<Err | Fun>;
+}
+export interface Conj {
+	type: 'conjunction';
+	repr: string;
+	arrayArray?: (n: Arr, m: Arr) => PromiseLike<Err | Fun>;
+	arrayFunction?: (n: Arr, f: Fun) => PromiseLike<Err | Fun>;
+	functionArray?: (f: Fun, m: Arr) => PromiseLike<Err | Fun>;
+	functionFunction?: (f: Fun, g: Fun) => PromiseLike<Err | Fun>;
+}
+type Value = Arr | Fun | Adv | Conj;
 export interface Err {
 	code: number;
 	message: string;
 }
-export type NiladGet = () => PromiseLike<Err | Arr>;
-export type NiladSet = (arr: Arr) => PromiseLike<Err | void>;
-export type Monad = (y: Arr) => PromiseLike<Err | Arr>;
-export type Dyad = (x: Arr, y: Arr) => PromiseLike<Err | Arr>;
-export type Quads = Record<string, (NiladGet & NiladSet) | (Monad & Dyad)>;
+export type Quads = Record<string, Nilad | Fun | Adv | Conj>;
 
 const files = [
 	new OpenFile(new File([], {})), // stdin
@@ -135,3 +156,9 @@ export const colorsInv: Record<number, string> = Object.fromEntries(Object.entri
 
 export const errors: Record<string, number> = Object.fromEntries(await Promise.all(Object.entries(instance.exports).filter(([k]) => k.startsWith('tinyapl_err')).map(async ([k, v]) => [k['tinyapl_err'.length].toLowerCase() + k.slice('tinyapl_err'.length + 1), await (v as () => Promise<number>)()])));
 
+/**
+ * Turn a `Value` into a string
+ */
+export async function show(o: Value): Promise<string> {
+	return await exports.tinyapl_show(o);
+}

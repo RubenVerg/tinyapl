@@ -137,18 +137,19 @@ for (const k of ['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'con
     buttons.appendChild(document.createElement('br'));
 }
 const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), io.error.bind(io), {
-    Debug: async (a, b) => { if (b === undefined) {
-        console.log('monad call', a);
-    }
-    else {
-        console.log('dyad call', a, b);
-    } return b ?? a; },
+    Debug: {
+        type: 'function',
+        repr: '⎕Debug',
+        monad: async (y) => { console.log('monad call', y); return y; },
+        dyad: async (x, y) => { console.log('dyad call', x, y); return y; },
+    },
     CreateImage: quads.qCreateImage,
     DisplayImage: quads.qDisplayImage,
     PlayAnimation: quads.qPlayAnimation,
     ScatterPlot: quads.qScatterPlot,
     PlayAudio: quads.qPlayAudio,
     Fetch: quads.qFetch,
+    _Graph: quads.qGraph,
 });
 function el(tag, cls, contents) {
     const el = document.createElement(tag);
@@ -247,6 +248,16 @@ async function runCode(code) {
         Plotly.newPlot(d, traces, { showlegend: false }, { responsive: true });
         newDiv();
     });
+    quads.rGraph(async (data, labels) => {
+        endDiv();
+        const traces = zip((console.log(data), data), (console.log(labels), labels)).map(([ps, l]) => (console.log(ps), { x: ps.map(x => x[0]), y: ps.map(x => x[1]), mode: 'lines', line: { shape: 'spline' }, name: l }));
+        console.log(traces);
+        const d = div('plot', '');
+        output.appendChild(d);
+        // @ts-expect-error Plotly global not typed
+        Plotly.newPlot(d, traces, { showlegend: true }, { responsive: true });
+        newDiv();
+    });
     quads.rPlayAudio(async (buf) => {
         endDiv();
         const audio = document.createElement('audio');
@@ -265,6 +276,7 @@ async function runCode(code) {
     quads.dPlayAudio();
     quads.dPlayAnimation();
     quads.dScatterPlot();
+    quads.dGraph();
     endDiv();
     if (success)
         output.appendChild(clickableDiv('result', result));

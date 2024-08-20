@@ -142,13 +142,19 @@ for (const k of (['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'co
 }
 
 const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), io.error.bind(io), {
-	Debug: async (a: tinyapl.Arr, b?: tinyapl.Arr) => { if (b === undefined) { console.log('monad call', a); } else { console.log('dyad call', a, b); } return b ?? a; },
-	CreateImage: quads.qCreateImage as (tinyapl.Monad & tinyapl.Dyad),
+	Debug: {
+		type: 'function',
+		repr: '⎕Debug',
+		monad: async (y: tinyapl.Arr) => { console.log('monad call', y); return y; },
+		dyad: async (x: tinyapl.Arr, y: tinyapl.Arr) => { console.log('dyad call', x, y); return y; },
+	},
+	CreateImage: quads.qCreateImage,
 	DisplayImage: quads.qDisplayImage,
 	PlayAnimation: quads.qPlayAnimation,
 	ScatterPlot: quads.qScatterPlot,
 	PlayAudio: quads.qPlayAudio,
 	Fetch: quads.qFetch,
+	_Graph: quads.qGraph,
 });
 
 function el<E extends HTMLElement>(tag: string, cls: string, contents: string) {
@@ -253,6 +259,16 @@ async function runCode(code: string) {
 		Plotly.newPlot(d, traces, { showlegend: false }, { responsive: true });
 		newDiv();
 	});
+	quads.rGraph(async (data, labels) => {
+		endDiv();
+		const traces = zip((console.log(data), data), (console.log(labels), labels)).map(([ps, l]) => (console.log(ps), { x: ps.map(x => x[0]), y: ps.map(x => x[1]), mode: 'lines', line: { shape: 'spline' }, name: l }));
+		console.log(traces);
+		const d = div('plot', '');
+		output.appendChild(d);
+		// @ts-expect-error Plotly global not typed
+		Plotly.newPlot(d, traces, { showlegend: true }, { responsive: true });
+		newDiv();
+	});
 	quads.rPlayAudio(async buf => {
 		endDiv();
 		const audio = document.createElement('audio');
@@ -271,6 +287,7 @@ async function runCode(code: string) {
 	quads.dPlayAudio();
 	quads.dPlayAnimation();
 	quads.dScatterPlot();
+	quads.dGraph();
 	endDiv();
 	if (success) output.appendChild(clickableDiv('result', result));
 	else output.appendChild(div('error', result));
