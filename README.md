@@ -91,7 +91,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⌈` ceiling
 		* [x] `⌈` maximum
 		* [x] `⸠` round
-		* [ ] `⸠` average?
+		* [ ] `⸠` round to nearest
 		* [x] `⌹` matrix inverse
 		* [x] `⌹` matrix divide
 		* [x] `!` factorial/gamma
