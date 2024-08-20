@@ -1,5 +1,11 @@
 import * as tinyapl from './tinyapl.js';
 import * as wav from './wav.js';
+async function callErr(fn, ...args) {
+    const res = await fn(...args);
+    if (typeof res === 'object' && res !== null && 'code' in res && 'message' in res)
+        throw res;
+    return res;
+}
 function makeFunction(fn) {
     let listeners = [];
     const register = (l) => { listeners.push(l); };
@@ -69,6 +75,59 @@ function ambivalent(m, d, repr) {
 function ambivalent1(fn, repr) {
     return ambivalent(fn, fn, repr);
 }
+function adverbArr(adv, repr) {
+    return {
+        type: 'adverb',
+        repr,
+        array: async (n) => {
+            try {
+                return await adv(n);
+            }
+            catch (ex) {
+                return handleEx(ex);
+            }
+        },
+    };
+}
+function adverbFun(adv, repr) {
+    return {
+        type: 'adverb',
+        repr,
+        function: async (f) => {
+            try {
+                return await adv(f);
+            }
+            catch (ex) {
+                return handleEx(ex);
+            }
+        },
+    };
+}
+function adverb(arr, fn, repr) {
+    return {
+        type: 'adverb',
+        repr,
+        array: async (n) => {
+            try {
+                return await arr(n);
+            }
+            catch (ex) {
+                return handleEx(ex);
+            }
+        },
+        function: async (f) => {
+            try {
+                return await fn(f);
+            }
+            catch (ex) {
+                return handleEx(ex);
+            }
+        },
+    };
+}
+function adverb1(adv, repr) {
+    return adverb(adv, adv, repr);
+}
 function makeMonad(fn, repr) {
     const { register, done, fn: fn1 } = makeFunction(fn);
     return { register, done, fn: monad(fn1, repr) };
@@ -87,6 +146,17 @@ function makeAmbivalent(m, d, repr) {
 }
 function makeAmbivalent1(fn, repr) {
     return makeAmbivalent(fn, fn, repr);
+}
+function makeAdverb(arr, fn, repr) {
+    let listeners = [];
+    const register = (l) => { listeners.push(l); };
+    const done = () => { listeners = []; };
+    const runListeners = async (...args) => { for (const l of listeners)
+        await l(...args); };
+    return { register, done, fn: adverb(n => arr(runListeners, n), f => fn(runListeners, f), repr) };
+}
+function makeAdverb1(arr, repr) {
+    return makeAdverb(arr, arr, repr);
 }
 function toImageData(a, name) {
     if (a.shape.length !== 2 && a.shape.length !== 3)
@@ -206,6 +276,61 @@ export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = 
     await runListeners(xs, ys, mode);
     return { type: 'array', shape: [0], contents: [] };
 }, '⎕ScatterPlot');
+export const { register: rGraph, done: dGraph, fn: qGraph } = makeAdverb1(async (runListeners, u) => {
+    const graphCounts = 500;
+    let fns = [], labels = [];
+    if (u.type === 'function') {
+        fns = [u];
+        labels = [u.repr];
+    }
+    else {
+        if (u.shape.length === 0) {
+            fns = [u.contents[0]];
+            labels = [fns[0].repr];
+        }
+        else if (u.shape.length === 1) {
+            for (const c of u.contents) {
+                if (typeof c === 'object' && !Array.isArray(c) && c.type === 'function') {
+                    fns.push(c);
+                    labels.push(c.repr);
+                }
+                else if (typeof c === 'object' && !Array.isArray(c) && c.type === 'array' && c.shape.length === 1 && c.shape[0] === 2) {
+                    fns.push(c.contents[0]);
+                    labels.push(typeof c.contents[1] === 'string' ? c.contents[1] : await tinyapl.joinString(c.contents[1].contents));
+                }
+                else
+                    throw { code: tinyapl.errors.domain, message: '⎕Graph left operand must be a function or a list of functions or pairs of functions and labels' };
+            }
+        }
+    }
+    const graph = async (start, end) => {
+        let results = [];
+        for (const f of fns) {
+            results.push([]);
+            for (let n = start; n < end; n += (end - start) / graphCounts) {
+                results.at(-1).push([n, (await callErr(f.monad, { type: 'array', shape: [], contents: [[n, 0]] })).contents[0][0]]);
+            }
+        }
+        console.log(results);
+        await runListeners(results, labels);
+    };
+    return ambivalent(async (y) => {
+        if (y.shape.length !== 0)
+            throw { code: tinyapl.errors.rank, message: '⎕Graph arguments must be scalar reals' };
+        const end = y.contents[0][0];
+        await graph(0, end);
+        return { type: 'array', shape: [0], contents: [] };
+    }, async (x, y) => {
+        if (x.shape.length !== 0)
+            throw { code: tinyapl.errors.rank, message: '⎕Graph arguments must be scalar reals' };
+        if (y.shape.length !== 0)
+            throw { code: tinyapl.errors.rank, message: '⎕Graph arguments must be scalar reals' };
+        const start = x.contents[0][0];
+        const end = y.contents[0][0];
+        await graph(start, end);
+        return { type: 'array', shape: [0], contents: [] };
+    }, '(' + await tinyapl.show(u) + ')' + '⎕_Graph');
+}, '⎕_Graph');
 export const { register: rPlayAudio, done: dPlayAudio, fn: qPlayAudio } = makeAmbivalent1(async (runListeners, x, y) => {
     let sampleRate, arr;
     if (y) {

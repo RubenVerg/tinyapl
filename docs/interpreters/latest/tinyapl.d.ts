@@ -4,7 +4,11 @@ declare global {
     }
 }
 export type Complex = [number, number];
-export type ScalarValue = Complex | string | Arr;
+export interface Struct {
+    type: 'struct';
+    entries: Record<string, Value>;
+}
+export type ScalarValue = Complex | string | Arr | Fun | Struct;
 export interface Arr {
     type: 'array';
     shape: number[];
@@ -36,6 +40,7 @@ export interface Conj {
     functionArray?: (f: Fun, m: Arr) => PromiseLike<Err | Fun>;
     functionFunction?: (f: Fun, g: Fun) => PromiseLike<Err | Fun>;
 }
+type Value = Arr | Fun | Adv | Conj;
 export interface Err {
     code: number;
     message: string;
@@ -93,3 +98,8 @@ export declare const glyphs: {
 export declare const colors: Record<string, number>;
 export declare const colorsInv: Record<number, string>;
 export declare const errors: Record<string, number>;
+/**
+ * Turn a `Value` into a string
+ */
+export declare function show(o: Value): Promise<string>;
+export {};

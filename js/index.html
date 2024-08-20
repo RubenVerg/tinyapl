@@ -24,6 +24,7 @@
 			top: 0;
 			background: white;
 			margin-bottom: 5px;
+			z-index: 100000000000;
 		}
 	
 		#buttons button {
@@ -222,6 +223,13 @@
 				If <pre class="hl">mode</pre> is provided, it must be one of <pre class="hl">"markers"</pre>, which is the default and displays dots;
 				<pre class="hl">"lines"</pre>, which connects the provided points (and attempts to do so smoothly);
 				<pre class="hl">"lines+markers"</pre>, which displays both.
+			</div></li>
+			<li><div>
+				<pre class="hl">[start] fns ⎕_Graph end</pre>: graphs functions.
+				<pre class="hl">fns</pre> should be a function, a vector of functions, or a vector of pairs of functions and labels.
+				The default labels are the representations of the functions.
+				<pre class="hl">start</pre> and <pre class="hl">end</pre> are the start and end of the graph, respectively. The default <pre class="hl">start</pre> is <pre class="hl">0</pre>.
+				The function is evaluated at <pre class="hl">501</pre> points evenly spaced between <pre class="hl">start</pre> and <pre class="hl">end</pre>.
 			</div></li>
 			<li><div>
 				<pre class="hl">[sampleRate] ⎕PlayAudio data</pre>: plays audio.

@@ -1,6 +1,12 @@
 import * as tinyapl from './tinyapl.js';
 import * as wav from './wav.js';
 
+async function callErr<Ret, Args extends unknown[]>(fn: (...args: Args) => PromiseLike<Ret | tinyapl.Err>, ...args: Args): Promise<Ret> {
+	const res = await fn(...args);
+	if (typeof res === 'object' && res !== null && 'code' in res && 'message' in res) throw res;
+	return res;
+}
+
 function makeFunction<Args extends unknown[], Ret, ListenerArgs extends unknown[]>(fn: (runListeners: (...args: ListenerArgs) => Promise<void>, ...args: Args) => Ret) {
 	let listeners: ((...args: ListenerArgs) => Promise<void>)[] = [];
 	const register = (l: (...args: ListenerArgs) => Promise<void>) => { listeners.push(l); };
@@ -68,6 +74,59 @@ function ambivalent1(fn: (x: tinyapl.Arr, y?: tinyapl.Arr) => PromiseLike<tinyap
 	return ambivalent(fn, fn, repr);
 }
 
+function adverbArr(adv: (n: tinyapl.Arr) => PromiseLike<tinyapl.Fun>, repr: string): tinyapl.Adv {
+	return {
+		type: 'adverb',
+		repr,
+		array: async n => {
+			try {
+				return await adv(n);
+			} catch (ex) {
+				return handleEx(ex);
+			}
+		},
+	}
+}
+
+function adverbFun(adv: (f: tinyapl.Fun) => PromiseLike<tinyapl.Fun>, repr: string): tinyapl.Adv {
+	return {
+		type: 'adverb',
+		repr,
+		function: async f => {
+			try {
+				return await adv(f);
+			} catch (ex) {
+				return handleEx(ex);
+			}
+		},
+	}
+}
+
+function adverb(arr: (n: tinyapl.Arr) => PromiseLike<tinyapl.Fun>, fn: (f: tinyapl.Fun) => PromiseLike<tinyapl.Fun>, repr: string): tinyapl.Adv {
+	return {
+		type: 'adverb',
+		repr,
+		array: async n => {
+			try {
+				return await arr(n);
+			} catch (ex) {
+				return handleEx(ex);
+			}
+		},
+		function: async f => {
+			try {
+				return await fn!(f);
+			} catch (ex) {
+				return handleEx(ex);
+			}
+		},
+	}
+}
+
+function adverb1(adv: (u: tinyapl.Arr | tinyapl.Fun) => PromiseLike<tinyapl.Fun>, repr: string) {
+	return adverb(adv, adv, repr);
+}
+
 function makeMonad<ListenerArgs extends unknown[]>(fn: (listener: (...args: ListenerArgs) => PromiseLike<void>, y: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, repr: string) {
 	const { register, done, fn: fn1 } = makeFunction<[tinyapl.Arr], PromiseLike<tinyapl.Arr>, ListenerArgs>(fn);
 	return { register, done, fn: monad(fn1, repr) };
@@ -88,6 +147,18 @@ function makeAmbivalent<ListenerArgs extends unknown[]>(m: (listener: (...args: 
 
 function makeAmbivalent1<ListenerArgs extends unknown[]>(fn: (listener: (...args: ListenerArgs) => PromiseLike<void>, x: tinyapl.Arr, y?: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, repr: string) {
 	return makeAmbivalent(fn, fn, repr);
+}
+
+function makeAdverb<ListenerArgs extends unknown[]>(arr: (listener: (...args: ListenerArgs) => PromiseLike<void>, n: tinyapl.Arr) => PromiseLike<tinyapl.Fun>, fn: (listener: (...args: ListenerArgs) => PromiseLike<void>, f: tinyapl.Fun) => PromiseLike<tinyapl.Fun>, repr: string) {
+	let listeners: ((...args: ListenerArgs) => Promise<void>)[] = [];
+	const register = (l: (...args: ListenerArgs) => Promise<void>) => { listeners.push(l); };
+	const done = () => { listeners = []; };
+	const runListeners = async (...args: ListenerArgs) => { for (const l of listeners) await l(...args); }
+	return { register, done, fn: adverb(n => arr(runListeners, n), f => fn(runListeners, f), repr) };
+}
+
+function makeAdverb1<ListenerArgs extends unknown[]>(arr: (listener: (...args: ListenerArgs) => PromiseLike<void>, u: tinyapl.Arr | tinyapl.Fun) => PromiseLike<tinyapl.Fun>, repr: string) {
+	return makeAdverb(arr, arr, repr);
 }
 
 function toImageData(a: tinyapl.Arr, name: string): ImageData {
@@ -195,6 +266,54 @@ export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = 
 	await runListeners(xs, ys, mode);
 	return { type: 'array', shape: [0], contents: [] };
 }, '⎕ScatterPlot');
+
+export const { register: rGraph, done: dGraph, fn: qGraph } = makeAdverb1<[[number, number][][], string[]]>(async (runListeners, u) => {
+	const graphCounts = 500;
+	let fns: tinyapl.Fun[] = [], labels: string[] = [];
+	if (u.type === 'function') {
+		fns = [u];
+		labels = [u.repr];
+	} else {
+		if (u.shape.length === 0) {
+			fns = [u.contents[0] as tinyapl.Fun];
+			labels = [fns[0].repr];
+		} else if (u.shape.length === 1) {
+			for (const c of u.contents) {
+				if (typeof c === 'object' && !Array.isArray(c) && c.type === 'function') {
+					fns.push(c);
+					labels.push(c.repr);
+				} else if (typeof c === 'object' && !Array.isArray(c) && c.type === 'array' && c.shape.length === 1 && c.shape[0] === 2) {
+					fns.push(c.contents[0] as tinyapl.Fun);
+					labels.push(typeof c.contents[1] === 'string' ? c.contents[1] : await tinyapl.joinString((c.contents[1] as tinyapl.Arr).contents as string[]));
+				} else throw { code: tinyapl.errors.domain, message: '⎕Graph left operand must be a function or a list of functions or pairs of functions and labels' };
+			}
+		}
+	}
+	const graph = async (start: number, end: number) => {
+		let results: [number, number][][] = [];
+		for (const f of fns) {
+			results.push([]);			
+			for (let n = start; n < end; n += (end - start) / graphCounts) {
+				results.at(-1)!.push([n, ((await callErr(f.monad!, { type: 'array', shape: [], contents: [[n, 0]] })).contents[0] as tinyapl.Complex)[0]]);
+			}
+		}
+		console.log(results);
+		await runListeners(results, labels);
+	};
+	return ambivalent(async y => {
+		if (y.shape.length !== 0) throw { code: tinyapl.errors.rank, message: '⎕Graph arguments must be scalar reals' };
+		const end = (y.contents[0] as tinyapl.Complex)[0];
+		await graph(0, end);
+		return { type: 'array', shape: [0], contents: [] };
+	}, async (x, y) => {
+		if (x.shape.length !== 0) throw { code: tinyapl.errors.rank, message: '⎕Graph arguments must be scalar reals' };
+		if (y.shape.length !== 0) throw { code: tinyapl.errors.rank, message: '⎕Graph arguments must be scalar reals' };
+		const start = (x.contents[0] as tinyapl.Complex)[0];
+		const end = (y.contents[0] as tinyapl.Complex)[0];
+		await graph(start, end);
+		return { type: 'array', shape: [0], contents: [] };
+	}, '(' + await tinyapl.show(u) + ')' + '⎕_Graph');
+}, '⎕_Graph');
 
 export const { register: rPlayAudio, done: dPlayAudio, fn: qPlayAudio } = makeAmbivalent1<[ArrayBuffer]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
 	let sampleRate, arr;

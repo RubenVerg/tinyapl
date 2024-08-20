@@ -10,7 +10,11 @@ declare global {
 }
 
 export type Complex = [number, number];
-export type ScalarValue = Complex | string | Arr;
+export interface Struct {
+	type: 'struct';
+	entries: Record<string, Value>;
+}
+export type ScalarValue = Complex | string | Arr | Fun | Struct;
 export interface Arr {
 	type: 'array';
 	shape: number[];
@@ -42,6 +46,7 @@ export interface Conj {
 	functionArray?: (f: Fun, m: Arr) => PromiseLike<Err | Fun>;
 	functionFunction?: (f: Fun, g: Fun) => PromiseLike<Err | Fun>;
 }
+type Value = Arr | Fun | Adv | Conj;
 export interface Err {
 	code: number;
 	message: string;
@@ -151,3 +156,9 @@ export const colorsInv: Record<number, string> = Object.fromEntries(Object.entri
 
 export const errors: Record<string, number> = Object.fromEntries(await Promise.all(Object.entries(instance.exports).filter(([k]) => k.startsWith('tinyapl_err')).map(async ([k, v]) => [k['tinyapl_err'.length].toLowerCase() + k.slice('tinyapl_err'.length + 1), await (v as () => Promise<number>)()])));
 
+/**
+ * Turn a `Value` into a string
+ */
+export async function show(o: Value): Promise<string> {
+	return await exports.tinyapl_show(o);
+}

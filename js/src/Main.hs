@@ -276,10 +276,10 @@ errNYI = errorCode $ NYIError ""
 errSyntax = errorCode $ SyntaxError ""
 errAssertion = errorCode $ AssertionError ""
 
-foreign export javascript "tinyapl_show" showJS :: Int -> JSVal -> IO JSString
+foreign export javascript "tinyapl_show" showJS :: JSVal -> IO JSString
 
-showJS :: Int -> JSVal -> IO JSString
-showJS contextId val = do
-  context <- (!! contextId) <$> readIORef contexts
-  r <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt val) context) :: IO Value
+showJS :: JSVal -> IO JSString
+showJS val = do
+  scope <- newIORef $ Scope [] [] [] [] Nothing
+  r <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt val) (Context scope mempty undefined undefined undefined)) :: IO Value
   pure $ toJSString $ show r
