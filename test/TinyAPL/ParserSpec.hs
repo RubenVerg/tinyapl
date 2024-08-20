@@ -106,10 +106,10 @@ spec = do
       tok "_{3⋄1}_" `shouldBe` pure [[TokenDconj [[TokenNumber [3] emptyPos], [TokenNumber [1] emptyPos]] emptyPos]]
 
     it "parses wraps" $ do
-      tok "(⊏+)" `shouldBe` pure [[TokenWrap [TokenPrimFunction '+' emptyPos] emptyPos]]
+      tok "⊏+" `shouldBe` pure [[TokenWrap (TokenPrimFunction '+' emptyPos) emptyPos]]
 
     it "parses unwraps" $ do
-      tok "(⊐3)" `shouldBe` pure [[TokenUnwrap [TokenNumber [3] emptyPos] emptyPos]]
+      tok "⊐3" `shouldBe` pure [[TokenUnwrap (TokenNumber [3] emptyPos) emptyPos]]
     
     it "parses guards" $ do
       tok "{1:2}" `shouldBe` pure [[TokenDfn [[TokenGuard [TokenNumber [1] emptyPos] [TokenNumber [2] emptyPos] emptyPos]] emptyPos]]

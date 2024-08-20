@@ -74,8 +74,8 @@ data Token
   | TokenTrain [[Token]] SourcePos
   | TokenAdverbTrain [[Token]] SourcePos
   | TokenConjunctionTrain [[Token]] SourcePos
-  | TokenWrap (NonEmpty Token) SourcePos
-  | TokenUnwrap (NonEmpty Token) SourcePos
+  | TokenWrap Token SourcePos
+  | TokenUnwrap Token SourcePos
   | TokenStruct [NonEmpty Token] SourcePos
 
 instance Eq Token where
@@ -157,8 +157,8 @@ instance Show Token where
   show (TokenTrain xs _) = "(train " ++ [fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train] ++ ")" where
   show (TokenAdverbTrain xs _) = "(adverb train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train] ++ ")" where
   show (TokenConjunctionTrain xs _) = "(conjunction train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train, G.underscore] ++ ")" where
-  show (TokenWrap xs _) = "(wrap " ++ [fst G.parens, G.wrap, ' '] ++ unwords (NE.toList $ show <$> xs) ++ [snd G.parens] ++ ")"
-  show (TokenUnwrap xs _) = "(unwrap " ++ [fst G.parens, G.unwrap, ' '] ++ unwords (NE.toList $ show <$> xs) ++ [snd G.parens] ++ ")"
+  show (TokenWrap x _) = "(wrap " ++ [fst G.parens, G.wrap, ' '] ++ show x ++ [snd G.parens] ++ ")"
+  show (TokenUnwrap x _) = "(unwrap " ++ [fst G.parens, G.unwrap, ' '] ++ show x ++ [snd G.parens] ++ ")"
   show (TokenStruct xs _) = "(struct " ++ [fst G.struct] ++ intercalate [' ', G.separator, ' '] (unwords . NE.toList . fmap show <$> xs) ++ [snd G.struct] ++ ")"
 
 tokenPos :: Token -> SourcePos
@@ -344,7 +344,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     primArray = withPos $ TokenPrimArray <$> oneOf G.arrays
 
     wrap :: Parser Token
-    wrap = withPos $ TokenWrap <$> (string [fst G.parens, G.wrap] *> bits <* string [snd G.parens])
+    wrap = withPos $ TokenWrap <$> (char G.wrap *> bit)
 
     struct :: Parser Token
     struct = withPos $ TokenStruct <$> (string [fst G.struct] *> sepBy bits separator <* string [snd G.struct])
@@ -365,7 +365,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     primFunction = withPos $ TokenPrimFunction <$> oneOf G.functions
 
     unwrap :: Parser Token
-    unwrap = withPos $ TokenUnwrap <$> (string [fst G.parens, G.unwrap] *> bits <* string [snd G.parens])
+    unwrap = withPos $ TokenUnwrap <$> (char G.unwrap *> bit)
 
   function :: Parser Token
   function = withPos (liftA2 ($) (qualified TokenQualifiedFunctionAssign bit' arrayName functionName `commitOn` char G.assign) bits) <|> withPos (qualified TokenQualifiedFunctionName bit' arrayName functionName) <|> functionAssign <|> function'
@@ -629,8 +629,8 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   tokenToTree (TokenTrain fs pos)                         = train CatFunction fs pos
   tokenToTree (TokenAdverbTrain fs pos)                   = train CatAdverb fs pos
   tokenToTree (TokenConjunctionTrain fs pos)              = train CatConjunction fs pos
-  tokenToTree (TokenWrap val _)                           = WrapBranch <$> (categorizeAndBind val >>= requireOfCategory CatFunction (\c -> makeSyntaxError (tokenPos $ NE.head val) source $ "Invalid wrap of type " ++ show c ++ ", function required"))
-  tokenToTree (TokenUnwrap val _)                         = UnwrapBranch <$> (categorizeAndBind val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head val) source $ "Invalid unwrap of type " ++ show c ++ ", array required"))
+  tokenToTree (TokenWrap val _)                           = WrapBranch <$> (tokenToTree val >>= requireOfCategory CatFunction (\c -> makeSyntaxError (tokenPos val) source $ "Invalid wrap of type " ++ show c ++ ", function required"))
+  tokenToTree (TokenUnwrap val _)                         = UnwrapBranch <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap of type " ++ show c ++ ", array required"))
   tokenToTree (TokenStruct es pos)                        = struct es pos
 
 parse :: String -> String -> Result [Tree]
