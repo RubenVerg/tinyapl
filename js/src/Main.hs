@@ -36,7 +36,8 @@ module Main
   , errRank
   , errNYI
   , errSyntax
-  , errAssertion) where  
+  , errAssertion
+  , showJS ) where  
 
 import JSBridge
 
@@ -51,7 +52,7 @@ import TinyAPL.Util
 import Data.IORef
 import GHC.Wasm.Prim
 import System.IO.Unsafe
-import Data.Function
+import Data.Bifunctor
 
 foreign export javascript "hs_start" main :: IO ()
 
@@ -71,10 +72,6 @@ noLast = DomainError "Last not found or has wrong type"
 
 foreign import javascript safe "return await $1();" callInput :: JSVal -> IO JSString
 foreign import javascript safe "await $1($2);" callOutput :: JSVal -> JSString -> IO ()
-foreign import javascript safe "return await $1();" jsGetNilad :: JSVal -> IO JSVal
-foreign import javascript safe "await $1($2);" jsSetNilad :: JSVal -> JSVal -> IO JSVal
-foreign import javascript safe "return await $1($2);" jsCallMonad :: JSVal -> JSVal -> IO JSVal
-foreign import javascript safe "return await $1($2, $3)" jsCallDyad :: JSVal -> JSVal -> JSVal -> IO JSVal
 
 foreign export javascript "tinyapl_newContext" newContext :: JSVal -> JSVal -> JSVal ->  JSVal -> IO Int
 
@@ -130,36 +127,26 @@ lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
 newContext :: JSVal -> JSVal -> JSVal -> JSVal -> IO Int
 newContext input output error quads = do
   l <- length <$> readIORef contexts
-  let qs = valToObject quads
-  let nilads = filter (isArrayName . fst) qs
-  let functions = filter (isFunctionName . fst) qs
   emptyScope <- newIORef $ Scope [] [] [] [] Nothing
+  let input' = liftToSt $ fromJSString <$> callInput input
+  let output' = liftToSt . callOutput output . toJSString
+  let error' = liftToSt . callOutput error . toJSString
+  let qpc = Context emptyScope core input' output' error'
+  qs <- fromRight' . second fst <$> (runResult $ runSt (mapM (secondM fromJSValSt) $ valToObject quads) qpc )
+  nilads <- secondM (\x -> fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) qpc)) `mapM` filter (isArrayName . fst) qs
+  functions <- secondM (\x -> fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) qpc)) `mapM` filter (isFunctionName . fst) qs
+  adverbs <- secondM (\x -> fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) qpc)) `mapM` filter (isAdverbName . fst) qs
+  conjunctions <- secondM (\x -> fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) qpc)) `mapM` filter (isConjunctionName . fst) qs
   modifyIORef contexts (++ [Context
     { contextScope = emptyScope
-    , contextQuads = core <> lastQuads l <>
-      quadsFromReprs
-        ((\(n, f) -> Nilad (Just $ do
-          r <- liftToSt $ fromJSVal <$> jsGetNilad f
-          case r of
-            Left err -> throwError err
-            Right res -> pure res) (Just $ \y -> do
-          r <- liftToSt $ fmap fromJSVal $ jsSetNilad f $ toJSVal y
-          case r of
-            Just err -> throwError err
-            Nothing -> pure ()) (quad : n) Nothing) <$> nilads)
-        ((\(n, f) -> Function (Just $ \y -> do
-          r <- liftToSt $ fmap fromJSVal $ jsCallMonad f $ toJSVal y
-          case r of
-            Left err -> throwError err
-            Right res -> pure res) (Just $ \x y -> do
-          r <- liftToSt $ fmap fromJSVal $ (jsCallDyad f `on` toJSVal) x y
-          case r of
-            Left err -> throwError err
-            Right res -> pure res) (quad : n) Nothing) <$> functions)
-        [] []
-    , contextIn = liftToSt $ fromJSString <$> callInput input
-    , contextOut = \str -> liftToSt $ callOutput output $ toJSString str
-    , contextErr = \str -> liftToSt $ callOutput error $ toJSString str }])
+    , contextQuads = core <> lastQuads l <> Quads {
+      quadArrays = first (quad :) <$> nilads,
+      quadFunctions = first (quad :) <$> functions,
+      quadAdverbs = first (quad :) <$> adverbs,
+      quadConjunctions = first (quad :) <$> conjunctions }
+    , contextIn = input'
+    , contextOut = output'
+    , contextErr = error' }])
   modifyIORef lasts (++ [Nothing])
   return l
 
@@ -288,3 +275,11 @@ errRank = errorCode $ RankError ""
 errNYI = errorCode $ NYIError ""
 errSyntax = errorCode $ SyntaxError ""
 errAssertion = errorCode $ AssertionError ""
+
+foreign export javascript "tinyapl_show" showJS :: Int -> JSVal -> IO JSString
+
+showJS :: Int -> JSVal -> IO JSString
+showJS contextId val = do
+  context <- (!! contextId) <$> readIORef contexts
+  r <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt val) context) :: IO Value
+  pure $ toJSString $ show r

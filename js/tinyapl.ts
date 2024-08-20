@@ -16,21 +16,37 @@ export interface Arr {
 	shape: number[];
 	contents: ScalarValue[];
 }
+export interface Nilad {
+	type: 'nilad';
+	repr: string;
+	get?: () => PromiseLike<Err | Arr>;
+	set?: (arr: Arr) => PromiseLike<Err | void>;
+}
 export interface Fun {
 	type: 'function';
 	repr: string;
-	monad(y: Arr): PromiseLike<Err | Arr>;
-	dyad(x: Arr, y: Arr): PromiseLike<Err | Arr>;
+	monad?: (y: Arr) => PromiseLike<Err | Arr>;
+	dyad?: (x: Arr, y: Arr) => PromiseLike<Err | Arr>;
+}
+export interface Adv {
+	type: 'adverb';
+	repr: string;
+	array?: (n: Arr) => PromiseLike<Err | Fun>;
+	function?: (f: Fun) => PromiseLike<Err | Fun>;
+}
+export interface Conj {
+	type: 'conjunction';
+	repr: string;
+	arrayArray?: (n: Arr, m: Arr) => PromiseLike<Err | Fun>;
+	arrayFunction?: (n: Arr, f: Fun) => PromiseLike<Err | Fun>;
+	functionArray?: (f: Fun, m: Arr) => PromiseLike<Err | Fun>;
+	functionFunction?: (f: Fun, g: Fun) => PromiseLike<Err | Fun>;
 }
 export interface Err {
 	code: number;
 	message: string;
 }
-export type NiladGet = () => PromiseLike<Err | Arr>;
-export type NiladSet = (arr: Arr) => PromiseLike<Err | void>;
-export type Monad = (y: Arr) => PromiseLike<Err | Arr>;
-export type Dyad = (x: Arr, y: Arr) => PromiseLike<Err | Arr>;
-export type Quads = Record<string, (NiladGet & NiladSet) | (Monad & Dyad)>;
+export type Quads = Record<string, Nilad | Fun | Adv | Conj>;
 
 const files = [
 	new OpenFile(new File([], {})), // stdin

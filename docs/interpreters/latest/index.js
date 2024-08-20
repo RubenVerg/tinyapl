@@ -137,12 +137,12 @@ for (const k of ['syntax', 'identifiers', 'arrays', 'functions', 'adverbs', 'con
     buttons.appendChild(document.createElement('br'));
 }
 const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), io.error.bind(io), {
-    Debug: async (a, b) => { if (b === undefined) {
-        console.log('monad call', a);
-    }
-    else {
-        console.log('dyad call', a, b);
-    } return b ?? a; },
+    Debug: {
+        type: 'function',
+        repr: '⎕Debug',
+        monad: async (y) => { console.log('monad call', y); return y; },
+        dyad: async (x, y) => { console.log('dyad call', x, y); return y; },
+    },
     CreateImage: quads.qCreateImage,
     DisplayImage: quads.qDisplayImage,
     PlayAnimation: quads.qPlayAnimation,

@@ -9,10 +9,91 @@ function makeFunction<Args extends unknown[], Ret, ListenerArgs extends unknown[
 	return { register, done, fn: (...args: Args) => fn(runListeners, ...args) };
 }
 
-function toImageData(a: tinyapl.Arr, name: string): ImageData | tinyapl.Err {
-	if (a.shape.length !== 2 && a.shape.length !== 3) return { code: tinyapl.errors.rank, message: `${name} expects arrays of rank 2 or 3` };
+function handleEx(ex: unknown): tinyapl.Err {
+	if (!(ex instanceof Error) && typeof ex === 'object' && ex !== null && 'code' in ex && 'message' in ex) return ex as tinyapl.Err;
+	else if (ex instanceof Error) return { code: tinyapl.errors.user, message: ex.message };
+	else return { code: tinyapl.errors.user, message: (ex as any).toString() };
+}
+
+function monad(fn: (y: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, repr: string): tinyapl.Fun {
+	return {
+		type: 'function',
+		repr,
+		monad: async y => {
+			try {
+				return await fn(y);
+			} catch (ex) {
+				return handleEx(ex);
+			}
+		},
+	};
+}
+
+function dyad(fn: (x: tinyapl.Arr, y: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, repr: string): tinyapl.Fun {
+	return {
+		type: 'function',
+		repr,
+		dyad: async (x, y) => {
+			try {
+				return await fn(x, y);
+			} catch (ex) {
+				return handleEx(ex);
+			}
+		},
+	};
+}
+
+function ambivalent(m: (y: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, d: (x: tinyapl.Arr, y: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, repr: string): tinyapl.Fun {
+	return {
+		type: 'function',
+		repr,
+		monad: async x => {
+			try {
+				return await m(x)
+			} catch (ex) {
+				return handleEx(ex);
+			}
+		},
+		dyad: async (x, y) => {
+			try {
+				return await d(x, y);
+			} catch (ex) {
+				return handleEx(ex);
+			}
+		},
+	};
+}
+
+function ambivalent1(fn: (x: tinyapl.Arr, y?: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, repr: string) {
+	return ambivalent(fn, fn, repr);
+}
+
+function makeMonad<ListenerArgs extends unknown[]>(fn: (listener: (...args: ListenerArgs) => PromiseLike<void>, y: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, repr: string) {
+	const { register, done, fn: fn1 } = makeFunction<[tinyapl.Arr], PromiseLike<tinyapl.Arr>, ListenerArgs>(fn);
+	return { register, done, fn: monad(fn1, repr) };
+}
+
+function makeDyad<ListenerArgs extends unknown[]>(fn: (listener: (...args: ListenerArgs) => PromiseLike<void>, x: tinyapl.Arr, y: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, repr: string) {
+	const { register, done, fn: fn1 } = makeFunction<[tinyapl.Arr, tinyapl.Arr], PromiseLike<tinyapl.Arr>, ListenerArgs>(fn);
+	return { register, done, fn: dyad(fn1, repr) };
+}
+
+function makeAmbivalent<ListenerArgs extends unknown[]>(m: (listener: (...args: ListenerArgs) => PromiseLike<void>, y: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, d: (listener: (...args: ListenerArgs) => PromiseLike<void>, x: tinyapl.Arr, y: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, repr: string) {
+	let listeners: ((...args: ListenerArgs) => Promise<void>)[] = [];
+	const register = (l: (...args: ListenerArgs) => Promise<void>) => { listeners.push(l); };
+	const done = () => { listeners = []; };
+	const runListeners = async (...args: ListenerArgs) => { for (const l of listeners) await l(...args); }
+	return { register, done, fn: ambivalent(y => m(runListeners, y), (x, y) => d(runListeners, x, y), repr) };
+}
+
+function makeAmbivalent1<ListenerArgs extends unknown[]>(fn: (listener: (...args: ListenerArgs) => PromiseLike<void>, x: tinyapl.Arr, y?: tinyapl.Arr) => PromiseLike<tinyapl.Arr>, repr: string) {
+	return makeAmbivalent(fn, fn, repr);
+}
+
+function toImageData(a: tinyapl.Arr, name: string): ImageData {
+	if (a.shape.length !== 2 && a.shape.length !== 3) throw { code: tinyapl.errors.rank, message: `${name} expects arrays of rank 2 or 3` };
 	const els = a.shape.length === 2 ? 1 : a.shape.at(-1)!;
-	if (![1, 2, 3, 4].includes(els)) return { code: tinyapl.errors.length, message: `${name}: third axis must have length 1, 2, 3 or 4` };
+	if (![1, 2, 3, 4].includes(els)) throw { code: tinyapl.errors.length, message: `${name}: third axis must have length 1, 2, 3 or 4` };
 	const data = new ImageData(a.shape[1], a.shape[0]);
 	for (let y = 0; y < a.shape[0]; y++)
 		for (let x = 0; x < a.shape[1]; x++) {
@@ -41,76 +122,56 @@ function toImageData(a: tinyapl.Arr, name: string): ImageData | tinyapl.Err {
 
 let imageId = 0;
 
-export const { register: rCreateImage, done: dCreateImage, fn: qCreateImage } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr | tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [number, number, number]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
-	if (y) return { code: tinyapl.errors.domain, message: '⎕CreateImage must be called monadically' };
-	if (x.shape.length !== 0 && x.shape.length !== 1) return { code: tinyapl.errors.rank, message: '⎕CreateImage expects arrays of rank 0 or 1' };
-	if (x.shape.length === 1 && x.contents.length !== 2) return { code: tinyapl.errors.length, message: '⎕CreateImage expects a scalar or a two-element vector' };
-	const height = (x.contents[0] as tinyapl.Complex)[0]
-	const width = (x.contents[x.shape.length] as tinyapl.Complex)[0];
+export const { register: rCreateImage, done: dCreateImage, fn: qCreateImage } = makeDyad<[number, number, number]>(async (runListeners, x: tinyapl.Arr, y: tinyapl.Arr) => {
+	if (y.shape.length !== 0 && x.shape.length !== 1) throw { code: tinyapl.errors.rank, message: '⎕CreateImage expects arrays of rank 0 or 1' };
+	if (y.shape.length === 1 && x.contents.length !== 2) throw { code: tinyapl.errors.length, message: '⎕CreateImage expects a scalar or a two-element vector' };
+	const height = (y.contents[0] as tinyapl.Complex)[0]
+	const width = (y.contents[x.shape.length] as tinyapl.Complex)[0];
 	const id = ++imageId;
-	try {
-		await runListeners(id, width, height);
-	} catch (ex) {
-		console.error(ex);
-		return { code: tinyapl.errors.user, message: (ex as Error).message };
-	}
+	await runListeners(id, width, height);
 	return { type: 'array', shape: [], contents: [[id, 0]] };
-});
+}, '⎕CreateImage');
 
-export const { register: rDisplayImage, done: dDisplayImage, fn: qDisplayImage } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr, tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [number | undefined, ImageData]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
+export const { register: rDisplayImage, done: dDisplayImage, fn: qDisplayImage } = makeAmbivalent1<[number | undefined, ImageData]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
 	let id, a;
 	if (y) {
 		a = y;
-		if (x.shape.length !== 0) return { code: tinyapl.errors.rank, message: '⎕DispayImage left argument must be a scalar natural' };
+		if (x.shape.length !== 0) throw { code: tinyapl.errors.rank, message: '⎕DispayImage left argument must be a scalar natural' };
 		id = (x.contents[0] as tinyapl.Complex)[0];
 	} else a = x;
 	const data = toImageData(a, '⎕DisplayImage');
-	if ('code' in data) return data;
-	try {
-		await runListeners(id, data);
-	} catch (ex) {
-		console.error(ex);
-		return { code: tinyapl.errors.user, message: (ex as Error).message };
-	}
-	return { type: 'array', shape: [0], contents: [] };
-});
+	await runListeners(id, data);
+	throw { type: 'array', shape: [0], contents: [] };
+}, '⎕DisplayImage');
 
-export const { register: rPlayAnimation, done: dPlayAnimation, fn: qPlayAnimation } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr, tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [number, ImageData[]]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
+export const { register: rPlayAnimation, done: dPlayAnimation, fn: qPlayAnimation } = makeAmbivalent1<[number, ImageData[]]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
 	let delay, arr;
 	if (y) {
 		arr = y;
-		if (x.shape.length !== 0) return { code: tinyapl.errors.rank, message: '⎕PlayAnimation left argument must be a scalar' };
+		if (x.shape.length !== 0) throw { code: tinyapl.errors.rank, message: '⎕PlayAnimation left argument must be a scalar' };
 		delay = (x.contents[0] as tinyapl.Complex)[0];
 	} else {
 		arr = x;
 		delay = 0.1;
 	}
-	if (arr.shape.length !== 3 && arr.shape.length !== 4) return { code: tinyapl.errors.rank, message: '⎕PlayAnimation expects arrays of rank 3 or 4' };
+	if (arr.shape.length !== 3 && arr.shape.length !== 4) throw { code: tinyapl.errors.rank, message: '⎕PlayAnimation expects arrays of rank 3 or 4' };
 	const [frames] = arr.shape;
 	const len = arr.shape.slice(1).reduce((a, b) => a * b, 1);
 	const datas: ImageData[] = [];
-	for (let idx = 0; idx < frames; idx++) {
-		const d = toImageData({ type: 'array', shape: arr.shape.slice(1), contents: arr.contents.slice(idx * len).slice(0, len) }, '⎕PlayAnimation');
-		if ('code' in d) return d;
-		datas.push(d);
-	}
-	try {
-		await runListeners(delay, datas);
-	} catch (ex) {
-		console.error(ex);
-		return { code: tinyapl.errors.user, message: (ex as Error).message };
-	}
+	for (let idx = 0; idx < frames; idx++)
+		datas.push(toImageData({ type: 'array', shape: arr.shape.slice(1), contents: arr.contents.slice(idx * len).slice(0, len) }, '⎕PlayAnimation'));
+	await runListeners(delay, datas);
 	return { type: 'array', shape: [0], contents: [] };
-});
+}, '⎕PlayAnimation');
 
-export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr, tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [number[][], number[][], string]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
+export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = makeAmbivalent1<[number[][], number[][], string]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
 	let mode = 'markers', arr;
 	if (y) {
 		mode = await tinyapl.joinString(x.contents as string[]);
 		arr = y;
 	} else arr = x;
-	if (arr.shape.length !== 2 && arr.shape.length !== 3) return { code: tinyapl.errors.rank, message: '⎕ScatterPlot expects arrays of rank 2 or 3' };
-	if (arr.shape.at(-1) !== 2) return { code: tinyapl.errors.length, message: '⎕ScatterPlot argument last axis must be of length 2' };
+	if (arr.shape.length !== 2 && arr.shape.length !== 3) throw { code: tinyapl.errors.rank, message: '⎕ScatterPlot expects arrays of rank 2 or 3' };
+	if (arr.shape.at(-1) !== 2) throw { code: tinyapl.errors.length, message: '⎕ScatterPlot argument last axis must be of length 2' };
 	const xs = [], ys = [];
 	if (arr.shape.length === 2) {
 		const x1 = [], y1 = [];
@@ -131,122 +192,97 @@ export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = 
 			ys.push(y1);
 		}
 	}
-	try {
-		await runListeners(xs, ys, mode);
-	} catch (ex) {
-		console.error(ex);
-		return { code: tinyapl.errors.user, message: (ex as Error).message };
-	}
+	await runListeners(xs, ys, mode);
 	return { type: 'array', shape: [0], contents: [] };
-});
+}, '⎕ScatterPlot');
 
-export const { register: rPlayAudio, done: dPlayAudio, fn: qPlayAudio } = makeFunction<[tinyapl.Arr] | [tinyapl.Arr, tinyapl.Arr], Promise<tinyapl.Err | tinyapl.Arr>, [ArrayBuffer]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
+export const { register: rPlayAudio, done: dPlayAudio, fn: qPlayAudio } = makeAmbivalent1<[ArrayBuffer]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {
 	let sampleRate, arr;
 	if (y) {
-		if (x.shape.length !== 0) return { code: tinyapl.errors.rank, message: '⎕PlayAudio left argument must be scalar' };
+		if (x.shape.length !== 0) throw { code: tinyapl.errors.rank, message: '⎕PlayAudio left argument must be scalar' };
 		sampleRate = Math.floor((x.contents[0] as tinyapl.Complex)[0]);
 		arr = y;
 	} else {
 		arr = x;
 		sampleRate = 44100;
 	}
-	if (arr.shape.length !== 1 && arr.shape.length !== 2) return { code: tinyapl.errors.rank, message: '⎕PlayAudio expects arrays of rank 1 or 2' };
+	if (arr.shape.length !== 1 && arr.shape.length !== 2) throw { code: tinyapl.errors.rank, message: '⎕PlayAudio expects arrays of rank 1 or 2' };
 	const channels = arr.shape.length === 1 ? 1 : arr.shape[0];
 	const length = arr.shape.at(-1)!;
 	const bufs = new Array(channels).fill(0).map(_ => new Float32Array(length));
 	for (let ch = 0; ch < channels; ch++)
 		for (let b = 0; b < length; b++)
 			bufs[ch][b] = (arr.contents[ch * length + b] as tinyapl.Complex)[0];
-	try {
-		await runListeners(wav.encode(sampleRate, bufs));
-	} catch (ex) {
-		console.error(ex);
-		return { code: tinyapl.errors.user, message: (ex as Error).message };
-	}
+	await runListeners(wav.encode(sampleRate, bufs));
 	return { type: 'array', shape: [0], contents: [] };
-});
+}, '⎕PlayAudio');
 
-export async function qFetch(x: tinyapl.Arr, y?: tinyapl.Arr): Promise<tinyapl.Arr | tinyapl.Err> {
-	let u, m;
-	if (y) {
-		u = y;
-		m = x;
-	} else {
-		u = x;
-		m = undefined;
-	}
-	if (u.shape.length > 1) return { code: tinyapl.errors.rank, message: '⎕Fetch expects character vectors' };
+export const qFetch = ambivalent(async (u: tinyapl.Arr) => {
+	if (u.shape.length > 1) throw { code: tinyapl.errors.rank, message: '⎕Fetch expects character vectors' };
 	const url = await tinyapl.joinString(u.contents as string[]);
-	let response;
-	try {
-		response = await fetch(url);
-	} catch (ex) {
-		console.error(ex);
-		return { code: tinyapl.errors.user, message: (ex as Error).message };
-	}
-	if (m) {
-		if (m.shape.length !== 0) return { code: tinyapl.errors.domain, message: '⎕Fetch left argument must be one of ⟨1⋄¯1⋄0ᴊ1⋄0ᴊ¯1⟩⊞⟨8⋄16⋄32⟩, ⟨1⋄0ᴊ1⟩⊞⟨0.32⋄0.64⟩ or 1' };
-		const mode = (m.contents[0] as tinyapl.Complex).join(';');
-		const buf = await response.arrayBuffer();
-		const view = new DataView(buf);
-		const result = [];
-		switch (mode) {
-			case '1:0':
-				for (let i = 0; i < view.byteLength; i += 1) {
-					const u = view.getUint8(i);
-					for (let bi = 0; bi < 8; bi++) {
-						result.push(Number((u & (1 << bi)) !== 0));
-					}
+	const text = await fetch(url).then(res => res.text());
+	return { type: 'array', shape: [text.length], contents: await tinyapl.splitString(text) };
+}, async (m: tinyapl.Arr, u: tinyapl.Arr) => {
+	if (u.shape.length > 1) throw { code: tinyapl.errors.rank, message: '⎕Fetch expects character vectors' };
+	const url = await tinyapl.joinString(u.contents as string[]);
+	if (m.shape.length !== 0) throw { code: tinyapl.errors.domain, message: '⎕Fetch left argument must be one of ⟨1⋄¯1⋄0ᴊ1⋄0ᴊ¯1⟩⊞⟨8⋄16⋄32⟩, ⟨1⋄0ᴊ1⟩⊞⟨0.32⋄0.64⟩ or 1' };
+	const mode = (m.contents[0] as tinyapl.Complex).join(';');
+	const buf = await fetch(url).then(res => res.arrayBuffer());
+	const view = new DataView(buf);
+	const result = [];
+	switch (mode) {
+		case '1:0':
+			for (let i = 0; i < view.byteLength; i += 1) {
+				const u = view.getUint8(i);
+				for (let bi = 0; bi < 8; bi++) {
+					result.push(Number((u & (1 << bi)) !== 0));
 				}
-				break;
-			case '8;0':
-			case '0;8':
-				for (let i = 0; i < view.byteLength; i += 1) result.push(view.getUint8(i));
-				break;
-			case '-8;0':
-			case '0;-8':
-				for (let i = 0; i < view.byteLength; i += 1) result.push(view.getInt8(i));
-				break;
-			case '16;0':
-				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint16(i, true));
-				break;
-			case '-16:0':
-				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt16(i, true));
-				break;
-			case '0;16':
-				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint16(i, false));
-				break;
-			case '0:-16':
-				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt16(i, false));
-				break;
-			case '32;0':
-				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint32(i, true));
-				break;
-			case '-32:0':
-				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt32(i, true));
-				break;
-			case '0;32':
-				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint32(i, false));
-				break;
-			case '0:-32':
-				for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt32(i, false));
-				break;
-			case '0.32:0':
-				for (let i = 0; i < view.byteLength; i += 4) result.push(view.getFloat32(i, true));
-				break;
-			case '0:0.32':
-				for (let i = 0; i < view.byteLength; i += 4) result.push(view.getFloat32(i, false));
-				break;
-			case '0.64:0':
-				for (let i = 0; i < view.byteLength; i += 8) result.push(view.getFloat64(i, true));
-				break;
-			case '0:0.64':
-				for (let i = 0; i < view.byteLength; i += 8) result.push(view.getFloat64(i, false));
-				break;
-		}
-		return { type: 'array', shape: [result.length], contents: result.map(r => [r, 0]) };
-	} else {
-		const text = await response.text();
-		return { type: 'array', shape: [text.length], contents: await tinyapl.splitString(text) };
+			}
+			break;
+		case '8;0':
+		case '0;8':
+			for (let i = 0; i < view.byteLength; i += 1) result.push(view.getUint8(i));
+			break;
+		case '-8;0':
+		case '0;-8':
+			for (let i = 0; i < view.byteLength; i += 1) result.push(view.getInt8(i));
+			break;
+		case '16;0':
+			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint16(i, true));
+			break;
+		case '-16:0':
+			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt16(i, true));
+			break;
+		case '0;16':
+			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint16(i, false));
+			break;
+		case '0:-16':
+			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt16(i, false));
+			break;
+		case '32;0':
+			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint32(i, true));
+			break;
+		case '-32:0':
+			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt32(i, true));
+			break;
+		case '0;32':
+			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint32(i, false));
+			break;
+		case '0:-32':
+			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt32(i, false));
+			break;
+		case '0.32:0':
+			for (let i = 0; i < view.byteLength; i += 4) result.push(view.getFloat32(i, true));
+			break;
+		case '0:0.32':
+			for (let i = 0; i < view.byteLength; i += 4) result.push(view.getFloat32(i, false));
+			break;
+		case '0.64:0':
+			for (let i = 0; i < view.byteLength; i += 8) result.push(view.getFloat64(i, true));
+			break;
+		case '0:0.64':
+			for (let i = 0; i < view.byteLength; i += 8) result.push(view.getFloat64(i, false));
+			break;
 	}
-}
+	return { type: 'array', shape: [result.length], contents: result.map(r => [r, 0]) };
+}, '⎕Fetch');

@@ -7,7 +7,7 @@ declare function _default(__exports: any): {
     ZC3ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any) => (a1: any) => any;
     ZC6ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any, $2: any, $3: any) => Promise<any>;
     ZC7ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any, $2: any) => Promise<any>;
-    ZC9ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any, $2: any) => boolean;
+    ZC8ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any) => Promise<any>;
     ZC10ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any, $2: any) => any;
     ZC11ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any) => $1 is any[];
     ZC12ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any) => "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function";
@@ -31,12 +31,8 @@ declare function _default(__exports: any): {
     ZC33ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any) => never[];
     ZC34ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any) => any;
     ZC35ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any) => any;
-    ZC36ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCMainZC: ($1: any, $2: any, $3: any) => Promise<any>;
-    ZC37ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCMainZC: ($1: any, $2: any) => Promise<any>;
-    ZC38ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCMainZC: ($1: any, $2: any) => Promise<void>;
-    ZC39ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCMainZC: ($1: any) => Promise<any>;
-    ZC40ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCMainZC: ($1: any, $2: any) => Promise<void>;
-    ZC41ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCMainZC: ($1: any) => Promise<any>;
+    ZC37ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCMainZC: ($1: any, $2: any) => Promise<void>;
+    ZC38ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCMainZC: ($1: any) => Promise<any>;
     ZC0ZCghczminternalZCGHCziInternalziWasmziPrimziExportsZC: ($1: any, $2: any) => any;
     ZC16ZCghczminternalZCGHCziInternalziWasmziPrimziExportsZC: ($1: any, $2: any) => any;
     ZC18ZCghczminternalZCGHCziInternalziWasmziPrimziExportsZC: ($1: any, $2: any) => any;
