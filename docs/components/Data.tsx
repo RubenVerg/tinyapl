@@ -27,7 +27,7 @@ function Data({ pages }: DataProps) {
 		<div>
 			<button class='btn btn-outline-secondary' data-bs-toggle='collapse' data-bs-target='#planned-quads-collapse'>Planned quads</button>
 			<div class='collapse' id='planned-quads-collapse'>
-				<ul>{Object.entries(pages.quads).filter(([_k, v]) => v.planned).toSorted(([_ka, va], [_kb, vb]) => va.name.localeCompare(vb.name)).map(([k, v]) => <li><a href={`/docs/quads/${k}`}><code>{v.glyph}</code> {v.name}</a></li>)}</ul>
+				<ul>{Object.entries(pages.quads).filter(([_k, v]) => v.planned).toSorted(([_ka, va], [_kb, vb]) => va.name.localeCompare(vb.name)).map(([k, v]) => <li><a href={`/docs/quad/${k}`}><code>{v.glyph}</code> {v.name}</a></li>)}</ul>
 			</div>
 		</div>
 		<p>Glyph count: {Object.values(pages.glyphs).length}</p>
