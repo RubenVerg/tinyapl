@@ -30,6 +30,8 @@ data ScalarValue
   | Character Char
   | Box Array
   | Wrap Function
+  | AdverbWrap Adverb
+  | ConjunctionWrap Conjunction
   | Struct Context
 
 data Array = Array
@@ -141,10 +143,25 @@ instance Ord ScalarValue where
   (Wrap _) `compare` (Box _) = GT
   (Wrap (Function { functionRepr = ar })) `compare` (Wrap (Function { functionRepr = br })) = ar `compare` br
   (Wrap _) `compare` _ = LT
+  (AdverbWrap _) `compare` (Number _) = GT
+  (AdverbWrap _) `compare` (Character _) = GT
+  (AdverbWrap _) `compare` (Box _) = GT
+  (AdverbWrap _) `compare` (Wrap _) = GT
+  (AdverbWrap (Adverb { adverbRepr = ar })) `compare` (AdverbWrap (Adverb { adverbRepr = br })) = ar `compare` br
+  (AdverbWrap _) `compare` _ = GT
+  (ConjunctionWrap _) `compare` (Number _) = GT
+  (ConjunctionWrap _) `compare` (Character _) = GT
+  (ConjunctionWrap _) `compare` (Box _) = GT
+  (ConjunctionWrap _) `compare` (Wrap _) = GT
+  (ConjunctionWrap _) `compare` (AdverbWrap _) = GT
+  (ConjunctionWrap (Conjunction { conjRepr = ar })) `compare` (ConjunctionWrap (Conjunction { conjRepr = br })) = ar `compare` br
+  (ConjunctionWrap _) `compare` _ = GT
   (Struct _) `compare` (Number _) = GT
   (Struct _) `compare` (Character _) = GT
   (Struct _) `compare` (Box _) = GT
   (Struct _) `compare` (Wrap _) = GT
+  (Struct _) `compare` (AdverbWrap _) = GT
+  (Struct _) `compare` (ConjunctionWrap _) = GT
   (Struct _) `compare` (Struct _) = LT
 
 instance Eq Array where
@@ -169,7 +186,9 @@ instance Show ScalarValue where
   show (Number x) = showComplex x
   show (Character x) = [x]
   show (Box xs) = G.enclose : show xs
-  show (Wrap fn) = [fst G.parens, G.wrap] ++ show fn ++ [snd G.parens]
+  show (Wrap fn) = [G.wrap, fst G.parens] ++ show fn ++ [snd G.parens]
+  show (AdverbWrap adv) = [G.wrap, fst G.parens] ++ show adv ++ [snd G.parens]
+  show (ConjunctionWrap conj) = [G.wrap, fst G.parens] ++ show conj ++ [snd G.parens]
   show (Struct _) = [fst G.struct] ++ "..." ++ [snd G.struct]
 
 instance Show Array where
@@ -190,7 +209,9 @@ scalarRepr (Character x) = case charRepr x of
   (e, True) -> [G.first, G.stringDelimiter] ++ e ++ [G.stringDelimiter]
   (c, False) -> [G.charDelimiter] ++ c ++ [G.charDelimiter]
 scalarRepr (Box xs) = G.enclose : arrayRepr xs
-scalarRepr (Wrap fn) = [fst G.parens, G.wrap] ++ show fn ++ [snd G.parens]
+scalarRepr (Wrap fn) = [G.wrap, fst G.parens] ++ show fn ++ [snd G.parens]
+scalarRepr (AdverbWrap adv) = [G.wrap, fst G.parens] ++ show adv ++ [snd G.parens]
+scalarRepr (ConjunctionWrap conj) = [G.wrap, fst G.parens] ++ show conj ++ [snd G.parens]
 scalarRepr (Struct _) = [fst G.struct] ++ "..." ++ [snd G.struct]
 
 stringRepr :: [Char] -> String
@@ -220,6 +241,14 @@ boolToScalar False = Number 0
 asWrap :: MonadError Error m => Error -> ScalarValue -> m Function
 asWrap _ (Wrap fn) = pure fn
 asWrap e _ = throwError e
+
+asAdverbWrap :: MonadError Error m => Error -> ScalarValue -> m Adverb
+asAdverbWrap _ (AdverbWrap adv) = pure adv
+asAdverbWrap e _ = throwError e
+
+asConjunctionWrap :: MonadError Error m => Error -> ScalarValue -> m Conjunction
+asConjunctionWrap _ (ConjunctionWrap conj) = pure conj
+asConjunctionWrap e _ = throwError e
 
 asStruct :: MonadError Error m => Error -> ScalarValue -> m Context
 asStruct _ (Struct ctx) = pure ctx

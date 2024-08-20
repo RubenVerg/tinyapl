@@ -14,7 +14,7 @@ export interface Struct {
 	type: 'struct';
 	entries: Record<string, Value>;
 }
-export type ScalarValue = Complex | string | Arr | Fun | Struct;
+export type ScalarValue = Complex | string | Arr | Fun | Adv | Conj | Struct;
 export interface Arr {
 	type: 'array';
 	shape: number[];

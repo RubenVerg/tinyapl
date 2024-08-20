@@ -188,6 +188,8 @@ instance IsJSSt ScalarValue where
       if jsIsArray v then pure $ Number $ fromJSVal v
       else if fromJSVal (jsLookup v $ toJSString "type") == "array" then Box <$> fromJSValSt v
       else if fromJSVal (jsLookup v $ toJSString "type") == "function" then Wrap <$> fromJSValSt v
+      else if fromJSVal (jsLookup v $ toJSString "type") == "adverb" then AdverbWrap <$> fromJSValSt v
+      else if fromJSVal (jsLookup v $ toJSString "type") == "conjunction" then ConjunctionWrap <$> fromJSValSt v
       else if fromJSVal (jsLookup v $ toJSString "type") == "struct" then do
         ctx <- getContext
         scope <- foldrM (\(n, v) s -> flip (scopeUpdate n) s <$> fromJSValSt v) (Scope [] [] [] [] Nothing) (valToObject $ jsLookup v $ toJSString "entries") >>= createRef
@@ -198,6 +200,8 @@ instance IsJSSt ScalarValue where
   toJSValSt (Character x) = pure $ toJSVal x
   toJSValSt (Box xs) = toJSValSt xs
   toJSValSt (Wrap fn) = toJSValSt fn
+  toJSValSt (AdverbWrap adv) = toJSValSt adv
+  toJSValSt (ConjunctionWrap conj) = toJSValSt conj
   toJSValSt (Struct ctx) = do
     scope <- readRef $ contextScope ctx
     entries <- mapM (secondM toJSValSt) $ scopeEntries scope
