@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, BangPatterns #-}
+{-# LANGUAGE LambdaCase, BangPatterns, TupleSections #-}
 
 module TinyAPL.Parser where
 
@@ -275,9 +275,9 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   conjunctionName :: Parser String
   conjunctionName = try ((\x y z w -> x : y : z ++ [w]) <$> char G.quad <*> char G.underscore <*> many (oneOf identifierRest) <*> char G.underscore) <|> try (string [G.underscore, G.del, G.underscore]) <|> liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (some $ oneOf identifierRest) (char G.underscore)
 
-  qualified :: Show a => (a -> NonEmpty String -> b) -> Parser a -> Parser String -> Parser String -> Parser b
-  qualified make head piece tail = do
-    ((first, middle), last) <- commitOn' (,) (liftA2 (,) (head `commitOn` char G.access) (many $ lexeme piece `commitOn` char G.access)) (lexeme tail)
+  qualified :: [(Token -> NonEmpty String -> b, Parser String)] -> Parser b
+  qualified xs = do
+    ((first, middle), (last, make)) <- commitOn' (,) (liftA2 (,) (bit' `commitOn` char G.access) (many $ lexeme arrayName `commitOn` char G.access)) (choice $ (\(m, p) -> (, m) <$> p) <$> xs)
     pure $ make first $ snocNE middle last
 
   arrayAssign :: Parser Token
@@ -358,8 +358,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     struct = withPos $ TokenStruct <$> (string [fst G.struct] *> sepBy bits separator <* string [snd G.struct])
 
   array :: Parser Token
-  array = withPos (liftA2 ($) (qualified TokenQualifiedArrayAssign bit' arrayName arrayName `commitOn` char G.assign) bits)
-    <|> withPos (qualified TokenQualifiedArrayName bit' arrayName arrayName) <|> vectorAssign <|> highRankAssign <|> arrayAssign <|> array'
+  array = vectorAssign <|> highRankAssign <|> arrayAssign <|> array'
 
   function' :: Parser Token
   function' = dfn <|> train <|> try (withPos $ TokenFunctionName <$> functionName) <|> primFunction <|> unwrap where
@@ -376,7 +375,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     unwrap = withPos $ TokenUnwrap <$> (char G.unwrap *> bit)
 
   function :: Parser Token
-  function = withPos (liftA2 ($) (qualified TokenQualifiedFunctionAssign bit' arrayName functionName `commitOn` char G.assign) bits) <|> withPos (qualified TokenQualifiedFunctionName bit' arrayName functionName) <|> functionAssign <|> function'
+  function = functionAssign <|> function'
 
   adverb' :: Parser Token
   adverb' = try dadv <|> try adverbTrain <|> try (withPos $ TokenAdverbName <$> adverbName) <|> primAdverb <|> unwrapAdverb where
@@ -393,7 +392,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     unwrapAdverb = withPos $ TokenUnwrapAdverb <$> (string [G.underscore, G.unwrap] *> bit)
 
   adverb :: Parser Token
-  adverb = withPos (liftA2 ($) (qualified TokenQualifiedAdverbAssign bit' arrayName adverbName `commitOn` char G.assign) bits) <|> withPos (qualified TokenQualifiedAdverbName bit' arrayName adverbName) <|> adverbAssign <|> adverb'
+  adverb = adverbAssign <|> adverb'
 
   conjunction' :: Parser Token
   conjunction' = try dconj <|> try conjunctionTrain <|> try (withPos $ TokenConjunctionName <$> conjunctionName) <|> primConjunction <|> unwrapConjunction where
@@ -410,7 +409,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     unwrapConjunction = withPos $ TokenUnwrapConjunction <$> (string [G.underscore, G.unwrap, G.underscore] *> bit)
 
   conjunction :: Parser Token
-  conjunction = withPos (liftA2 ($) (qualified TokenQualifiedConjunctionAssign bit' arrayName conjunctionName `commitOn` char G.assign) bits) <|> withPos (qualified TokenQualifiedConjunctionName bit' arrayName conjunctionName) <|> conjunctionAssign <|> conjunction'
+  conjunction = conjunctionAssign <|> conjunction'
 
   guard :: Parser Token
   guard = withPos $ liftA2 TokenGuard (bits `commitOn` char G.guard) definedBits
@@ -428,7 +427,9 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   bit' = lexeme $ conjunction' <|> adverb' <|> function' <|> array' <|> bracketed
 
   bit :: Parser Token
-  bit = lexeme $ conjunction <|> adverb <|> function <|> array <|> bracketed
+  bit = lexeme $ (withPos $ liftA2 ($) (qualified [(TokenQualifiedConjunctionAssign, try conjunctionName), (TokenQualifiedAdverbAssign, adverbName), (TokenQualifiedFunctionAssign, functionName), (TokenQualifiedArrayAssign, arrayName)] `commitOn` char G.assign) bits)
+    <|> (withPos $ qualified [(TokenQualifiedConjunctionName, try conjunctionName), (TokenQualifiedAdverbName, adverbName), (TokenQualifiedFunctionName, functionName), (TokenQualifiedArrayName, arrayName)])
+    <|> conjunction <|> adverb <|> function <|> array <|> bracketed
 
   bitsMaybe :: Parser [Token]
   bitsMaybe = spaceConsumer *> many bit
