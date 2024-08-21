@@ -263,11 +263,9 @@ instance IsJSSt Function where
       let repr = fromJSString $ fromJSVal $ jsLookup v $ toJSString "repr"
       let monad = jsLookup v $ toJSString "monad"
       let dyad = jsLookup v $ toJSString "dyad"
-      sc <- createRef $ Scope [] [] [] [] Nothing
-      ctx <- getContext
       pure $ Function {
         functionRepr = repr,
-        functionContext = Just $ ctx{ contextScope = sc },
+        functionContext = Nothing,
         functionMonad = if jsIsUndefined monad then Nothing else Just $ (\x -> toJSValSt x >>= liftToSt . jsCall1 monad >>= fromJSValSt),
         functionDyad = if jsIsUndefined dyad then Nothing else Just $ (\x y -> do
           x' <- toJSValSt x
@@ -293,11 +291,9 @@ instance IsJSSt Adverb where
       let repr = fromJSString $ fromJSVal $ jsLookup v $ toJSString "repr"
       let onArray = jsLookup v $ toJSString "array"
       let onFunction = jsLookup v $ toJSString "function"
-      sc <- createRef $ Scope [] [] [] [] Nothing
-      ctx <- getContext
       pure $ Adverb {
         adverbRepr = repr,
-        adverbContext = Just $ ctx{ contextScope = sc },
+        adverbContext = Nothing,
         adverbOnArray = if jsIsUndefined onArray then Nothing else Just $ (\x -> toJSValSt x >>= liftToSt . jsCall1 onArray >>= fromJSValSt),
         adverbOnFunction = if jsIsUndefined onFunction then Nothing else Just $ (\x -> toJSValSt x >>= liftToSt . jsCall1 onFunction >>= fromJSValSt) }
     | otherwise = throwError $ DomainError "fromJSValSt Adverb: not an adverb"
@@ -321,11 +317,9 @@ instance IsJSSt Conjunction where
       let onArrayFunction = jsLookup v $ toJSString "arrayFunction"
       let onFunctionArray = jsLookup v $ toJSString "functionArray"
       let onFunctionFunction = jsLookup v $ toJSString "functionFunction"
-      sc <- createRef $ Scope [] [] [] [] Nothing
-      ctx <- getContext
       pure $ Conjunction {
         conjRepr = repr,
-        conjContext = Just $ ctx{ contextScope = sc },
+        conjContext = Nothing,
         conjOnArrayArray = if jsIsUndefined onArrayArray then Nothing else Just $ (\x y -> do
           x' <- toJSValSt x
           y' <- toJSValSt y
