@@ -71,6 +71,9 @@ unerror x = case x of
 except :: Monad m => Either e a -> ExceptT e m a
 except m = ExceptT $ return m
 
+liftEither :: MonadError e m => Either e a -> m a
+liftEither = Control.Monad.Except.liftEither
+
 throwError :: MonadError Error m => Error -> m a
 throwError = Control.Monad.Except.throwError
 

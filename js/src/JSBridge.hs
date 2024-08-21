@@ -14,6 +14,7 @@ import Data.List
 import Data.Bifunctor
 import Data.Foldable
 import Control.Monad (void)
+import Debug.Trace
 
 class IsJS a where
   fromJSVal :: JSVal -> a
@@ -253,9 +254,9 @@ foreign import javascript safe "return await $1();" jsCall0 :: JSVal -> IO JSVal
 foreign import javascript safe "return await $1($2);" jsCall1 :: JSVal -> JSVal -> IO JSVal
 foreign import javascript safe "return await $1($2, $3);" jsCall2 :: JSVal -> JSVal -> JSVal -> IO JSVal
 
-foreign import javascript unsafe "wrapper" jsWrap0 :: IO JSVal -> IO JSVal
-foreign import javascript unsafe "wrapper" jsWrap1 :: (JSVal -> IO JSVal) -> IO JSVal
-foreign import javascript unsafe "wrapper" jsWrap2 :: (JSVal -> JSVal -> IO JSVal) -> IO JSVal
+foreign import javascript safe "wrapper" jsWrap0 :: IO JSVal -> IO JSVal
+foreign import javascript safe "wrapper" jsWrap1 :: (JSVal -> IO JSVal) -> IO JSVal
+foreign import javascript safe "wrapper" jsWrap2 :: (JSVal -> JSVal -> IO JSVal) -> IO JSVal
 
 instance IsJSSt Function where
   fromJSValSt v
@@ -266,11 +267,15 @@ instance IsJSSt Function where
       pure $ Function {
         functionRepr = repr,
         functionContext = Nothing,
-        functionMonad = if jsIsUndefined monad then Nothing else Just $ (\x -> toJSValSt x >>= liftToSt . jsCall1 monad >>= fromJSValSt),
+        functionMonad = if jsIsUndefined monad then Nothing else Just $ (\x -> do
+          x' <- toJSValSt x
+          res <- liftToSt (jsCall1 monad x') >>= fromJSValSt
+          liftEither res),
         functionDyad = if jsIsUndefined dyad then Nothing else Just $ (\x y -> do
           x' <- toJSValSt x
           y' <- toJSValSt y
-          liftToSt (jsCall2 dyad x' y') >>= fromJSValSt) }
+          res <- liftToSt (jsCall2 dyad x' y') >>= fromJSValSt
+          liftEither res) }
     | otherwise = throwError $ DomainError "fromJSValSt Function: not a function"
   toJSValSt f = do
     ctx <- getContext
@@ -294,8 +299,14 @@ instance IsJSSt Adverb where
       pure $ Adverb {
         adverbRepr = repr,
         adverbContext = Nothing,
-        adverbOnArray = if jsIsUndefined onArray then Nothing else Just $ (\x -> toJSValSt x >>= liftToSt . jsCall1 onArray >>= fromJSValSt),
-        adverbOnFunction = if jsIsUndefined onFunction then Nothing else Just $ (\x -> toJSValSt x >>= liftToSt . jsCall1 onFunction >>= fromJSValSt) }
+        adverbOnArray = if jsIsUndefined onArray then Nothing else Just $ (\x -> do
+          x' <- toJSValSt x
+          res <- liftToSt (jsCall1 onArray x') >>= fromJSValSt
+          liftEither res),
+        adverbOnFunction = if jsIsUndefined onFunction then Nothing else Just $ (\x -> do
+          x' <- toJSValSt x
+          res <- liftToSt (jsCall1 onFunction x') >>= fromJSValSt
+          liftEither res) }
     | otherwise = throwError $ DomainError "fromJSValSt Adverb: not an adverb"
   toJSValSt a = do
     ctx <- getContext
@@ -323,19 +334,23 @@ instance IsJSSt Conjunction where
         conjOnArrayArray = if jsIsUndefined onArrayArray then Nothing else Just $ (\x y -> do
           x' <- toJSValSt x
           y' <- toJSValSt y
-          liftToSt (jsCall2 onArrayArray x' y') >>= fromJSValSt),
+          res <- liftToSt (jsCall2 onArrayArray x' y') >>= fromJSValSt
+          liftEither res),
         conjOnArrayFunction = if jsIsUndefined onArrayFunction then Nothing else Just $ (\x y -> do
           x' <- toJSValSt x
           y' <- toJSValSt y
-          liftToSt (jsCall2 onArrayFunction x' y') >>= fromJSValSt),
+          res <- liftToSt (jsCall2 onArrayFunction x' y') >>= fromJSValSt
+          liftEither res),
         conjOnFunctionArray = if jsIsUndefined onFunctionArray then Nothing else Just $ (\x y -> do
           x' <- toJSValSt x
           y' <- toJSValSt y
-          liftToSt (jsCall2 onFunctionArray x' y') >>= fromJSValSt),
+          res <- liftToSt (jsCall2 onFunctionArray x' y') >>= fromJSValSt
+          liftEither res),
         conjOnFunctionFunction = if jsIsUndefined onFunctionFunction then Nothing else Just $ (\x y -> do
           x' <- toJSValSt x
           y' <- toJSValSt y
-          liftToSt (jsCall2 onFunctionFunction x' y') >>= fromJSValSt) }
+          res <- liftToSt (jsCall2 onFunctionFunction x' y') >>= fromJSValSt
+          liftEither res) }
     | otherwise = throwError $ DomainError "fromJSValSt Conjunction: not a conjunction"
   toJSValSt c = do
     ctx <- getContext

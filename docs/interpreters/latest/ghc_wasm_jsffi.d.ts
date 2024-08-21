@@ -8,6 +8,7 @@ declare function _default(__exports: any): {
     ZC6ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any, $2: any, $3: any) => Promise<any>;
     ZC7ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any, $2: any) => Promise<any>;
     ZC8ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any) => Promise<any>;
+    ZC9ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any, $2: any) => boolean;
     ZC10ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any, $2: any) => any;
     ZC11ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any) => $1 is any[];
     ZC12ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1: any) => "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function";
