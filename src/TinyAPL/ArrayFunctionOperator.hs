@@ -558,6 +558,18 @@ instance Show Scope where
 specialNames :: [String]
 specialNames = [[G.alpha], [G.omega], [G.alpha, G.alpha], [G.omega, G.omega], [G.alphaBar, G.alphaBar], [G.omegaBar, G.omegaBar], [G.del], [G.underscore, G.del], [G.underscore, G.del, G.underscore]]
 
+scopeShallowLookupArray :: String -> Scope -> Maybe Array
+scopeShallowLookupArray name sc = lookup name (scopeArrays sc)
+
+scopeShallowLookupFunction :: String -> Scope -> Maybe Function
+scopeShallowLookupFunction name sc = lookup name (scopeFunctions sc)
+
+scopeShallowLookupAdverb :: String -> Scope -> Maybe Adverb
+scopeShallowLookupAdverb name sc = lookup name (scopeAdverbs sc)
+
+scopeShallowLookupConjunction :: String -> Scope -> Maybe Conjunction
+scopeShallowLookupConjunction name sc = lookup name (scopeConjunctions sc)
+
 scopeLookupArray :: String -> Scope -> St (Maybe Array)
 scopeLookupArray name sc = case lookup name (scopeArrays sc) of
   Just x -> pure $ Just x
