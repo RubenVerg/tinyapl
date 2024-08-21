@@ -94,6 +94,13 @@ makeValueConjunction a s = Conjunction
 scopeEntries :: Scope -> [(String, Value)]
 scopeEntries sc = (second VArray <$> scopeArrays sc) ++ (second VFunction <$> scopeFunctions sc) ++ (second VAdverb <$> scopeAdverbs sc) ++ (second VConjunction <$> scopeConjunctions sc)
 
+scopeShallowLookup :: String -> Scope -> Maybe Value
+scopeShallowLookup name sc =
+  VArray <$> scopeShallowLookupArray name sc
+  <|> VFunction <$> scopeShallowLookupFunction name sc
+  <|> VAdverb <$> scopeShallowLookupAdverb name sc
+  <|> VConjunction <$> scopeShallowLookupConjunction name sc
+
 scopeLookup :: String -> Scope -> St (Maybe Value)
 scopeLookup name sc = do
   a <- scopeLookupArray name sc
@@ -276,7 +283,7 @@ evalQualified head ns = do
   headCtx <- unwrapArray err head >>= asScalar err >>= asStruct err
   ctx <- resolve headCtx q
   scope <- readRef $ contextScope ctx
-  scopeLookup l scope >>= lift . except . maybeToEither (SyntaxError $ "Qualified variable " ++ l ++ " does not exist")
+  lift $ except $ maybeToEither (SyntaxError $ "Qualified variable " ++ l ++ " does not exist") $ scopeShallowLookup l scope
 
 evalMonadCall :: Value -> Value -> St Value
 evalMonadCall (VFunction fn) (VArray arr) = VArray <$> callMonad fn arr
