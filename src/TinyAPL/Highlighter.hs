@@ -78,6 +78,11 @@ highlight str = reverse $ hColors $ execState hl (HState [] str) where
     str <- gets hStr
     pure $ case str of (_:s:_) -> s; _ -> chr 0
 
+  peekNextNext :: HSt Char
+  peekNextNext = do
+    str <- gets hStr
+    pure $ case str of (_:_:s:_) -> s; _ -> chr 0
+
   advance :: HSt Char
   advance = do
     st <- get
@@ -156,6 +161,7 @@ highlight str = reverse $ hColors $ execState hl (HState [] str) where
   hl = whileM_ (not <$> atEnd) $ do
     p <- peek
     n <- peekNext
+    nn <- peekNextNext
     if p `elem` numberChars then number
     else if p `elem` [G.stringDelimiter, G.charDelimiter] then string
     else if p == fst G.braces then advance >> push CSyntax
@@ -166,6 +172,9 @@ highlight str = reverse $ hColors $ execState hl (HState [] str) where
     else if p == G.underscore && n == fst G.train then advance >> advance >> pushMany [CSyntax, CSyntax]
     else if p == snd G.train && n == G.underscore then advance >> advance >> pushMany [CSyntax, CSyntax]
     else if p == snd G.train then advance >> push CSyntax
+    else if p == G.underscore && n == G.unwrap && nn == G.underscore then advance >> advance >> advance >> pushMany [CSyntax, CSyntax, CSyntax]
+    else if p == G.underscore && n == G.unwrap then advance >> advance >> pushMany [CSyntax, CSyntax]
+    else if p == G.unwrap then advance >> push CSyntax
     else if p `elem` identifierChars then identifier
     else if p == fst G.inlineComment then inlineComment
     else if p == G.comment then comment
