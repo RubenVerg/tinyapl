@@ -275,10 +275,13 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   conjunctionName :: Parser String
   conjunctionName = try ((\x y z w -> x : y : z ++ [w]) <$> char G.quad <*> char G.underscore <*> many (oneOf identifierRest) <*> char G.underscore) <|> try (string [G.underscore, G.del, G.underscore]) <|> liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (some $ oneOf identifierRest) (char G.underscore)
 
-  qualified :: [(Token -> NonEmpty String -> b, Parser String)] -> Parser b
+  qualified :: [(Token -> NonEmpty String -> b, Token -> NonEmpty String -> NonEmpty Token -> b, Parser String)] -> Parser b
   qualified xs = do
-    ((first, middle), (last, make)) <- commitOn' (,) (liftA2 (,) (bit' `commitOn` char G.access) (many $ lexeme arrayName `commitOn` char G.access)) (choice $ (\(m, p) -> (, m) <$> p) <$> xs)
-    pure $ make first $ snocNE middle last
+    ((first, middle), (name, assign, last)) <- commitOn' (,) (liftA2 (,) (bit' `commitOn` char G.access) (many $ lexeme arrayName `commitOn` char G.access)) (choice $ (\(n, a, p) -> (n, a, ) <$> p) <$> xs)
+    option (name first $ snocNE middle last) $ do
+      char G.assign
+      w <- bits
+      pure $ assign first (snocNE middle last) w
 
   arrayAssign :: Parser Token
   arrayAssign = assign' TokenArrayAssign arrayName
@@ -427,8 +430,11 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   bit' = lexeme $ conjunction' <|> adverb' <|> function' <|> array' <|> bracketed
 
   bit :: Parser Token
-  bit = lexeme $ (withPos $ liftA2 ($) (qualified [(TokenQualifiedConjunctionAssign, try conjunctionName), (TokenQualifiedAdverbAssign, adverbName), (TokenQualifiedFunctionAssign, functionName), (TokenQualifiedArrayAssign, arrayName)] `commitOn` char G.assign) bits)
-    <|> (withPos $ qualified [(TokenQualifiedConjunctionName, try conjunctionName), (TokenQualifiedAdverbName, adverbName), (TokenQualifiedFunctionName, functionName), (TokenQualifiedArrayName, arrayName)])
+  bit = lexeme $ (withPos $ qualified
+      [ (TokenQualifiedConjunctionName, TokenQualifiedConjunctionAssign, try conjunctionName)
+      , (TokenQualifiedAdverbName, TokenQualifiedAdverbAssign, adverbName)
+      , (TokenQualifiedFunctionName, TokenQualifiedFunctionAssign, functionName)
+      , (TokenQualifiedArrayName, TokenQualifiedArrayAssign, arrayName) ])
     <|> conjunction <|> adverb <|> function <|> array <|> bracketed
 
   bitsMaybe :: Parser [Token]
