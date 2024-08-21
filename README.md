@@ -273,6 +273,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⎕Repr` convert an array to a representation that can be read with Execute
 		* [ ] `⎕Assert` assertions
 		* [x] `⎕Delay` sleep for n seconds
+		* [ ] `⎕Import` import a module
 	* system adverbs
 		* [ ] `⎕_BinFile` read/write binary files, with format chosen from the operand
 	* system conjunctions
