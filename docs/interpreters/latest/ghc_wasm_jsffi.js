@@ -94,6 +94,7 @@ export default (__exports) => {
         ZC6ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: async ($1, $2, $3) => { return await $1($2, $3); },
         ZC7ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: async ($1, $2) => { return await $1($2); },
         ZC8ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: async ($1) => { return await $1(); },
+        ZC9ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1, $2) => { return $1 in $2; },
         ZC10ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1, $2) => { return $1[$2]; },
         ZC11ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1) => { return Array.isArray($1); },
         ZC12ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1) => { return typeof $1; },
