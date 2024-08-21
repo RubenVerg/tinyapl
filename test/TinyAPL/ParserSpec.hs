@@ -237,8 +237,10 @@ spec = do
         par "[+]" `shouldBe` Nothing
 
     describe "wraps" $ do
-      it "parses wraps of functions" $ do
+      it "parses wraps of functions and modifiers" $ do
         par "⊏+" `shouldBe` pure [WrapBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
+        par "⊏⍨" `shouldBe` pure [WrapBranch (Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos))]
+        par "⊏∘" `shouldBe` pure [WrapBranch (Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos))]
 
       it "fails on wraps of non-functions" $ do
         par "⊏3" `shouldBe` Nothing

@@ -643,7 +643,11 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   tokenToTree (TokenTrain fs pos)                         = train CatFunction fs pos
   tokenToTree (TokenAdverbTrain fs pos)                   = train CatAdverb fs pos
   tokenToTree (TokenConjunctionTrain fs pos)              = train CatConjunction fs pos
-  tokenToTree (TokenWrap val _)                           = WrapBranch <$> tokenToTree val
+  tokenToTree (TokenWrap val _)                           = WrapBranch <$> (tokenToTree val >>= (\x -> case treeCategory x of
+    CatFunction -> pure x
+    CatAdverb -> pure x
+    CatConjunction -> pure x
+    _ -> throwError $ makeSyntaxError (tokenPos val) source $ "Invalid wrap of type " ++ show (treeCategory x) ++ ", function, adverb or conjunction required"))
   tokenToTree (TokenUnwrap val _)                         = UnwrapBranch CatFunction <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap of type " ++ show c ++ ", array required"))
   tokenToTree (TokenUnwrapAdverb val _)                   = UnwrapBranch CatAdverb <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap adverb of type " ++ show c ++ ", array required"))
   tokenToTree (TokenUnwrapConjunction val _)              = UnwrapBranch CatConjunction <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap conjunction of type " ++ show c ++ ", array required"))
