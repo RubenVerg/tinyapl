@@ -198,7 +198,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⊣` left
 		* [ ] `⍎` execute
 		* [ ] `⍕` format
-		* [ ] `↗` raise?
+		* [x] `↗` raise
 		* [x] `⇂` minimal (TAO minimum)
 		* [x] `↾` maximal (TAO maximum)
 	* operators
