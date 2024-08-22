@@ -14,7 +14,6 @@ import Data.List
 import Data.Bifunctor
 import Data.Foldable
 import Control.Monad (void)
-import Debug.Trace
 
 class IsJS a where
   fromJSVal :: JSVal -> a
