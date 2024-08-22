@@ -21,6 +21,7 @@ import Data.Void (Void)
 import Text.Parser.Combinators (sepByNonEmpty)
 import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Char (isSpace)
 
 type Parser = Parsec Void String
 
@@ -237,7 +238,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   withPos = (<**>) getSourcePos
 
   spaceConsumer :: Parser ()
-  spaceConsumer = L.space space1 (L.skipLineComment [G.comment]) (L.skipBlockComment [fst G.inlineComment] [snd G.inlineComment])
+  spaceConsumer = L.space (void $ satisfy (liftA2 (&&) isSpace (/= '\n')) <|> try (char '\n' <* notFollowedBy (char '\n'))) (L.skipLineComment [G.comment]) (L.skipBlockComment [fst G.inlineComment] [snd G.inlineComment])
 
   lexeme :: Parser a -> Parser a
   lexeme = L.lexeme spaceConsumer
@@ -424,7 +425,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   bracketed = withPos $ TokenParens <$> between (char $ fst G.parens) (char $ snd G.parens) bits
 
   separator :: Parser ()
-  separator = void $ char (G.separator)
+  separator = void $ char (G.separator) <|> char '\n' <* some (char '\n')
 
   bit' :: Parser Token
   bit' = lexeme $ conjunction' <|> adverb' <|> function' <|> array' <|> bracketed

@@ -125,6 +125,11 @@ spec = do
     it "ignores spaces and newlines" $ do
       tok "1\n2" `shouldBe` pure [[TokenNumber [1] emptyPos, TokenNumber [2] emptyPos]]
       tok "1     2" `shouldBe` pure [[TokenNumber [1] emptyPos, TokenNumber [2] emptyPos]]
+
+    it "treats multiple newlines as a separator" $ do
+      tok "1\n\n2" `shouldBe` pure [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos]]
+      tok "1\n\n\n2" `shouldBe` pure [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos]]
+      tok "1\n\n\n\n2" `shouldBe` pure [[TokenNumber [1] emptyPos], [TokenNumber [2] emptyPos]]
     
     it "parses parens" $ do
       tok "(1 2)" `shouldBe` pure [[TokenParens [TokenNumber [1] emptyPos, TokenNumber [2] emptyPos] emptyPos]]
