@@ -14,6 +14,10 @@ import interpreters from './interpreters.ts';
 
 import { serveDir } from './deps/std/http.ts';
 import html, { h, HtmlOptions } from './deps/x/htm.ts';
+import { extensions, types } from './deps/std/media_types/_db.ts';
+
+types.set('tinyapl', 'text/plain');
+extensions.set('text/plain', [...extensions.get('text/plain')!, 'tinyapl']);
 
 const stylesheets = [
 	'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
