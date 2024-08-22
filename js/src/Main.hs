@@ -53,11 +53,20 @@ import Data.IORef
 import GHC.Wasm.Prim
 import System.IO.Unsafe
 import Data.Bifunctor
+import Data.List (intercalate)
 
 foreign export javascript "hs_start" main :: IO ()
 
 main :: IO ()
 main = return ()
+
+foreign import javascript safe "return await fetch($1).then(x => x.text());" fetchStr :: JSString -> IO JSString
+
+readImportUrl :: String -> St String
+readImportUrl = liftToSt . fmap fromJSString . fetchStr . toJSString
+
+readImportStd :: [String] -> St String
+readImportStd path = readImportUrl $ "std/" ++ intercalate "/" path ++ ".tinyapl"
 
 {-# NOINLINE contexts #-}
 contexts :: IORef [Context]
@@ -143,7 +152,7 @@ newContext input output error quads = do
       quadArrays = first (quad :) <$> nilads,
       quadFunctions = first (quad :) <$> functions,
       quadAdverbs = first (quad :) <$> adverbs,
-      quadConjunctions = first (quad :) <$> conjunctions }
+      quadConjunctions = first (quad :) <$> conjunctions } <> quadsFromReprs [] [ makeImport readImportUrl readImportStd ] [] []
     , contextIn = input'
     , contextOut = output'
     , contextErr = error' }])

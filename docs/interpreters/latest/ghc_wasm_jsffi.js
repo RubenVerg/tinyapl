@@ -118,6 +118,7 @@ export default (__exports) => {
         ZC35ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCJSBridgeZC: ($1) => { return $1; },
         ZC37ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCMainZC: async ($1, $2) => { await $1($2); },
         ZC38ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCMainZC: async ($1) => { return await $1(); },
+        ZC39ZCtinyaplzm0zi6zi0zi0zminplacezmtinyaplzmjsZCMainZC: async ($1) => { return await fetch($1).then(x => x.text()); },
         ZC0ZCghczminternalZCGHCziInternalziWasmziPrimziExportsZC: ($1, $2) => ($1.reject(new WebAssembly.RuntimeError($2))),
         ZC16ZCghczminternalZCGHCziInternalziWasmziPrimziExportsZC: ($1, $2) => ($1.resolve($2)),
         ZC18ZCghczminternalZCGHCziInternalziWasmziPrimziExportsZC: ($1, $2) => ($1.resolve($2)),

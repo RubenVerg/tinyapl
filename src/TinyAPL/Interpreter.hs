@@ -11,7 +11,6 @@ import TinyAPL.Util
 
 import Control.Applicative ((<|>))
 import Control.Monad.State
-import Data.Foldable (foldlM)
 import Control.Monad
 import Data.List
 import Data.Bifunctor
@@ -133,10 +132,13 @@ interpret tree = runSt (eval tree)
 forceTrees :: [Maybe Tree] -> [Tree]
 forceTrees = fmap $ fromMaybe $ VectorBranch []
 
-run :: String -> String -> Context -> ResultIO (Value, Context)
-run file src scope = do
-  trees <- except (parse file src)
-  join $ foldlM (\last next -> interpret next . snd <$> last) (return (undefined, scope)) $ forceTrees trees
+run :: FilePath -> String -> Context -> ResultIO (Value, Context)
+run file src = runSt (run' file src)
+
+run' :: FilePath -> String -> St Value
+run' file src = do
+  trees <- lift $ except (parse file src)
+  last <$> mapM eval (forceTrees trees)
 
 eval :: Tree -> St Value
 eval (Leaf _ tok)                   = evalLeaf tok

@@ -11,6 +11,8 @@ import TinyAPL.Complex
 import Control.Monad.State
 import Data.Time.Clock.POSIX
 import Control.Concurrent
+import Data.List
+import Data.List.Split (splitOn)
 
 io = Nilad (Just $ pure $ scalar $ Number 1) Nothing (G.quad : "io") Nothing
 ct = Nilad (Just $ pure $ scalar $ Number $ comparisonTolerance :+ 0) Nothing (G.quad : "ct") Nothing
@@ -46,3 +48,17 @@ delay = Function (Just $ \x -> do
   ) Nothing (G.quad : "Delay") Nothing
 
 core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay ] [] []
+
+makeImport :: (FilePath -> St String) -> ([String] -> St String) -> Function
+makeImport read readStd = Function (Just $ \x -> do
+  let err = DomainError "Import argument must be a character vector"
+  path <- asVector err x >>= mapM (asCharacter err)
+  ctx <- getContext
+  scope <- createRef $ Scope [] [] [] [] Nothing -- The scope has intentionally no parent; imports run in an isolated context
+  let ctx' = ctx{ contextScope = scope }
+  source <-
+    if isPrefixOf "std:" path
+    then readStd <$> splitOn "/" $ drop (length "std:") path
+    else read path
+  runWithContext ctx' $ run' path source
+  pure $ scalar $ Struct ctx') Nothing (G.quad : "Import") Nothing

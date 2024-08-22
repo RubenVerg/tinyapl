@@ -11,8 +11,14 @@ import System.Environment
 import Control.Monad (void)
 import System.IO
 import Data.Functor (($>))
-import Data.List (singleton)
+import Data.List (singleton, intercalate)
 import Data.IORef
+
+readImportFile :: FilePath -> St String
+readImportFile path = liftToSt $ readFile path
+
+readImportStdFile :: [String] -> St String
+readImportStdFile path = liftToSt $ readFile $ "std/" ++ intercalate "/" path ++ ".tinyapl"
 
 main :: IO ()
 main = do
@@ -23,7 +29,7 @@ main = do
 
   let context = Context {
       contextScope = scope
-    , contextQuads = core
+    , contextQuads = core <> quadsFromReprs [] [ makeImport readImportFile readImportStdFile ] [] []
     , contextIn = liftToSt getLine
     , contextOut = \str -> do
       liftToSt $ putStr str
