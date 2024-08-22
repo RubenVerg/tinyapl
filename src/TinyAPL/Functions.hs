@@ -20,7 +20,6 @@ import Data.Ord (Down(..))
 import qualified Data.Matrix as M
 import qualified TinyAPL.Gamma.Gamma as Gamma
 import Debug.Trace
-import TinyAPL.Glyphs (comment)
 
 -- * Functions
 
