@@ -77,6 +77,7 @@ maximal = Function Nothing (Just F.maximal) [G.maximal] Nothing
 transpose = Function (Just F.transpose) (Just F.reorderAxes') [G.transpose] Nothing
 matrixInverse = Function (Just F.matrixInverse') (Just F.matrixDivide') [G.matrixInverse] Nothing
 factorial = Function (Just F.factorial') (Just F.binomial') [G.factorial] Nothing
+raise = Function (Just F.raise1) (Just F.raise') [G.raise] Nothing
 
 functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -140,7 +141,8 @@ functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.maximal
   , TinyAPL.Primitives.transpose
   , TinyAPL.Primitives.matrixInverse
-  , TinyAPL.Primitives.factorial ]
+  , TinyAPL.Primitives.factorial
+  , TinyAPL.Primitives.raise ]
 
 -- * Primitive adverbs
 

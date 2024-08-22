@@ -628,6 +628,21 @@ spec = do
           d P.factorial (scalar $ Number 5) (scalar $ Number -2) `shouldReturn` pure (scalar $ Number -6)
           d P.factorial (scalar $ Number -1) (scalar $ Number -2) `shouldReturn` pure (scalar $ Number 0)
           d P.factorial (scalar $ Number -8) (scalar $ Number -2) `shouldReturn` pure (scalar $ Number 7)
+    
+    describe [G.raise] $ do
+      describe "raise" $ do
+        it "does nothing if the left argument is 0" $ do
+          d P.raise (scalar $ Number 0) (vector $ Character <$> "error") `shouldReturn` pure (vector [])
+        it "raises an error if the left argument is not 0" $ do
+          d P.raise (scalar $ Number 1) (vector $ Character <$> "error") `shouldReturn` throwError (UserError "error")
+          d P.raise (scalar $ Number 2) (vector $ Character <$> "error") `shouldReturn` throwError (DomainError "error")
+          d P.raise (scalar $ Number 3) (vector $ Character <$> "error") `shouldReturn` throwError (LengthError "error")
+          d P.raise (scalar $ Number 4) (vector $ Character <$> "error") `shouldReturn` throwError (RankError "error")
+          d P.raise (scalar $ Number 5) (vector $ Character <$> "error") `shouldReturn` throwError (NYIError "error")
+          d P.raise (scalar $ Number 6) (vector $ Character <$> "error") `shouldReturn` throwError (SyntaxError "error")
+          d P.raise (scalar $ Number 7) (vector $ Character <$> "error") `shouldReturn` throwError (AssertionError "error")
+        it "defaults to an user error" $ do
+          m P.raise (vector $ Character <$> "error") `shouldReturn` throwError (UserError "error")
   
   describe "adverbs" $ do
     describe [G.selfie] $ do

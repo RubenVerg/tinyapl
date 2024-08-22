@@ -752,6 +752,21 @@ binomial _ _ = throwError expectedNumber
 binomial' :: MonadError Error m => Array -> Array -> m Array
 binomial' = scalarDyad binomial
 
+raise :: MonadError Error m => Int -> String -> m ()
+raise = throwError .: fromErrorCode
+
+raise' :: MonadError Error m => Array -> Array -> m Array
+raise' code msg = do
+  let err = DomainError "Raise left argument must be an integer scalar"
+  code' <- asScalar err code >>= asNumber err >>= asInt err
+  when (code' /= 0) $ raise code' $ show msg
+  pure $ vector []
+
+raise1 :: MonadError Error m => Array -> m Array
+raise1 msg = do
+  raise 1 $ show msg
+  pure $ vector []
+
 -- * Operators
 
 compose :: MonadError Error m => (b -> m c) -> (a -> m b) -> a -> m c
