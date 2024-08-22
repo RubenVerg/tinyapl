@@ -1,0 +1,46 @@
+⍝⍝ std:bitwise: Two's complement bitwise operations
+
+⟃private⟄ PadStart ← {⍵⍪⍨0⍴⍨0⌈⍺-≢⍵}
+
+⍝⍝ Turn a number into a list of bits
+Encode ← ⍬∘{ ⍵<0: ↗"Negative number" ⋄ q←⌊⍵÷2 ⋄ r←2|⍵ ⋄ q=0: ■r⍪⍺ ⋄ q∇⍨r⍪⍺ } ⟃ replace with ⊤ ⟄
+
+⍝⍝ Turn a list of bits into a number
+Decode ← { ⍵≡⍬: ■0 ⋄ (⊇⍵)+2×∇¯1↓⍵ } ⟃ replace with ⊥ ⟄
+
+⍝⍝ Bitwise NOT (~)
+Not ← 1∘+⍛-
+
+⟃private⟄ _BinaryOp ← _{ a←Encode ⍺ ⋄ w←Encode ⍵ ⋄ l←a⌈⍥≢w⋄ Decode a ⍶⍶⍥(l∘PadStart) w }
+
+⟃private⟄ _NegativeCasesBinary ← _{ ⟨pp⋄pn⋄np⋄nn⟩←⍺⍺ ⋄ s←0>⍺⍮⍵ ⋄ 0‿0≡s: ■⍺ ⊐pp ⍵ ⋄ 0‿1≡s: ■⍺ ⊐pn ⍵ ⋄ 1‿0≡s: ■⍺ ⊐np ⍵ ⋄ 1‿1≡s: ■⍺ ⊐nn ⍵ ⋄ ↗"Unreachable" }
+
+⍝⍝ Bitwise AND (∧)
+And ← ⟨∧_BinaryOp ⋄ ≠_BinaryOp⇽(∧_BinaryOp∘Not) ⋄ Not⍛(∧_BinaryOp)⇾(≠_BinaryOp) ⋄ Not⍤(∨_BinaryOp⍥Not)⟩_NegativeCasesBinary
+
+⍝⍝ Bitwise OR (∨)
+Or ← Not⍤And⍥Not
+
+⍝⍝ Bitwise XOR (≠)
+Xor ← ⦅Or⋄And∘Not⋄And⦆
+
+⍝⍝ Bitwise NAND (⍲)
+Nand←Not⍤And
+
+⍝⍝ Bitwise NOR (⍱)
+Nor←Not⍤Or
+
+⍝⍝ Bitwise XNOR (=)
+Xnor←Not⍤Xor
+
+⍝⍝ Bitwise implication (≤)
+Imply←Not⍛Or
+
+⍝⍝ Bitwise converse implication (≥)
+Cimply←Or∘Not
+
+⍝⍝ Bitwise non-implication (>)
+Nimply←And∘Not
+
+⍝⍝ Bitwise converse non-implication (<)
+Cnimply←Not⍛And

@@ -27,7 +27,7 @@ Circular ← {
 ⋄ ⍺=¯11: ■⊕⍵
 ⋄ ⍺= 12: ■∡⍵
 ⋄ ⍺=¯12: ■⊗⍵
-⋄ "error" ⟃ use ↗ when it's implemented! ⟄
+⋄ 2↗"Unknown circular function"
 }
 
 ⍝⍝ A function that replicates the behavior of the Circular function from Dyalog and most other APLs.
