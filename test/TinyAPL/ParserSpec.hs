@@ -154,42 +154,42 @@ spec = do
     let par = e2m . parse "<test>"
     
     it "parses leaves" $ do
-      par "1" `shouldBe` pure [Leaf CatArray (TokenNumber [1] emptyPos)]
-      par "'abc'" `shouldBe` pure [Leaf CatArray (TokenChar "abc" emptyPos)]
-      par "\"abc\"" `shouldBe` pure [Leaf CatArray (TokenString "abc" emptyPos)]
-      par "⍬" `shouldBe` pure [Leaf CatArray (TokenPrimArray '⍬' emptyPos)]
-      par "+" `shouldBe` pure [Leaf CatFunction (TokenPrimFunction '+' emptyPos)]
-      par "⍨" `shouldBe` pure [Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos)]
-      par "∘" `shouldBe` pure [Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos)]
-      par "abc" `shouldBe` pure [Leaf CatArray (TokenArrayName "abc" emptyPos)]
-      par "Abc" `shouldBe` pure [Leaf CatFunction (TokenFunctionName "Abc" emptyPos)]
-      par "_Abc" `shouldBe` pure [Leaf CatAdverb (TokenAdverbName "_Abc" emptyPos)]
-      par "_Abc_" `shouldBe` pure [Leaf CatConjunction (TokenConjunctionName "_Abc_" emptyPos)]
+      par "1" `shouldBe` pure [Just $ Leaf CatArray (TokenNumber [1] emptyPos)]
+      par "'abc'" `shouldBe` pure [Just $ Leaf CatArray (TokenChar "abc" emptyPos)]
+      par "\"abc\"" `shouldBe` pure [Just $ Leaf CatArray (TokenString "abc" emptyPos)]
+      par "⍬" `shouldBe` pure [Just $ Leaf CatArray (TokenPrimArray '⍬' emptyPos)]
+      par "+" `shouldBe` pure [Just $ Leaf CatFunction (TokenPrimFunction '+' emptyPos)]
+      par "⍨" `shouldBe` pure [Just $ Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos)]
+      par "∘" `shouldBe` pure [Just $ Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos)]
+      par "abc" `shouldBe` pure [Just $ Leaf CatArray (TokenArrayName "abc" emptyPos)]
+      par "Abc" `shouldBe` pure [Just $ Leaf CatFunction (TokenFunctionName "Abc" emptyPos)]
+      par "_Abc" `shouldBe` pure [Just $ Leaf CatAdverb (TokenAdverbName "_Abc" emptyPos)]
+      par "_Abc_" `shouldBe` pure [Just $ Leaf CatConjunction (TokenConjunctionName "_Abc_" emptyPos)]
     
     it "parses parens" $ do
-      par "(1)" `shouldBe` pure [Leaf CatArray (TokenNumber [1] emptyPos)]
+      par "(1)" `shouldBe` pure [Just $ Leaf CatArray (TokenNumber [1] emptyPos)]
 
     describe "application" $ do
       it "parses monad application" $ do
-        par "+1" `shouldBe` pure [MonadCallBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos)) (Leaf CatArray (TokenNumber [1] emptyPos))]
+        par "+1" `shouldBe` pure [Just $ MonadCallBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos)) (Leaf CatArray (TokenNumber [1] emptyPos))]
       
       it "parses dyad application" $ do
-        par "1+" `shouldBe` pure [DyadCallBranch (Leaf CatArray (TokenNumber [1] emptyPos)) (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
-        par "1+2" `shouldBe` pure [MonadCallBranch (DyadCallBranch (Leaf CatArray (TokenNumber [1] emptyPos)) (Leaf CatFunction (TokenPrimFunction '+' emptyPos))) (Leaf CatArray (TokenNumber [2] emptyPos))]
+        par "1+" `shouldBe` pure [Just $ DyadCallBranch (Leaf CatArray (TokenNumber [1] emptyPos)) (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
+        par "1+2" `shouldBe` pure [Just $ MonadCallBranch (DyadCallBranch (Leaf CatArray (TokenNumber [1] emptyPos)) (Leaf CatFunction (TokenPrimFunction '+' emptyPos))) (Leaf CatArray (TokenNumber [2] emptyPos))]
 
       it "parses adverb application" $ do
-        par "1⍨" `shouldBe` pure [AdverbCallBranch (Leaf CatArray (TokenNumber [1] emptyPos)) (Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos))]
-        par "+⍨" `shouldBe` pure [AdverbCallBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos)) (Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos))]
+        par "1⍨" `shouldBe` pure [Just $ AdverbCallBranch (Leaf CatArray (TokenNumber [1] emptyPos)) (Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos))]
+        par "+⍨" `shouldBe` pure [Just $ AdverbCallBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos)) (Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos))]
 
       it "parses conjunction application" $ do
-        par "∘1" `shouldBe` pure [ConjunctionCallBranch (Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos)) (Leaf CatArray (TokenNumber [1] emptyPos))]
-        par "∘+" `shouldBe` pure [ConjunctionCallBranch (Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos)) (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
+        par "∘1" `shouldBe` pure [Just $ ConjunctionCallBranch (Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos)) (Leaf CatArray (TokenNumber [1] emptyPos))]
+        par "∘+" `shouldBe` pure [Just $ ConjunctionCallBranch (Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos)) (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
 
     describe "dfns" $ do
       it "parses dfns and dops" $ do
-        par "{1}" `shouldBe` pure [DefinedBranch CatFunction [Leaf CatArray (TokenNumber [1] emptyPos)]]
-        par "_{1}" `shouldBe` pure [DefinedBranch CatAdverb [Leaf CatArray (TokenNumber [1] emptyPos)]]
-        par "_{1}_" `shouldBe` pure [DefinedBranch CatConjunction [Leaf CatArray (TokenNumber [1] emptyPos)]]
+        par "{1}" `shouldBe` pure [Just $ DefinedBranch CatFunction [Leaf CatArray (TokenNumber [1] emptyPos)]]
+        par "_{1}" `shouldBe` pure [Just $ DefinedBranch CatAdverb [Leaf CatArray (TokenNumber [1] emptyPos)]]
+        par "_{1}_" `shouldBe` pure [Just $ DefinedBranch CatConjunction [Leaf CatArray (TokenNumber [1] emptyPos)]]
       
       it "requires at least one statement" $ do
         par "{}" `shouldBe` Nothing
@@ -199,10 +199,10 @@ spec = do
     
     describe "assignment" $ do
       it "parses assignment to variables of the correct type" $ do
-        par "a←b" `shouldBe` pure [AssignBranch CatArray "a" AssignNormal (Leaf CatArray (TokenArrayName "b" emptyPos))]
-        par "A←B" `shouldBe` pure [AssignBranch CatFunction "A" AssignNormal (Leaf CatFunction (TokenFunctionName "B" emptyPos))]
-        par "_A←_B" `shouldBe` pure [AssignBranch CatAdverb "_A" AssignNormal (Leaf CatAdverb (TokenAdverbName "_B" emptyPos))]
-        par "_A_←_B_" `shouldBe` pure [AssignBranch CatConjunction "_A_" AssignNormal (Leaf CatConjunction (TokenConjunctionName "_B_" emptyPos))]
+        par "a←b" `shouldBe` pure [Just $ AssignBranch CatArray "a" AssignNormal (Leaf CatArray (TokenArrayName "b" emptyPos))]
+        par "A←B" `shouldBe` pure [Just $ AssignBranch CatFunction "A" AssignNormal (Leaf CatFunction (TokenFunctionName "B" emptyPos))]
+        par "_A←_B" `shouldBe` pure [Just $ AssignBranch CatAdverb "_A" AssignNormal (Leaf CatAdverb (TokenAdverbName "_B" emptyPos))]
+        par "_A_←_B_" `shouldBe` pure [Just $ AssignBranch CatConjunction "_A_" AssignNormal (Leaf CatConjunction (TokenConjunctionName "_B_" emptyPos))]
 
       it "fails on assignment to variables of the wrong type" $ do
         par "a←B" `shouldBe` Nothing
@@ -212,49 +212,49 @@ spec = do
     
     describe "guards" $ do
       it "parses guards with array conditions" $ do
-        par "{a:b}" `shouldBe` pure [DefinedBranch CatFunction [GuardBranch (Leaf CatArray (TokenArrayName "a" emptyPos)) (Leaf CatArray (TokenArrayName "b" emptyPos))]]
+        par "{a:b}" `shouldBe` pure [Just $ DefinedBranch CatFunction [GuardBranch (Leaf CatArray (TokenArrayName "a" emptyPos)) (Leaf CatArray (TokenArrayName "b" emptyPos))]]
       
       it "fails on guards with non-array conditions" $ do
         par "{A:b}" `shouldBe` Nothing
 
     describe "exit statements" $ do
       it "parses exit statements with array results" $ do
-        par "{■3}" `shouldBe` pure [DefinedBranch CatFunction [ExitBranch (Leaf CatArray (TokenNumber [3] emptyPos))]]
+        par "{■3}" `shouldBe` pure [Just $ DefinedBranch CatFunction [ExitBranch (Leaf CatArray (TokenNumber [3] emptyPos))]]
 
       it "fails on exit statements with non-array results" $ do
         par "{■+}" `shouldBe` Nothing
 
     describe "vector notation" $ do
       it "parses arrays with array or function contents" $ do
-        par "⟨1⋄2⟩" `shouldBe` pure [VectorBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos)]]
-        par "⟨+⟩" `shouldBe` pure [VectorBranch [Leaf CatFunction (TokenPrimFunction '+' emptyPos)]]
-        par "⟨⟩" `shouldBe` pure [VectorBranch []]
+        par "⟨1⋄2⟩" `shouldBe` pure [Just $ VectorBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos)]]
+        par "⟨+⟩" `shouldBe` pure [Just $ VectorBranch [Leaf CatFunction (TokenPrimFunction '+' emptyPos)]]
+        par "⟨⟩" `shouldBe` pure [Just $ VectorBranch []]
       
       it "fails on vector notation with non-array nor function contents" $ do
         par "⟨¨⟩" `shouldBe` Nothing
 
     describe "high rank notation" $ do
       it "parses arrays with array contents" $ do
-        par "[1⋄2]" `shouldBe` pure [HighRankBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos)]]
-        par "[]" `shouldBe` pure [HighRankBranch []]
+        par "[1⋄2]" `shouldBe` pure [Just $ HighRankBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos)]]
+        par "[]" `shouldBe` pure [Just $ HighRankBranch []]
       
       it "fails on arrays with non-array contents" $ do
         par "[+]" `shouldBe` Nothing
 
     describe "wraps" $ do
       it "parses wraps of functions and modifiers" $ do
-        par "⊏+" `shouldBe` pure [WrapBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
-        par "⊏⍨" `shouldBe` pure [WrapBranch (Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos))]
-        par "⊏∘" `shouldBe` pure [WrapBranch (Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos))]
+        par "⊏+" `shouldBe` pure [Just $ WrapBranch (Leaf CatFunction (TokenPrimFunction '+' emptyPos))]
+        par "⊏⍨" `shouldBe` pure [Just $ WrapBranch (Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos))]
+        par "⊏∘" `shouldBe` pure [Just $ WrapBranch (Leaf CatConjunction (TokenPrimConjunction '∘' emptyPos))]
 
       it "fails on wraps of non-functions" $ do
         par "⊏3" `shouldBe` Nothing
 
     describe "unwraps" $ do
       it "parses unwraps of arrays" $ do
-        par "⊐3" `shouldBe` pure [UnwrapBranch CatFunction (Leaf CatArray (TokenNumber [3] emptyPos))]
-        par "_⊐3" `shouldBe` pure [UnwrapBranch CatAdverb (Leaf CatArray (TokenNumber [3] emptyPos))]
-        par "_⊐_3" `shouldBe` pure [UnwrapBranch CatConjunction (Leaf CatArray (TokenNumber [3] emptyPos))]
+        par "⊐3" `shouldBe` pure [Just $ UnwrapBranch CatFunction (Leaf CatArray (TokenNumber [3] emptyPos))]
+        par "_⊐3" `shouldBe` pure [Just $ UnwrapBranch CatAdverb (Leaf CatArray (TokenNumber [3] emptyPos))]
+        par "_⊐_3" `shouldBe` pure [Just $ UnwrapBranch CatConjunction (Leaf CatArray (TokenNumber [3] emptyPos))]
 
       it "fails on unwraps of non-arrays" $ do
         par "⊐+" `shouldBe` Nothing
@@ -263,4 +263,8 @@ spec = do
 
     describe "structs" $ do
       it "parses structs" $ do
-        par "⦃1⋄2⋄3⦄" `shouldBe` pure [StructBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos), Leaf CatArray (TokenNumber [3] emptyPos)]]
+        par "⦃1⋄2⋄3⦄" `shouldBe` pure [Just $ StructBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos), Leaf CatArray (TokenNumber [3] emptyPos)]]
+
+    describe "empty statements" $ do
+      it "parses empty statements" $ do
+        par "1⋄⋄2" `shouldBe` pure [Just $ Leaf CatArray (TokenNumber [1] emptyPos), Nothing, Just $ Leaf CatArray (TokenNumber [2] emptyPos)]

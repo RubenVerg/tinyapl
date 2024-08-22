@@ -19,6 +19,7 @@ import Data.List.NonEmpty (NonEmpty((:|)))
 import qualified Data.List.NonEmpty as NE
 import Data.Functor ( ($>) )
 import Control.Monad.Except (MonadError)
+import Data.Maybe (fromMaybe)
 
 asWraps :: MonadError Error m => Error -> Array -> m Function
 asWraps err arr = do
@@ -129,10 +130,13 @@ inChildScope vals x parent = do
 interpret :: Tree -> Context -> ResultIO (Value, Context)
 interpret tree = runSt (eval tree)
 
+forceTrees :: [Maybe Tree] -> [Tree]
+forceTrees = fmap $ fromMaybe $ VectorBranch []
+
 run :: String -> String -> Context -> ResultIO (Value, Context)
 run file src scope = do
   trees <- except (parse file src)
-  join $ foldlM (\last next -> interpret next . snd <$> last) (return (undefined, scope)) trees
+  join $ foldlM (\last next -> interpret next . snd <$> last) (return (undefined, scope)) $ forceTrees trees
 
 eval :: Tree -> St Value
 eval (Leaf _ tok)                   = evalLeaf tok

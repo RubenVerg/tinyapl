@@ -232,8 +232,8 @@ makeParseErrors :: String -> ParseErrorBundle String Void -> Error
 makeParseErrors source es = case attachSourcePos errorOffset (bundleErrors es) (bundlePosState es) of
   (r :| rs, _) -> SyntaxError $ concatMap (uncurry $ flip $ prettyParseError source) $ r : rs
 
-tokenize :: String -> String -> Result [NonEmpty Token]
-tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (sepBy1 bits separator <* eof) file source where
+tokenize :: String -> String -> Result [[Token]]
+tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (sepBy1 bitsMaybe separator <* eof) file source where
   withPos :: Parser (SourcePos -> a) -> Parser a
   withPos = (<**>) getSourcePos
 
@@ -561,8 +561,10 @@ bindAll :: NonEmpty Tree -> Result Tree
 bindAll (x :| []) = pure x
 bindAll xs = bindPair xs >>= bindAll
 
-categorize :: String -> String -> Result [NonEmpty Tree]
-categorize name source = tokenize name source >>= mapM categorizeTokens where
+categorize :: String -> String -> Result [[Tree]]
+categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty xs of
+  Nothing -> pure []
+  Just xs -> NE.toList <$> categorizeTokens xs) where
   categorizeTokens :: NonEmpty Token -> Result (NonEmpty Tree)
   categorizeTokens = mapM tokenToTree
 
@@ -661,5 +663,7 @@ categorize name source = tokenize name source >>= mapM categorizeTokens where
   tokenToTree (TokenUnwrapConjunction val _)              = UnwrapBranch CatConjunction <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap conjunction of type " ++ show c ++ ", array required"))
   tokenToTree (TokenStruct es pos)                        = struct es pos
 
-parse :: String -> String -> Result [Tree]
-parse name = categorize name >=> mapM bindAll
+parse :: String -> String -> Result [Maybe Tree]
+parse name = categorize name >=> mapM (\xs -> case NE.nonEmpty xs of
+  Nothing -> pure Nothing
+  Just xs -> Just <$> bindAll xs)
