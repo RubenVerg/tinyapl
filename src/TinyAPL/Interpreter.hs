@@ -171,7 +171,8 @@ eval (VectorBranch es)              = do
   entries <- mapM (eval >=> \case
     VArray x -> pure $ box x
     VFunction f -> pure $ Wrap f
-    _ -> throwError $ DomainError "Vector notation entries must be arrays or functions") $ reverse es
+    VAdverb a -> pure $ AdverbWrap a
+    VConjunction c -> pure $ ConjunctionWrap c) $ reverse es
   return $ VArray $ vector $ reverse entries
 eval (HighRankBranch es)            = do
   entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) $ reverse es

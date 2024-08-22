@@ -599,10 +599,7 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   destructureAssignment h names ts pos = h names <$> (categorizeAndBind ts >>= requireOfCategory CatArray (\c -> makeSyntaxError pos source $ "Invalid destructure assignment of " ++ show c ++ ", array required"))
 
   vector :: [NonEmpty Token] -> SourcePos -> Result Tree
-  vector es _ = VectorBranch <$> mapM (\x -> categorizeAndBind x >>= \x' -> case treeCategory x' of
-    CatArray -> pure x'
-    CatFunction -> pure x'
-    _ -> throwError $ makeSyntaxError (tokenPos $ NE.head x) source $ "Invalid vector entry of type " ++ show (treeCategory x') ++ ", array or function required") es
+  vector es _ = VectorBranch <$> mapM (\x -> categorizeAndBind x) es
 
   highRank :: [NonEmpty Token] -> SourcePos -> Result Tree
   highRank es _ = HighRankBranch <$> mapM (\x -> categorizeAndBind x >>=

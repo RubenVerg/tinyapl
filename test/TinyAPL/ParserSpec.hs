@@ -225,13 +225,12 @@ spec = do
         par "{■+}" `shouldBe` Nothing
 
     describe "vector notation" $ do
-      it "parses arrays with array or function contents" $ do
+      it "parses arrays with any contents" $ do
         par "⟨1⋄2⟩" `shouldBe` pure [Just $ VectorBranch [Leaf CatArray (TokenNumber [1] emptyPos), Leaf CatArray (TokenNumber [2] emptyPos)]]
         par "⟨+⟩" `shouldBe` pure [Just $ VectorBranch [Leaf CatFunction (TokenPrimFunction '+' emptyPos)]]
+        par "⟨⍨⟩" `shouldBe` pure [Just $ VectorBranch [Leaf CatAdverb (TokenPrimAdverb '⍨' emptyPos)]]
+        par "⟨⍥⟩" `shouldBe` pure [Just $ VectorBranch [Leaf CatConjunction (TokenPrimConjunction '⍥' emptyPos)]]
         par "⟨⟩" `shouldBe` pure [Just $ VectorBranch []]
-      
-      it "fails on vector notation with non-array nor function contents" $ do
-        par "⟨¨⟩" `shouldBe` Nothing
 
     describe "high rank notation" $ do
       it "parses arrays with array contents" $ do
