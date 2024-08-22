@@ -666,7 +666,7 @@ evalTrain cat es = let
       Nothing -> pure Nothing
       Just x -> Just <$> eval x) $ reverse es
     t <- train us
-    r <- withTrainRepr us t
+    r <- withTrainRepr (reverse us) t
     case (cat, r) of
       (CatArray, _) -> throwError $ DomainError "Array train?"
       (CatFunction, r@(VFunction _)) -> pure r
