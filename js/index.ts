@@ -280,7 +280,7 @@ async function runCode(code: string) {
   	output.appendChild(audio);
 		newDiv();
 	});
-	const [result, success] = await tinyapl.runCode(context, code);
+	const result = await tinyapl.runCode(context, code);
 	io.done();
 	quads.dCreateImage();
 	quads.dDisplayImage();
@@ -289,8 +289,8 @@ async function runCode(code: string) {
 	quads.dScatterPlot();
 	quads.dGraph();
 	endDiv();
-	if (success) output.appendChild(clickableDiv('result', result));
-	else output.appendChild(div('error', result));
+	if ('code' in result) output.appendChild(div('error', await tinyapl.show(result)));
+	else output.appendChild(clickableDiv('result', await tinyapl.show(result)));
 	loader.remove();
 	button.disabled = false;
 }

@@ -91,9 +91,8 @@ export async function newContext(input: () => PromiseLike<string>, output: (what
  * @param context Context ID
  * @returns A pair containing the result of the code or the error and whether running succeeded
  */
-export async function runCode(context: number, code: string): Promise<[string, boolean]> {
-	const [result, success] = await exports.tinyapl_runCode(context, code);
-	return [await joinString(result), Boolean(success)];
+export async function runCode(context: number, code: string): Promise<Err | Value> {
+	return await exports.tinyapl_runCode(context, code);
 }
 
 /**
@@ -159,6 +158,6 @@ export const errors: Record<string, number> = Object.fromEntries(await Promise.a
 /**
  * Turn a `Value` into a string
  */
-export async function show(o: Value): Promise<string> {
+export async function show(o: Err | Value): Promise<string> {
 	return await exports.tinyapl_show(o);
 }
