@@ -40,7 +40,7 @@ export interface Conj {
     functionArray?: (f: Fun, m: Arr) => PromiseLike<Err | Fun>;
     functionFunction?: (f: Fun, g: Fun) => PromiseLike<Err | Fun>;
 }
-type Value = Arr | Fun | Adv | Conj;
+export type Value = Arr | Fun | Adv | Conj;
 export interface Err {
     code: number;
     message: string;
@@ -59,7 +59,7 @@ export declare function newContext(input: () => PromiseLike<string>, output: (wh
  * @param context Context ID
  * @returns A pair containing the result of the code or the error and whether running succeeded
  */
-export declare function runCode(context: number, code: string): Promise<[string, boolean]>;
+export declare function runCode(context: number, code: string): Promise<Err | Value>;
 /**
  * List of all global names
  * @param context Context ID
@@ -101,5 +101,4 @@ export declare const errors: Record<string, number>;
 /**
  * Turn a `Value` into a string
  */
-export declare function show(o: Value): Promise<string>;
-export {};
+export declare function show(o: Err | Value): Promise<string>;

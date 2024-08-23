@@ -379,6 +379,8 @@ instance IsJSSt Value where
   fromJSValSt v
     | fromJSVal (jsLookup v $ toJSString "type") == "array" = VArray <$> fromJSValSt v
     | fromJSVal (jsLookup v $ toJSString "type") == "function" = VFunction <$> fromJSValSt v
+    | fromJSVal (jsLookup v $ toJSString "type") == "adverb" = VAdverb <$> fromJSValSt v
+    | fromJSVal (jsLookup v $ toJSString "type") == "conjunction" = VConjunction <$> fromJSValSt v
     | otherwise = throwError $ DomainError "fromJSValSt Value: unknown type"
   toJSValSt (VArray arr) = toJSValSt arr
   toJSValSt (VFunction f) = toJSValSt f

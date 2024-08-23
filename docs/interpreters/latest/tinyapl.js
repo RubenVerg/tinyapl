@@ -35,8 +35,7 @@ export async function newContext(input, output, error, quads) {
  * @returns A pair containing the result of the code or the error and whether running succeeded
  */
 export async function runCode(context, code) {
-    const [result, success] = await exports.tinyapl_runCode(context, code);
-    return [await joinString(result), Boolean(success)];
+    return await exports.tinyapl_runCode(context, code);
 }
 /**
  * List of all global names

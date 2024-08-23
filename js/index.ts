@@ -14,6 +14,7 @@ const highlighted = document.querySelector<HTMLPreElement>('#highlighted')!;
 const button = document.querySelector<HTMLButtonElement>('#button')!;
 const infobutton = document.querySelector<HTMLButtonElement>('#infobutton')!;
 const info = document.querySelector<HTMLDivElement>('#info')!;
+const fancyarrays = document.querySelector<HTMLInputElement>('#fancyarrays')!;
 
 function zip<A, B>(as: A[], bs: B[]): [A, B][] {
 	return [...as, ...bs].slice(0, Math.min(as.length, bs.length)).map((_, idx) => [as[idx], bs[idx]]);
@@ -280,7 +281,7 @@ async function runCode(code: string) {
   	output.appendChild(audio);
 		newDiv();
 	});
-	const [result, success] = await tinyapl.runCode(context, code);
+	const result = await tinyapl.runCode(context, code);
 	io.done();
 	quads.dCreateImage();
 	quads.dDisplayImage();
@@ -289,8 +290,54 @@ async function runCode(code: string) {
 	quads.dScatterPlot();
 	quads.dGraph();
 	endDiv();
-	if (success) output.appendChild(clickableDiv('result', result));
-	else output.appendChild(div('error', result));
+	if ('code' in result) output.appendChild(div('error', await tinyapl.show(result)));
+	else if (fancyarrays.checked && result.type === 'array' && result.shape.length === 1) {
+		const table = document.createElement('table');
+		table.className = 'vector';
+		const tbody = document.createElement('tbody');
+		table.appendChild(tbody);
+		const tr = document.createElement('tr');
+		tbody.appendChild(tr);
+		for (let x = 0; x < result.shape[0]; x++) {
+			const el = result.contents[x];
+			const td = document.createElement('td');
+			td.textContent = await tinyapl.show({ type: 'array', shape: [], contents: [el] });
+			tr.appendChild(td);
+		}
+		output.appendChild(table);
+	} else if (fancyarrays.checked && result.type === 'array' && result.shape.length === 2) {
+		const table = document.createElement('table');
+		table.className = 'matrix';
+		const tbody = document.createElement('tbody');
+		table.appendChild(tbody);
+		for (let y = 0; y < result.shape[0]; y++) {
+			const tr = document.createElement('tr');
+			tbody.appendChild(tr);
+			for (let x = 0; x < result.shape[1]; x++) {
+				const el = result.contents[y * result.shape[1] + x];
+				const td = document.createElement('td');
+				td.textContent = await tinyapl.show({ type: 'array', shape: [], contents: [el] });
+				tr.appendChild(td);
+			}
+		}
+		output.appendChild(table);
+	} else if (fancyarrays.checked && result.type === 'array' && result.shape.length === 0 && typeof result.contents[0] === 'object' && !Array.isArray(result.contents[0]) && (result.contents[0] as tinyapl.ScalarValue & { type: string }).type === 'struct') {
+		const struct = result.contents[0] as tinyapl.Struct;
+		const details = document.createElement('details');
+		details.className = 'struct';
+		details.open = true;
+		const summary = document.createElement('summary');
+		summary.textContent = 'struct';
+		details.appendChild(summary);
+		const ul = document.createElement('ul');
+		for (const [k, v] of Object.entries(struct.entries)) {
+			const li = document.createElement('li');
+			li.textContent = `${k} ← ${await tinyapl.show(v)}`;
+			ul.appendChild(li);
+		}
+		details.appendChild(ul);
+		output.appendChild(details);
+	} else output.appendChild(clickableDiv('result', await tinyapl.show(result)));
 	loader.remove();
 	button.disabled = false;
 }

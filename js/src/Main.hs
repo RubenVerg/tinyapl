@@ -159,24 +159,25 @@ newContext input output error quads = do
   modifyIORef lasts (++ [Nothing])
   return l
 
-runCode :: Int -> String -> IO (String, Bool)
+runCode :: Int -> String -> IO (Either Error Value)
 runCode contextId code = do
   context <- (!! contextId) <$> readIORef contexts
   let file = "<tinyapl js>"
   result <- runResult $ run file code context
   case result of
-    Left err -> return (show err, False)
+    (Left err) -> return $ Left err
     Right (res, context') -> do
       modifyIORef contexts (setAt contextId context')
       modifyIORef lasts (setAt contextId $ Just res)
-      return (show res, True)
+      return $ Right res
 
 foreign export javascript "tinyapl_runCode" runCodeJS :: Int -> JSString -> IO JSVal
 
 runCodeJS :: Int -> JSString -> IO JSVal
 runCodeJS contextId code = do
-  (r, s) <- runCode contextId $ fromJSString code
-  return $ toJSVal (r, s)
+  context <- (!! contextId) <$> readIORef contexts
+  res <- runCode contextId $ fromJSString code
+  fst . fromRight' <$> (runResult $ runSt (toJSValSt res) context)
 
 getGlobals :: Int -> IO [String]
 getGlobals contextId = do
@@ -290,5 +291,7 @@ foreign export javascript "tinyapl_show" showJS :: JSVal -> IO JSString
 showJS :: JSVal -> IO JSString
 showJS val = do
   scope <- newIORef $ Scope [] [] [] [] Nothing
-  r <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt val) (Context scope mempty undefined undefined undefined)) :: IO Value
-  pure $ toJSString $ show r
+  r <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt val) (Context scope mempty undefined undefined undefined)) :: IO (Either Error Value)
+  pure $ toJSString $ case r of
+    Left err -> show err
+    Right val -> show val

@@ -138,6 +138,15 @@
 			display: inline-block;
 		}
 
+		.vector, .vector tr, .vector td, .matrix, .matrix tr, .matrix td {
+			border: 2px solid black;
+			border-collapse: collapse;
+		}
+		
+		.struct ul {
+			margin-block: 0;
+		}
+
 		.loader {
 			width: 1ch;
 			height: 1ch;
@@ -162,6 +171,9 @@
 </head>
 <body>
 	<h1 id="loading">Loading...</h1>
+	<input id="fancyarrays" type="checkbox" checked>
+	<label for="fancyarrays">Show some arrays as tables</label>
+	<br />
 	<button id="infobutton" type="button" disabled>Info</button>
 	<div id="info">
 		<h1>Info</h1>
