@@ -281,7 +281,7 @@ async function runCode(code) {
     endDiv();
     if ('code' in result)
         output.appendChild(div('error', await tinyapl.show(result)));
-    else if (fancyarrays.checked && result.type === 'array' && result.shape.length === 1) {
+    else if (fancyarrays.checked && result.type === 'array' && result.shape.length === 1 && result.contents.length !== 0 && !result.contents.every(x => typeof x === 'string')) {
         const table = document.createElement('table');
         table.className = 'vector';
         const tbody = document.createElement('tbody');
@@ -296,7 +296,7 @@ async function runCode(code) {
         }
         output.appendChild(table);
     }
-    else if (fancyarrays.checked && result.type === 'array' && result.shape.length === 2) {
+    else if (fancyarrays.checked && result.type === 'array' && result.shape.length === 2 && result.contents.length !== 0) {
         const table = document.createElement('table');
         table.className = 'matrix';
         const tbody = document.createElement('tbody');
