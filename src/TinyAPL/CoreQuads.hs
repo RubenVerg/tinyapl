@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module TinyAPL.CoreQuads where
 
 import TinyAPL.ArrayFunctionOperator
@@ -29,25 +30,33 @@ ts = Nilad (Just $ do
   err "Deprecation warning: ⎕ts has been replaced by ⎕unix and will be used for something else in a future version\n"
   scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "ts") Nothing
 
-exists = Function (Just $ \x -> do
-  let var = show x
+exists = Function (Just $ \y -> do
+  let var = show y
   v <- gets contextScope >>= readRef >>= scopeLookup var
   case v of
     Just _ -> return $ scalar $ Number 1
     Nothing -> return $ scalar $ Number 0
   ) Nothing (G.quad : "Exists") Nothing
-repr = Function (Just $ \x -> return $ vector $ Character <$> arrayRepr x) Nothing (G.quad : "Repr") Nothing
-delay = Function (Just $ \x -> do
+repr = Function (Just $ \y -> return $ vector $ Character <$> arrayRepr y) Nothing (G.quad : "Repr") Nothing
+delay = Function (Just $ \y -> do
   let err = DomainError "Delay argument must be a nonnegative scalar number"
-  n <- asScalar err x >>= asNumber err >>= asReal err
+  n <- asScalar err y >>= asNumber err >>= asReal err
   if n < 0 then throwError err else do
     start <- realToFrac <$> liftToSt getPOSIXTime
     liftToSt $ threadDelay $ floor $ n * 1000 * 1000
     end <- realToFrac <$> liftToSt getPOSIXTime
     pure $ scalar $ Number $ (end - start) :+ 0
   ) Nothing (G.quad : "Delay") Nothing
+type_ = Function (Just $ \(Array sh cs) -> return $ Array sh $ (\case
+  Number _ -> Number 0
+  Character _ -> Number 1
+  Box _ -> Number 2
+  Wrap _ -> Number 3
+  AdverbWrap _ -> Number 4
+  ConjunctionWrap _ -> Number 5
+  Struct _ -> Number 6) <$> cs) Nothing (G.quad : "Type") Nothing
 
-core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay ] [] []
+core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay, type_ ] [] []
 
 makeImport :: (FilePath -> St String) -> ([String] -> St String) -> Function
 makeImport read readStd = Function (Just $ \x -> do
