@@ -46,7 +46,7 @@ export interface Conj {
 	functionArray?: (f: Fun, m: Arr) => PromiseLike<Err | Fun>;
 	functionFunction?: (f: Fun, g: Fun) => PromiseLike<Err | Fun>;
 }
-type Value = Arr | Fun | Adv | Conj;
+export type Value = Arr | Fun | Adv | Conj;
 export interface Err {
 	code: number;
 	message: string;
