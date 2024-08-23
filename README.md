@@ -274,7 +274,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⎕Assert` assertions
 		* [x] `⎕Delay` sleep for n seconds
 		* [ ] `⎕Import` import a module
-		* [ ] `⎕Type` type of a scalar
+		* [x] `⎕Type` type of a scalar
 	* system adverbs
 		* [ ] `⎕_BinFile` read/write binary files, with format chosen from the operand
 	* system conjunctions
