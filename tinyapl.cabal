@@ -36,13 +36,14 @@ library
                     , TinyAPL.Parser
                     , TinyAPL.Primitives
                     , TinyAPL.Random
+                    , TinyAPL.StandardLibrary
                     , TinyAPL.Util
                     , TinyAPL.Gamma.Factorial
                     , TinyAPL.Gamma.Gamma
                     , TinyAPL.Gamma.Gamma.Incomplete
                     , TinyAPL.Gamma.Gamma.Lanczos
                     , TinyAPL.Gamma.Gamma.Stirling
-    -- other-modules:
+    other-modules:    TinyAPL.StandardLibrary.Internal
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -57,15 +58,23 @@ library
                     , vector ^>=0.13.1.0
                     , parsers ^>=0.12.11
                     , split ^>=0.2.5
+                    , filepath ^>=1.5.2.0
+                    , directory ^>=1.3.8.3
+                    , deepseq ^>=1.5.0.0
+    if !os(wasi)
+        build-depends: template-haskell ^>=2.22.0.0
     hs-source-dirs:   src
     default-language: Haskell2010
+
+    if os(wasi)
+        c-sources:    cbits/wasm_init_stub.c
 
 executable tinyapl
     import:           warnings
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    -- other-modules:
+    other-modules:    TinyAPL.CLI
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -74,6 +83,10 @@ executable tinyapl
 
     hs-source-dirs:   app
     default-language: Haskell2010
+
+    if os(wasi)
+        ghc-options:  -W -optl-mexec-model=reactor "-optl-Wl,--export=_start"
+        c-sources:    cbits/wasm_init.c
 
 executable tinyapl-js
     import:           warnings
@@ -90,6 +103,7 @@ executable tinyapl-js
     
     if os(wasi)
         ghc-options:  -W -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=hs_start"
+        c-sources:    cbits/wasm_init.c
     else
         build-depends:ghc-wasm-compat
         ghc-options:  -W -fplugin GHC.Wasm.FFI.Plugin

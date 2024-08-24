@@ -7,6 +7,7 @@ import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
 import TinyAPL.Interpreter
 import TinyAPL.Random
+import TinyAPL.StandardLibrary
 
 import TinyAPL.Complex
 import Control.Monad.State
@@ -58,7 +59,7 @@ type_ = Function (Just $ \(Array sh cs) -> return $ Array sh $ (\case
 
 core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay, type_ ] [] []
 
-makeImport :: (FilePath -> St String) -> ([String] -> St String) -> Function
+makeImport :: (FilePath -> St String) -> Maybe ([String] -> St String) -> Function
 makeImport read readStd = Function (Just $ \x -> do
   let err = DomainError "Import argument must be a character vector"
   path <- asVector err x >>= mapM (asCharacter err)
@@ -67,7 +68,11 @@ makeImport read readStd = Function (Just $ \x -> do
   let ctx' = ctx{ contextScope = scope }
   source <-
     if isPrefixOf "std:" path
-    then readStd <$> splitOn "/" $ drop (length "std:") path
+    then case readStd of
+      Just fn -> fn <$> splitOn "/" $ drop (length "std:") path
+      Nothing -> case lookup (splitOn "/" $ drop (length "std:") path) standardLibrary of
+        Just source -> pure source
+        Nothing -> throwError $ DomainError $ "Standard library module " ++ path ++ " not found"
     else read path
   runWithContext ctx' $ run' path source
   pure $ scalar $ Struct ctx') Nothing (G.quad : "Import") Nothing
