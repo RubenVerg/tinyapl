@@ -442,7 +442,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   separator = void $ lexeme (char G.separator) <|> char '\n' <* some (char '\n')
 
   bit' :: Parser Token
-  bit' = lexeme $ conjunction' <|> adverb' <|> function' <|> array' <|> bracketed
+  bit' = lexeme $ bracketed <|> conjunction' <|> adverb' <|> function' <|> array'
 
   bit :: Parser Token
   bit = lexeme $ bracketed <|> conjunction'' <|> adverb'' <|> function'' <|> array'' <|>

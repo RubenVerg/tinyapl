@@ -37,7 +37,8 @@ module Main
   , errNYI
   , errSyntax
   , errAssertion
-  , showJS ) where  
+  , showJS
+  , reprJS ) where  
 
 import JSBridge
 
@@ -291,3 +292,13 @@ showJS val = do
   pure $ toJSString $ case r of
     Left err -> show err
     Right val -> show val
+
+foreign export javascript "tinyapl_repr" reprJS :: JSVal -> IO JSString
+
+reprJS :: JSVal -> IO JSString
+reprJS val = do
+  scope <- newIORef $ Scope [] [] [] [] Nothing
+  r <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt val) (Context scope mempty undefined undefined undefined))
+  pure $ toJSString $ case r of
+    VArray arr -> arrayRepr arr
+    o -> show o

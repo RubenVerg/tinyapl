@@ -102,3 +102,7 @@ export declare const errors: Record<string, number>;
  * Turn a `Value` into a string
  */
 export declare function show(o: Err | Value): Promise<string>;
+/**
+ * Turn a `Value` into a string that is more likely to be parseable again
+ */
+export declare function repr(o: Value): Promise<string>;
