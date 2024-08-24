@@ -142,7 +142,11 @@
 			display: inline-block;
 		}
 
-		.vector, .vector tr, .vector td, .matrix, .matrix tr, .matrix td {
+		.result * {
+			vertical-align: top;
+		}
+
+		table.vector, table.vector > tbody > tr, table.vector > tbody > tr > td, table.matrix, table.matrix > tbody > tr, table.matrix > tbody > tr > td {
 			border: 2px solid black;
 			border-collapse: collapse;
 		}

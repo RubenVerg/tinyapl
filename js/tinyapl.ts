@@ -161,3 +161,10 @@ export const errors: Record<string, number> = Object.fromEntries(await Promise.a
 export async function show(o: Err | Value): Promise<string> {
 	return await exports.tinyapl_show(o);
 }
+
+/**
+ * Turn a `Value` into a string that is more likely to be parseable again
+ */
+export async function repr(o: Value): Promise<string> {
+	return await exports.tinyapl_repr(o);
+}

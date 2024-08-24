@@ -155,12 +155,18 @@ const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), 
 function el(tag, cls, contents) {
     const el = document.createElement(tag);
     el.className = cls;
-    el.textContent = contents;
+    if (typeof contents === 'string')
+        el.textContent = contents;
+    else if (Array.isArray(contents))
+        for (const c of contents)
+            el.appendChild(c);
+    else
+        el.appendChild(contents);
     return el;
 }
 const div = (cls, contents) => el('div', cls, contents);
 const span = (cls, contents) => el('span', cls, contents);
-function clickableEl(tag, cls, contents, clickedContents = contents) {
+function clickableEl(tag, cls, contents, clickedContents) {
     const e = el(tag, cls, contents);
     e.addEventListener('click', () => {
         if (input.value.trim() == '') {
@@ -171,11 +177,81 @@ function clickableEl(tag, cls, contents, clickedContents = contents) {
     });
     return e;
 }
-const clickableDiv = (cls, contents, clickedContents = contents) => clickableEl('div', cls, contents, clickedContents);
-const clickableSpan = (cls, contents, clickedContents = contents) => clickableEl('span', cls, contents, clickedContents);
+const clickableDiv = (cls, contents, clickedContents) => clickableEl('div', cls, contents, clickedContents);
+const clickableSpan = (cls, contents, clickedContents) => clickableEl('span', cls, contents, clickedContents);
+const selfClickableDiv = (cls, contents) => clickableEl('div', cls, contents, contents);
+const selfClickableSpan = (cls, contents) => clickableEl('span', cls, contents, contents);
 const images = {};
 const ranCode = [];
 let lastIndex = 0;
+async function fancyShow(result, depth = 0) {
+    const fsScalar = (v) => {
+        if (typeof v === 'object' && !Array.isArray(v) && v.type !== 'struct')
+            return fancyShow(v, depth + 1);
+        return fancyShow({ type: 'array', shape: [], contents: [v] }, depth + 1);
+    };
+    if (depth >= 5)
+        return document.createTextNode(await tinyapl.show(result));
+    if (result.type === 'array' && result.shape.length === 1 && result.contents.length !== 0 && !result.contents.every(x => typeof x === 'string')) {
+        const table = document.createElement('table');
+        table.className = 'vector';
+        const tbody = document.createElement('tbody');
+        table.appendChild(tbody);
+        const tr = document.createElement('tr');
+        tbody.appendChild(tr);
+        for (let x = 0; x < result.shape[0]; x++) {
+            const el = result.contents[x];
+            const td = document.createElement('td');
+            td.appendChild(await fsScalar(el));
+            tr.appendChild(td);
+        }
+        return table;
+    }
+    if (result.type === 'array' && result.shape.length === 2 && result.contents.length !== 0) {
+        const table = document.createElement('table');
+        table.className = 'matrix';
+        const tbody = document.createElement('tbody');
+        table.appendChild(tbody);
+        for (let y = 0; y < result.shape[0]; y++) {
+            const tr = document.createElement('tr');
+            tbody.appendChild(tr);
+            for (let x = 0; x < result.shape[1]; x++) {
+                const el = result.contents[y * result.shape[1] + x];
+                const td = document.createElement('td');
+                td.appendChild(await fsScalar(el));
+                tr.appendChild(td);
+            }
+        }
+        return table;
+    }
+    else if (result.type === 'array' && result.shape.length === 0 && typeof result.contents[0] === 'object' && !Array.isArray(result.contents[0]) && result.contents[0].type === 'struct') {
+        const struct = result.contents[0];
+        const details = document.createElement('details');
+        details.open = depth === 0;
+        const summary = document.createElement('summary');
+        summary.textContent = 'struct';
+        details.appendChild(summary);
+        const table = document.createElement('table');
+        const tbody = document.createElement('tbody');
+        table.appendChild(tbody);
+        for (const [k, v] of Object.entries(struct.entries)) {
+            const tr = document.createElement('tr');
+            const tdName = document.createElement('td');
+            tdName.textContent = k;
+            tr.appendChild(tdName);
+            const tdArrow = document.createElement('td');
+            tdArrow.textContent = '←';
+            tr.appendChild(tdArrow);
+            const tdValue = document.createElement('td');
+            tdValue.appendChild(await fsScalar(v));
+            tr.appendChild(tdValue);
+            tbody.appendChild(tr);
+        }
+        details.appendChild(table);
+        return details;
+    }
+    return document.createTextNode(await tinyapl.show(result));
+}
 async function runCode(code) {
     let d;
     const endDiv = () => {
@@ -215,7 +291,7 @@ async function runCode(code) {
     const loader = div('loader', '');
     pad.appendChild(loader);
     in1.appendChild(pad);
-    in1.appendChild(clickableSpan('code', code));
+    in1.appendChild(selfClickableSpan('code', code));
     newDiv();
     io.rInput(async (what) => { d.innerText += what + '\n'; });
     io.rOutput(async (what) => { d.innerText += what; });
@@ -281,57 +357,10 @@ async function runCode(code) {
     endDiv();
     if ('code' in result)
         output.appendChild(div('error', await tinyapl.show(result)));
-    else if (fancyarrays.checked && result.type === 'array' && result.shape.length === 1 && result.contents.length !== 0 && !result.contents.every(x => typeof x === 'string')) {
-        const table = document.createElement('table');
-        table.className = 'vector';
-        const tbody = document.createElement('tbody');
-        table.appendChild(tbody);
-        const tr = document.createElement('tr');
-        tbody.appendChild(tr);
-        for (let x = 0; x < result.shape[0]; x++) {
-            const el = result.contents[x];
-            const td = document.createElement('td');
-            td.textContent = await tinyapl.show({ type: 'array', shape: [], contents: [el] });
-            tr.appendChild(td);
-        }
-        output.appendChild(table);
-    }
-    else if (fancyarrays.checked && result.type === 'array' && result.shape.length === 2 && result.contents.length !== 0) {
-        const table = document.createElement('table');
-        table.className = 'matrix';
-        const tbody = document.createElement('tbody');
-        table.appendChild(tbody);
-        for (let y = 0; y < result.shape[0]; y++) {
-            const tr = document.createElement('tr');
-            tbody.appendChild(tr);
-            for (let x = 0; x < result.shape[1]; x++) {
-                const el = result.contents[y * result.shape[1] + x];
-                const td = document.createElement('td');
-                td.textContent = await tinyapl.show({ type: 'array', shape: [], contents: [el] });
-                tr.appendChild(td);
-            }
-        }
-        output.appendChild(table);
-    }
-    else if (fancyarrays.checked && result.type === 'array' && result.shape.length === 0 && typeof result.contents[0] === 'object' && !Array.isArray(result.contents[0]) && result.contents[0].type === 'struct') {
-        const struct = result.contents[0];
-        const details = document.createElement('details');
-        details.className = 'struct';
-        details.open = true;
-        const summary = document.createElement('summary');
-        summary.textContent = 'struct';
-        details.appendChild(summary);
-        const ul = document.createElement('ul');
-        for (const [k, v] of Object.entries(struct.entries)) {
-            const li = document.createElement('li');
-            li.textContent = `${k} ← ${await tinyapl.show(v)}`;
-            ul.appendChild(li);
-        }
-        details.appendChild(ul);
-        output.appendChild(details);
-    }
+    else if (fancyarrays.checked)
+        output.appendChild(clickableDiv('result', await fancyShow(result), await tinyapl.repr(result)));
     else
-        output.appendChild(clickableDiv('result', await tinyapl.show(result)));
+        output.appendChild(clickableDiv('result', await tinyapl.show(result), await tinyapl.repr(result)));
     loader.remove();
     button.disabled = false;
 }

@@ -93,3 +93,9 @@ export const errors = Object.fromEntries(await Promise.all(Object.entries(instan
 export async function show(o) {
     return await exports.tinyapl_show(o);
 }
+/**
+ * Turn a `Value` into a string that is more likely to be parseable again
+ */
+export async function repr(o) {
+    return await exports.tinyapl_repr(o);
+}
