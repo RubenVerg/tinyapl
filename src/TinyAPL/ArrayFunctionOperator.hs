@@ -292,6 +292,15 @@ asNat' e x
 asNat :: MonadError Error m => Error -> Complex Double -> m Natural
 asNat e = asNat' e <=< asInt e
 
+asString :: MonadError Error m => Error -> Array -> m String
+asString err = asVector err >=> mapM (asCharacter err)
+
+asStrings :: MonadError Error m => Error -> Array -> m [String]
+asStrings _ (Array [] [Character x]) = pure [[x]]
+asStrings _ (Array [_] vec) | all isCharacter vec = pure [asCharacter' <$> vec]
+asStrings err (Array [_] vec) = mapM (asString err . fromScalar) vec
+asStrings err _ = throwError err
+
 isScalar :: Array -> Bool
 isScalar (Array [] _) = True
 isScalar _ = False

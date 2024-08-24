@@ -1,8 +1,8 @@
 ---
 glyph: '⎕Exists'
-pattern: 'r←⎕Exists y'
+pattern: 'r←[x] ⎕Exists y'
 name: Exists
 category: Core
 ---
 
-`y` must be either a simple character vector or a vector of simple character vectors. `r` is a Boolean specifying whether the variable `y` exists in the current scope.
+`y` must be either a simple character vector or a vector of simple character vectors. If `x` is not provided, `r` is a Boolean specifying whether the variable `y` exists in the current scope; if `x` is provided, it must be a scalar struct and `r` is a Boolean specifying whether `y` exists in the struct `x`.
