@@ -32,12 +32,18 @@ ts = Nilad (Just $ do
   scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "ts") Nothing
 
 exists = Function (Just $ \y -> do
-  let var = show y
+  var <- asString (DomainError "Exists argument must be a string") y
   v <- gets contextScope >>= readRef >>= scopeLookup var
   case v of
     Just _ -> return $ scalar $ Number 1
     Nothing -> return $ scalar $ Number 0
-  ) Nothing (G.quad : "Exists") Nothing
+  ) (Just $ \x y -> do
+  var <- asString (DomainError "Exists right argument must be a string") y
+  let err = DomainError "Exists left argument must be a scalar struct"
+  ns <- asScalar err x >>= asStruct err >>= readRef . contextScope
+  case scopeShallowLookup var ns of
+    Just _ -> pure $ scalar $ Number 1
+    Nothing -> pure $ scalar $ Number 0) (G.quad : "Exists") Nothing
 repr = Function (Just $ \y -> return $ vector $ Character <$> arrayRepr y) Nothing (G.quad : "Repr") Nothing
 delay = Function (Just $ \y -> do
   let err = DomainError "Delay argument must be a nonnegative scalar number"
