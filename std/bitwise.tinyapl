@@ -3,7 +3,7 @@
 ⟃private⟄ PadStart ← {⍵⍪⍨0⍴⍨0⌈⍺-≢⍵}
 
 ⍝⍝ Turn a number into a list of bits
-Encode ← ⍬∘{ ⍵<0: ↗"Negative number" ⋄ q←⌊⍵÷2 ⋄ r←2|⍵ ⋄ q=0: ■r⍪⍺ ⋄ q∇⍨r⍪⍺ } ⟃ replace with ⊤ ⟄
+Encode ← ⍬∘{ ⍵<0: 2↗"Negative number" ⋄ q←⌊⍵÷2 ⋄ r←2|⍵ ⋄ q=0: ■r⍪⍺ ⋄ q∇⍨r⍪⍺ } ⟃ replace with ⊤ ⟄
 
 ⍝⍝ Turn a list of bits into a number
 Decode ← { ⍵≡⍬: ■0 ⋄ (⊇⍵)+2×∇¯1↓⍵ } ⟃ replace with ⊥ ⟄
@@ -44,3 +44,35 @@ Nimply←And∘Not
 
 ⍝⍝ Bitwise converse non-implication (<)
 Cnimply←Not⍛And
+
+⍝⍝ Apply a function bitwise
+⍝⍝ ~: NOT
+⍝⍝ ∧: AND
+⍝⍝ ∨: OR
+⍝⍝ ≠: XOR
+⍝⍝ ⍲: NAND
+⍝⍝ ⍱: NOR
+⍝⍝ =: XNOR
+⍝⍝ ≤: implication
+⍝⍝ ≥: converse implication
+⍝⍝ >: non-implication
+⍝⍝ <: converse non-implication
+_Bitwise ← _{
+  d←⎕Exists"⍺" ⋄ m←~d
+⋄ _I ← _{⊏⍶⍶ ⦅⍋⋄=ᑒ⋄⍒⦆⍤⍮ ⍵}
+⋄ ⎕Exists "⍶⍶": f←⊏⍶⍶
+⋄ ⎕Exists"⍺⍺": 3=⎕Type ⍺⍺: f←⍺⍺
+⋄ ~⎕Exists"f": 2↗"operand should be a function"
+⋄ m∧~_I f: ■Not ⍵
+⋄ d∧∧_I f: ■⍺ And ⍵
+⋄ d∧∨_I f: ■⍺ Or ⍵
+⋄ d∧≠_I f: ■⍺ Xor ⍵
+⋄ d∧⍲_I f: ■⍺ Nand ⍵
+⋄ d∧⍱_I f: ■⍺ Nor ⍵
+⋄ d∧=_I f: ■⍺ Xor ⍵
+⋄ d∧≤_I f: ■⍺ Imply ⍵
+⋄ d∧≥_I f: ■⍺ Cimply ⍵
+⋄ d∧>_I f: ■⍺ Nimply ⍵
+⋄ d∧<_I f: ■⍺ Cnimply ⍵
+⋄ 2↗"invalid operand"
+}
