@@ -203,8 +203,7 @@ resolve ctx (name:ns) = do
     >>= flip resolve ns
 
 evalLeaf :: Token -> St Value
-evalLeaf (TokenNumber [x] _)              = return $ VArray $ scalar $ Number x
-evalLeaf (TokenNumber xs _)               = return $ VArray $ vector $ Number <$> xs
+evalLeaf (TokenNumber x _  )              = return $ VArray $ scalar $ Number x
 evalLeaf (TokenChar [x] _)                = return $ VArray $ scalar $ Character x
 evalLeaf (TokenChar xs _)                 = return $ VArray $ vector $ Character <$> xs
 evalLeaf (TokenString xs _)               = return $ VArray $ vector $ Character <$> xs
