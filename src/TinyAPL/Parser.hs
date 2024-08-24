@@ -39,7 +39,7 @@ assignTypeArrow AssignNormal = G.assign
 assignTypeArrow AssignModify = G.assignModify
 
 data Token
-  = TokenNumber [(Complex Double)] SourcePos
+  = TokenNumber (Complex Double) SourcePos
   | TokenChar String SourcePos
   | TokenString String SourcePos
   | TokenPrimArray Char SourcePos
@@ -67,6 +67,7 @@ data Token
   | TokenQualifiedConjunctionAssign Token (NonEmpty String) (NonEmpty Token) SourcePos
   | TokenVectorAssign [String] (NonEmpty Token) SourcePos
   | TokenHighRankAssign [String] (NonEmpty Token) SourcePos
+  | TokenTieAssign (NonEmpty String) (NonEmpty Token) SourcePos
   | TokenParens (NonEmpty Token) SourcePos
   | TokenGuard (NonEmpty Token) (NonEmpty Token) SourcePos
   | TokenExit (NonEmpty Token) SourcePos
@@ -80,6 +81,7 @@ data Token
   | TokenUnwrapAdverb Token SourcePos
   | TokenUnwrapConjunction Token SourcePos
   | TokenStruct [NonEmpty Token] SourcePos
+  | TokenTie (NonEmpty Token) SourcePos
 
 instance Eq Token where
   (TokenNumber x _) == (TokenNumber y _) = x == y
@@ -110,6 +112,7 @@ instance Eq Token where
   (TokenQualifiedConjunctionAssign xh xs xv _) == (TokenQualifiedConjunctionAssign yh ys yv _) = xh == yh && xs == ys && xv == yv
   (TokenVectorAssign xn x _) == (TokenVectorAssign yn y _) = xn == yn && x == y
   (TokenHighRankAssign xn x _) == (TokenHighRankAssign yn y _) = xn == yn && x == y
+  (TokenTieAssign xn x _) == (TokenTieAssign yn y _) = xn == yn && x == y
   (TokenParens x _) == (TokenParens y _) = x == y
   (TokenGuard xc xe _) == (TokenGuard yc ye _) = xc == yc && xe == ye
   (TokenExit x _) == (TokenExit y _) = x == y
@@ -123,6 +126,7 @@ instance Eq Token where
   (TokenUnwrapAdverb x _) == (TokenUnwrapAdverb y _) = x == y
   (TokenUnwrapConjunction x _) == (TokenUnwrapConjunction y _) = x == y
   (TokenStruct x _) == (TokenStruct y _) = x == y
+  (TokenTie x _) == (TokenTie y _) = x == y
   _ == _ = False
 
 instance Show Token where
@@ -154,6 +158,7 @@ instance Show Token where
   show (TokenQualifiedConjunctionAssign t ns xs _) = "(qualified conjunction assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenVectorAssign ns xs _) = "(vector assign " ++ unwords (show <$> ns) ++ " " ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenHighRankAssign ns xs _) = "(high rank assign " ++ unwords (show <$> ns) ++ " " ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenTieAssign ns xs _) = "(tie assign " ++ unwords (NE.toList $ show <$> ns) ++ " " ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenParens xs _) = "(parens (" ++ unwords (NE.toList $ show <$> xs) ++ "))"
   show (TokenGuard gs rs _) = "(guard " ++ unwords (NE.toList $ show <$> gs) ++ " : " ++ unwords (NE.toList $ show <$> rs) ++ ")"
   show (TokenExit xs _) = "(exit " ++ [G.exit, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
@@ -167,6 +172,7 @@ instance Show Token where
   show (TokenUnwrapAdverb x _) = "(unwrap adverb " ++ [G.underscore, G.unwrap] ++ show x ++ ")"
   show (TokenUnwrapConjunction x _) = "(unwrap conjunction " ++ [G.underscore, G.unwrap, G.underscore] ++ show x ++ ")"
   show (TokenStruct xs _) = "(struct " ++ [fst G.struct] ++ intercalate [' ', G.separator, ' '] (unwords . NE.toList . fmap show <$> xs) ++ [snd G.struct] ++ ")"
+  show (TokenTie xs _) = "(tie " ++ intercalate [G.tie] (NE.toList $ fmap show xs) ++ ")"
 
 tokenPos :: Token -> SourcePos
 tokenPos (TokenNumber _ pos) = pos
@@ -197,6 +203,7 @@ tokenPos (TokenQualifiedAdverbAssign _ _ _ pos) = pos
 tokenPos (TokenQualifiedConjunctionAssign _ _ _ pos) = pos
 tokenPos (TokenVectorAssign _ _ pos) = pos
 tokenPos (TokenHighRankAssign _ _ pos) = pos
+tokenPos (TokenTieAssign _ _ pos) = pos
 tokenPos (TokenParens _ pos) = pos
 tokenPos (TokenGuard _ _ pos) = pos
 tokenPos (TokenExit _ pos) = pos
@@ -210,6 +217,7 @@ tokenPos (TokenUnwrap _ pos) = pos
 tokenPos (TokenUnwrapAdverb _ pos) = pos
 tokenPos (TokenUnwrapConjunction _ pos) = pos
 tokenPos (TokenStruct _ pos) = pos
+tokenPos (TokenTie _ pos) = pos
 
 emptyPos :: SourcePos
 emptyPos = SourcePos "<empty>" (mkPos 1) (mkPos 1)
@@ -276,36 +284,25 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   conjunctionName :: Parser String
   conjunctionName = try ((\x y z w -> x : y : z ++ [w]) <$> char G.quad <*> char G.underscore <*> many (oneOf identifierRest) <*> char G.underscore) <|> try (string [G.underscore, G.del, G.underscore]) <|> liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (some $ oneOf identifierRest) (char G.underscore)
 
-  qualified :: [(Token -> NonEmpty String -> b, Token -> NonEmpty String -> NonEmpty Token -> b, Parser String)] -> Parser b
-  qualified xs = do
-    ((first, middle), (name, assign, last)) <- commitOn' (,) (liftA2 (,) (bit' `commitOn` char G.access) (many $ lexeme arrayName `commitOn` char G.access)) (choice $ (\(n, a, p) -> (n, a, ) <$> p) <$> xs)
-    option (name first $ snocNE middle last) $ do
-      char G.assign
-      w <- bits
-      pure $ assign first (snocNE middle last) w
-
-  arrayAssign :: Parser Token
-  arrayAssign = assign' TokenArrayAssign arrayName
-
-  functionAssign :: Parser Token
-  functionAssign = assign' TokenFunctionAssign functionName
-
-  adverbAssign :: Parser Token
-  adverbAssign = assign' TokenAdverbAssign adverbName
-
-  conjunctionAssign :: Parser Token
-  conjunctionAssign = assign' TokenConjunctionAssign conjunctionName
-
-  vectorAssign :: Parser Token
-  vectorAssign = assign TokenVectorAssign $ between (char $ fst G.vector) (char $ snd G.vector) (sepBy arrayName separator)
-
-  highRankAssign :: Parser Token
-  highRankAssign = assign TokenHighRankAssign $ between (char $ fst G.highRank) (char $ snd G.highRank) (sepBy arrayName separator)
+  maybeQualifiedTie :: (NonEmpty Token -> SourcePos -> Token) -> [(Token -> NonEmpty String -> SourcePos -> Token, Token -> NonEmpty String -> NonEmpty Token -> SourcePos -> Token, Parser String)] -> Parser Token
+  maybeQualifiedTie tie xs = do
+    pos <- getSourcePos
+    first <- bit'
+    choice [do
+      lexeme $ char G.access
+      (middle, (name, assign, last)) <- commitOn' (,) (many $ lexeme arrayName `commitOn` char G.access) (choice $ (\(n, a, p) -> (n, a, ) <$> p) <$> xs)
+      option (name first (snocNE middle last) pos) $ do
+        char G.assign
+        w <- bits
+        pure $ assign first (snocNE middle last) w pos, do
+      lexeme $ char G.tie
+      rest <- sepBy1 bit' (lexeme $ char G.tie)
+      pure $ tie (first :| rest) pos, pure first]
 
   array' :: Parser Token
   array' = number <|> charVec <|> str <|> try (withPos $ TokenArrayName <$> arrayName) <|> vectorNotation <|> highRankNotation <|> primArray <|> wrap <|> struct where
     number :: Parser Token
-    number = withPos $ TokenNumber <$> sepBy1 complex (lexeme $ char G.tie) where
+    number = withPos $ TokenNumber <$> complex where
       sign :: Parser Double
       sign = option 1 (char G.negative $> (-1))
 
@@ -361,8 +358,19 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     struct :: Parser Token
     struct = withPos $ TokenStruct <$> (string [fst G.struct] *> sepBy bits separator <* string [snd G.struct])
 
-  array :: Parser Token
-  array = vectorAssign <|> highRankAssign <|> arrayAssign <|> array'
+  array'' :: Parser Token
+  array'' = vectorAssign <|> highRankAssign <|> tieAssign <|> arrayAssign where
+    vectorAssign :: Parser Token
+    vectorAssign = assign TokenVectorAssign $ between (lexeme $ char $ fst G.vector) (lexeme $ char $ snd G.vector) (sepBy (lexeme arrayName) separator)
+
+    highRankAssign :: Parser Token
+    highRankAssign = assign TokenHighRankAssign $ between (lexeme $ char $ fst G.highRank) (lexeme $ char $ snd G.highRank) (sepBy (lexeme arrayName) separator)
+
+    tieAssign :: Parser Token
+    tieAssign = assign TokenTieAssign $ liftA2 (:|) (lexeme arrayName `commitOn` lexeme (char G.tie)) (sepBy (lexeme arrayName) (lexeme $ char G.tie))
+
+    arrayAssign :: Parser Token
+    arrayAssign = assign' TokenArrayAssign arrayName
 
   function' :: Parser Token
   function' = dfn <|> train <|> try (withPos $ TokenFunctionName <$> functionName) <|> primFunction <|> unwrap where
@@ -378,8 +386,10 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     unwrap :: Parser Token
     unwrap = withPos $ TokenUnwrap <$> (char G.unwrap *> bit)
 
-  function :: Parser Token
-  function = functionAssign <|> function'
+  function'' :: Parser Token
+  function'' = functionAssign where
+    functionAssign :: Parser Token
+    functionAssign = assign' TokenFunctionAssign functionName
 
   adverb' :: Parser Token
   adverb' = try dadv <|> try adverbTrain <|> try (withPos $ TokenAdverbName <$> adverbName) <|> primAdverb <|> unwrapAdverb where
@@ -395,8 +405,10 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     unwrapAdverb :: Parser Token
     unwrapAdverb = withPos $ TokenUnwrapAdverb <$> (string [G.underscore, G.unwrap] *> bit)
 
-  adverb :: Parser Token
-  adverb = adverbAssign <|> adverb'
+  adverb'' :: Parser Token
+  adverb'' = adverbAssign where
+    adverbAssign :: Parser Token
+    adverbAssign = assign' TokenAdverbAssign adverbName
 
   conjunction' :: Parser Token
   conjunction' = try dconj <|> try conjunctionTrain <|> try (withPos $ TokenConjunctionName <$> conjunctionName) <|> primConjunction <|> unwrapConjunction where
@@ -412,8 +424,10 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     unwrapConjunction :: Parser Token
     unwrapConjunction = withPos $ TokenUnwrapConjunction <$> (string [G.underscore, G.unwrap, G.underscore] *> bit)
 
-  conjunction :: Parser Token
-  conjunction = conjunctionAssign <|> conjunction'
+  conjunction'' :: Parser Token
+  conjunction'' = conjunctionAssign where
+    conjunctionAssign :: Parser Token
+    conjunctionAssign = assign' TokenConjunctionAssign conjunctionName
 
   guard :: Parser Token
   guard = withPos $ liftA2 TokenGuard (bits `commitOn` char G.guard) definedBits
@@ -425,18 +439,20 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   bracketed = withPos $ TokenParens <$> between (char $ fst G.parens) (char $ snd G.parens) bits
 
   separator :: Parser ()
-  separator = void $ char (G.separator) <|> char '\n' <* some (char '\n')
+  separator = void $ lexeme (char G.separator) <|> char '\n' <* some (char '\n')
 
   bit' :: Parser Token
   bit' = lexeme $ conjunction' <|> adverb' <|> function' <|> array' <|> bracketed
 
   bit :: Parser Token
-  bit = lexeme $ (withPos $ qualified
+  bit = lexeme $ bracketed <|> conjunction'' <|> adverb'' <|> function'' <|> array'' <|>
+    maybeQualifiedTie
+      TokenTie
       [ (TokenQualifiedConjunctionName, TokenQualifiedConjunctionAssign, try conjunctionName)
       , (TokenQualifiedAdverbName, TokenQualifiedAdverbAssign, adverbName)
       , (TokenQualifiedFunctionName, TokenQualifiedFunctionAssign, functionName)
-      , (TokenQualifiedArrayName, TokenQualifiedArrayAssign, arrayName) ])
-    <|> conjunction <|> adverb <|> function <|> array <|> bracketed
+      , (TokenQualifiedArrayName, TokenQualifiedArrayAssign, arrayName) ]
+    <|> conjunction' <|> adverb' <|> function' <|> array'
 
   bitsMaybe :: Parser [Token]
   bitsMaybe = spaceConsumer *> many bit
@@ -642,6 +658,7 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   tokenToTree (TokenQualifiedConjunctionAssign h ns ts _) = qualifiedAssignment CatConjunction h ns ts
   tokenToTree (TokenVectorAssign names ts pos)            = destructureAssignment VectorAssignBranch names ts pos
   tokenToTree (TokenHighRankAssign names ts pos)          = destructureAssignment HighRankAssignBranch names ts pos
+  tokenToTree (TokenTieAssign names ts pos)               = destructureAssignment VectorAssignBranch (NE.toList names) ts pos
   tokenToTree (TokenParens ts _)                          = categorizeAndBind ts
   tokenToTree (TokenGuard check result _)                 = liftA2 GuardBranch (categorizeAndBind check >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head check) source $ "Invalid guard of type " ++ show c ++ ", array required")) (categorizeAndBind result)
   tokenToTree (TokenExit result _)                        = ExitBranch <$> (categorizeAndBind result >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head result) source $ "Invalid exit statement of type " ++ show c ++ ", array required"))
@@ -659,6 +676,7 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   tokenToTree (TokenUnwrapAdverb val _)                   = UnwrapBranch CatAdverb <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap adverb of type " ++ show c ++ ", array required"))
   tokenToTree (TokenUnwrapConjunction val _)              = UnwrapBranch CatConjunction <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap conjunction of type " ++ show c ++ ", array required"))
   tokenToTree (TokenStruct es pos)                        = struct es pos
+  tokenToTree (TokenTie es pos)                           = vector (NE.toList $ fmap NE.singleton $ es) pos
 
 parse :: String -> String -> Result [Maybe Tree]
 parse name = categorize name >=> mapM (\xs -> case NE.nonEmpty xs of
