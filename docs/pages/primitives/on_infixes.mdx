@@ -2,9 +2,69 @@
 glyph: '↡'
 pattern: 'r←x(F↡)y'
 name: On Infixes
+planned: true
 ---
 
-`x` must be a scalar natural. `r` is the result of applying `F` to *infixes* of `y` of length `|x`:
+`x` is a scalar integer, vector of integers or matrix. `r` is the result of applying `F` to *infixes* of `y` as defined by `x`:
 
-* if `x` is positive, infixes are overlapping "windows";
-* if `x` is negative, infixes are non-overlapping "chunks"; if `|x` does not divide evenly in the tally of `y`, the last chunk will be shorter than the others.
+* if `x` is a positive scalar, it is interpreted as `⟨x⋄1⟩`;
+* if `x` is a negative scalar, it is interpreted as `⟨|x⋄|x⟩`;
+* if `x` is a vector, it is interpreted as `⍪x`;
+
+Each row of `x` indicates the way infixes are calculated along the corresponding axis of `y`. The first element is a positive integer and indicates the _window size_, `w`. The second element is a positive integer and indicates the _skip count_, `s`. The third element is a scalar or vector and indicates the _mode_; the first element is the mode and the other elements are parameters; modes are explained below; it defaults to `1`.
+
+## Modes
+
+### Mode `1`: Keep Shorter at End
+
+The infixes are `w↑y`, `w↑s↓y`, `w↑s↓s↓y`, etc, until the result is empty. If the last infix is shorter, it is kept.
+
+### Mode `¯1`: Keep Shorter at Start
+
+TBD
+
+### Mode `2`: Drop Shorter at End
+
+The infixes are `w↓y`, `w↓s↓y`, `w↓s↓s↓y`, etc, until the result is empty. If the last infix is shorter, it is dropped.
+
+### Mode `¯2`: Drop Shorter at Start
+
+TBD
+
+### Mode `3`: Apply Transformation at End
+
+The infixes are `w↑y`, `w↑s↓y`, `w↑s↓s↓y`, etc, until the result is empty. If the last infix is shorter, it is transformed with the transformation described by the first parameter, optionally passing the other parameters.
+
+### Mode `¯3`: Apply Transformation at Start
+
+TBD
+
+### Mode `4`: Stencil
+
+TBD
+
+## Transformations
+
+### Transformation `0`: Fill
+
+The edges are extended with the parameter.
+
+### Transformation `1`: Replicate
+
+The left edge is extended with the first value of the list; the right edge is extended with the last value of the list.
+
+### Transformation `2`: Reverse
+
+The edges are extended by catenating the reverse of the list.
+
+### Transformation `3`: Mirror
+
+The left edge is extended by catenating the reverse of the tail (`1↓`) of the list; the right edge is extended by catenating the reverse of the init (`¯1↓`) of the list.
+
+### Transformation `4`: Wrap
+
+The edges are extended by catenating the list.
+
+### Custom Transformation
+
+If the transformation is a function, it is applied with left argument the list, and right argument the required (extra) length, negative if the left edge is being extended, positive if the right edge is extended.
