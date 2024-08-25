@@ -445,7 +445,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   bit' = lexeme $ bracketed <|> conjunction' <|> adverb' <|> function' <|> array'
 
   bit :: Parser Token
-  bit = lexeme $ bracketed <|> conjunction'' <|> adverb'' <|> function'' <|> array'' <|>
+  bit = lexeme $ conjunction'' <|> adverb'' <|> function'' <|> array'' <|>
     maybeQualifiedTie
       TokenTie
       [ (TokenQualifiedConjunctionName, TokenQualifiedConjunctionAssign, try conjunctionName)
