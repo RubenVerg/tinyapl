@@ -28,7 +28,10 @@ type Parser = Parsec Void String
 data AssignType
   = AssignNormal
   | AssignModify
-  deriving (Eq)
+  deriving (Eq, Enum, Bounded)
+
+assignTypes :: [AssignType]
+assignTypes = [minBound .. maxBound]
 
 instance Show AssignType where
   show AssignNormal = "normal"
@@ -37,6 +40,9 @@ instance Show AssignType where
 assignTypeArrow :: AssignType -> Char
 assignTypeArrow AssignNormal = G.assign
 assignTypeArrow AssignModify = G.assignModify
+
+assignArrows :: [(AssignType, Char)]
+assignArrows = map (liftA2 (,) id assignTypeArrow) assignTypes
 
 data Token
   = TokenNumber (Complex Double) SourcePos
@@ -61,13 +67,13 @@ data Token
   | TokenFunctionAssign String AssignType (NonEmpty Token) SourcePos
   | TokenAdverbAssign String AssignType (NonEmpty Token) SourcePos
   | TokenConjunctionAssign String AssignType (NonEmpty Token) SourcePos
-  | TokenQualifiedArrayAssign Token (NonEmpty String) (NonEmpty Token) SourcePos
-  | TokenQualifiedFunctionAssign Token (NonEmpty String) (NonEmpty Token) SourcePos
-  | TokenQualifiedAdverbAssign Token (NonEmpty String) (NonEmpty Token) SourcePos
-  | TokenQualifiedConjunctionAssign Token (NonEmpty String) (NonEmpty Token) SourcePos
-  | TokenVectorAssign [String] (NonEmpty Token) SourcePos
-  | TokenHighRankAssign [String] (NonEmpty Token) SourcePos
-  | TokenTieAssign (NonEmpty String) (NonEmpty Token) SourcePos
+  | TokenQualifiedArrayAssign Token (NonEmpty String) AssignType (NonEmpty Token) SourcePos
+  | TokenQualifiedFunctionAssign Token (NonEmpty String) AssignType (NonEmpty Token) SourcePos
+  | TokenQualifiedAdverbAssign Token (NonEmpty String) AssignType (NonEmpty Token) SourcePos
+  | TokenQualifiedConjunctionAssign Token (NonEmpty String) AssignType (NonEmpty Token) SourcePos
+  | TokenVectorAssign [String] AssignType (NonEmpty Token) SourcePos
+  | TokenHighRankAssign [String] AssignType (NonEmpty Token) SourcePos
+  | TokenTieAssign (NonEmpty String) AssignType (NonEmpty Token) SourcePos
   | TokenParens (NonEmpty Token) SourcePos
   | TokenGuard (NonEmpty Token) (NonEmpty Token) SourcePos
   | TokenExit (NonEmpty Token) SourcePos
@@ -106,13 +112,13 @@ instance Eq Token where
   (TokenFunctionAssign xn xc x _) == (TokenFunctionAssign yn yc y _) = xn == yn && xc == yc && x == y
   (TokenAdverbAssign xn xc x _) == (TokenAdverbAssign yn yc y _) = xn == yn && xc == yc && x == y
   (TokenConjunctionAssign xn xc x _) == (TokenConjunctionAssign yn yc y _) = xn == yn && xc == yc && x == y
-  (TokenQualifiedArrayAssign xh xs xv _) == (TokenQualifiedArrayAssign yh ys yv _) = xh == yh && xs == ys && xv == yv
-  (TokenQualifiedFunctionAssign xh xs xv _) == (TokenQualifiedFunctionAssign yh ys yv _) = xh == yh && xs == ys && xv == yv
-  (TokenQualifiedAdverbAssign xh xs xv _) == (TokenQualifiedAdverbAssign yh ys yv _) = xh == yh && xs == ys && xv == yv
-  (TokenQualifiedConjunctionAssign xh xs xv _) == (TokenQualifiedConjunctionAssign yh ys yv _) = xh == yh && xs == ys && xv == yv
-  (TokenVectorAssign xn x _) == (TokenVectorAssign yn y _) = xn == yn && x == y
-  (TokenHighRankAssign xn x _) == (TokenHighRankAssign yn y _) = xn == yn && x == y
-  (TokenTieAssign xn x _) == (TokenTieAssign yn y _) = xn == yn && x == y
+  (TokenQualifiedArrayAssign xh xs xt xv _) == (TokenQualifiedArrayAssign yh ys yt yv _) = xh == yh && xs == ys && xt == yt && xv == yv
+  (TokenQualifiedFunctionAssign xh xs xt xv _) == (TokenQualifiedFunctionAssign yh ys yt yv _) = xh == yh && xs == ys && xt == yt && xv == yv
+  (TokenQualifiedAdverbAssign xh xs xt xv _) == (TokenQualifiedAdverbAssign yh ys yt yv _) = xh == yh && xs == ys && xt == yt && xv == yv
+  (TokenQualifiedConjunctionAssign xh xs xt xv _) == (TokenQualifiedConjunctionAssign yh ys yt yv _) = xh == yh && xs == ys && xt == yt && xv == yv
+  (TokenVectorAssign xn xt x _) == (TokenVectorAssign yn yt y _) = xn == yn && xt == yt && x == y
+  (TokenHighRankAssign xn xt x _) == (TokenHighRankAssign yn yt y _) = xn == yn && xt == yt && x == y
+  (TokenTieAssign xn xt x _) == (TokenTieAssign yn yt y _) = xn == yn && xt == yt && x == y
   (TokenParens x _) == (TokenParens y _) = x == y
   (TokenGuard xc xe _) == (TokenGuard yc ye _) = xc == yc && xe == ye
   (TokenExit x _) == (TokenExit y _) = x == y
@@ -152,13 +158,13 @@ instance Show Token where
   show (TokenFunctionAssign x c xs _) = "(function assign " ++ x ++ [' ', assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenAdverbAssign x c xs _) = "(adverb assign " ++ x ++ [' ', assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenConjunctionAssign x c xs _) = "(conjunction assign " ++ x ++ [' ', assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
-  show (TokenQualifiedArrayAssign t ns xs _) = "(qualified array assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
-  show (TokenQualifiedFunctionAssign t ns xs _) = "(qualified function assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
-  show (TokenQualifiedAdverbAssign t ns xs _) = "(qualified adverb assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
-  show (TokenQualifiedConjunctionAssign t ns xs _) = "(qualified conjunction assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', G.assign, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
-  show (TokenVectorAssign ns xs _) = "(vector assign " ++ unwords (show <$> ns) ++ " " ++ unwords (NE.toList $ show <$> xs) ++ ")"
-  show (TokenHighRankAssign ns xs _) = "(high rank assign " ++ unwords (show <$> ns) ++ " " ++ unwords (NE.toList $ show <$> xs) ++ ")"
-  show (TokenTieAssign ns xs _) = "(tie assign " ++ unwords (NE.toList $ show <$> ns) ++ " " ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenQualifiedArrayAssign t ns ty xs _) = "(qualified array assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', assignTypeArrow ty, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenQualifiedFunctionAssign t ns ty xs _) = "(qualified function assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', assignTypeArrow ty, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenQualifiedAdverbAssign t ns ty xs _) = "(qualified adverb assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', assignTypeArrow ty, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenQualifiedConjunctionAssign t ns ty xs _) = "(qualified conjunction assign " ++ show t ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ [' ', assignTypeArrow ty, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenVectorAssign ns c xs _) = "(vector assign " ++ unwords (show <$> ns) ++ " " ++ [assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenHighRankAssign ns c xs _) = "(high rank assign " ++ unwords (show <$> ns) ++ " " ++ [assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenTieAssign ns c xs _) = "(tie assign " ++ unwords (NE.toList $ show <$> ns) ++ " " ++ [assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenParens xs _) = "(parens (" ++ unwords (NE.toList $ show <$> xs) ++ "))"
   show (TokenGuard gs rs _) = "(guard " ++ unwords (NE.toList $ show <$> gs) ++ " : " ++ unwords (NE.toList $ show <$> rs) ++ ")"
   show (TokenExit xs _) = "(exit " ++ [G.exit, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
@@ -197,13 +203,13 @@ tokenPos (TokenArrayAssign _ _ _ pos) = pos
 tokenPos (TokenFunctionAssign _ _ _ pos) = pos
 tokenPos (TokenAdverbAssign _ _ _ pos) = pos
 tokenPos (TokenConjunctionAssign _ _ _ pos) = pos
-tokenPos (TokenQualifiedArrayAssign _ _ _ pos) = pos
-tokenPos (TokenQualifiedFunctionAssign _ _ _ pos) = pos
-tokenPos (TokenQualifiedAdverbAssign _ _ _ pos) = pos
-tokenPos (TokenQualifiedConjunctionAssign _ _ _ pos) = pos
-tokenPos (TokenVectorAssign _ _ pos) = pos
-tokenPos (TokenHighRankAssign _ _ pos) = pos
-tokenPos (TokenTieAssign _ _ pos) = pos
+tokenPos (TokenQualifiedArrayAssign _ _ _ _ pos) = pos
+tokenPos (TokenQualifiedFunctionAssign _ _ _ _ pos) = pos
+tokenPos (TokenQualifiedAdverbAssign _ _ _ _ pos) = pos
+tokenPos (TokenQualifiedConjunctionAssign _ _ _ _ pos) = pos
+tokenPos (TokenVectorAssign _ _ _ pos) = pos
+tokenPos (TokenHighRankAssign _ _ _ pos) = pos
+tokenPos (TokenTieAssign _ _ _ pos) = pos
 tokenPos (TokenParens _ pos) = pos
 tokenPos (TokenGuard _ _ pos) = pos
 tokenPos (TokenExit _ pos) = pos
@@ -266,11 +272,11 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   identifierRest :: String
   identifierRest = arrayStart ++ functionStart ++ ['0'..'9']
 
-  assign :: (a -> NonEmpty Token -> SourcePos -> b) -> Parser a -> Parser b
-  assign con name = withPos $ liftA2 con (lexeme name `commitOn` char G.assign) bits
-
+  assignArrow :: Parser AssignType
+  assignArrow = choice $ map (\(ty, c) -> char c $> ty) assignArrows
+  
   assign' :: (a -> AssignType -> NonEmpty Token -> SourcePos -> b) -> Parser a -> Parser b
-  assign' con name = withPos $ liftA2 ($) (commitOn' con (lexeme name) (char G.assign $> AssignNormal <|> char G.assignModify $> AssignModify)) bits
+  assign' con name = withPos $ liftA2 ($) (commitOn' con (lexeme name) assignArrow) bits
 
   arrayName :: Parser String
   arrayName = try (liftA3 (\x y z -> x : y : z) (char G.quad) (oneOf arrayStart) (many $ oneOf identifierRest)) <|> try (string [G.alpha, G.alpha]) <|> try (string [G.omega, G.omega]) <|> try (string [G.alpha]) <|> try (string [G.omega]) <|> try (string [G.quad]) <|> try (string [G.quadQuote]) <|> liftA2 (:) (oneOf arrayStart) (many $ oneOf identifierRest)
@@ -284,7 +290,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   conjunctionName :: Parser String
   conjunctionName = try ((\x y z w -> x : y : z ++ [w]) <$> char G.quad <*> char G.underscore <*> many (oneOf identifierRest) <*> char G.underscore) <|> try (string [G.underscore, G.del, G.underscore]) <|> liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (some $ oneOf identifierRest) (char G.underscore)
 
-  maybeQualifiedTie :: (NonEmpty Token -> SourcePos -> Token) -> [(Token -> NonEmpty String -> SourcePos -> Token, Token -> NonEmpty String -> NonEmpty Token -> SourcePos -> Token, Parser String)] -> Parser Token
+  maybeQualifiedTie :: (NonEmpty Token -> SourcePos -> Token) -> [(Token -> NonEmpty String -> SourcePos -> Token, Token -> NonEmpty String -> AssignType -> NonEmpty Token -> SourcePos -> Token, Parser String)] -> Parser Token
   maybeQualifiedTie tie xs = do
     pos <- getSourcePos
     first <- bit'
@@ -292,9 +298,9 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
       lexeme $ char G.access
       (middle, (name, assign, last)) <- commitOn' (,) (many $ lexeme arrayName `commitOn` char G.access) (choice $ (\(n, a, p) -> (n, a, ) <$> p) <$> xs)
       option (name first (snocNE middle last) pos) $ do
-        char G.assign
+        as <- assignArrow
         w <- bits
-        pure $ assign first (snocNE middle last) w pos, do
+        pure $ assign first (snocNE middle last) as w pos, do
       lexeme $ char G.tie
       rest <- sepBy1 bit' (lexeme $ char G.tie)
       pure $ tie (first :| rest) pos, pure first]
@@ -361,13 +367,13 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   array'' :: Parser Token
   array'' = vectorAssign <|> highRankAssign <|> tieAssign <|> arrayAssign where
     vectorAssign :: Parser Token
-    vectorAssign = assign TokenVectorAssign $ between (lexeme $ char $ fst G.vector) (lexeme $ char $ snd G.vector) (sepBy (lexeme arrayName) separator)
+    vectorAssign = assign' TokenVectorAssign $ between (lexeme $ char $ fst G.vector) (lexeme $ char $ snd G.vector) (sepBy (lexeme arrayName) separator)
 
     highRankAssign :: Parser Token
-    highRankAssign = assign TokenHighRankAssign $ between (lexeme $ char $ fst G.highRank) (lexeme $ char $ snd G.highRank) (sepBy (lexeme arrayName) separator)
+    highRankAssign = assign' TokenHighRankAssign $ between (lexeme $ char $ fst G.highRank) (lexeme $ char $ snd G.highRank) (sepBy (lexeme arrayName) separator)
 
     tieAssign :: Parser Token
-    tieAssign = assign TokenTieAssign $ liftA2 (:|) (lexeme arrayName `commitOn` lexeme (char G.tie)) (sepBy (lexeme arrayName) (lexeme $ char G.tie))
+    tieAssign = assign' TokenTieAssign $ liftA2 (:|) (lexeme arrayName `commitOn` lexeme (char G.tie)) (sepBy (lexeme arrayName) (lexeme $ char G.tie))
 
     arrayAssign :: Parser Token
     arrayAssign = assign' TokenArrayAssign arrayName
@@ -486,9 +492,9 @@ data Tree
   | AdverbCallBranch { adverbCallBranchLeft :: Tree, adverbCallBranchRight :: Tree }
   | ConjunctionCallBranch { conjunctionCallBranchLeft :: Tree, conjunctionCallBranchRight :: Tree }
   | AssignBranch { assignmentBranchCategory :: Category, assignmentName :: String, assignBranchType :: AssignType, assignmentValue :: Tree }
-  | QualifiedAssignBranch { qualifiedAssignBranchCategory :: Category, qualifiedAssignBranchHead :: Tree, qualifiedAssignBranchNames :: NonEmpty String, qualifiedAssignBranchValue :: Tree }
-  | VectorAssignBranch { vectorAssignBranchNames :: [String], vectorAssignBranchValue :: Tree }
-  | HighRankAssignBranch { highRankAssignBranchNames :: [String], highRankAssignBranchValue :: Tree }
+  | QualifiedAssignBranch { qualifiedAssignBranchCategory :: Category, qualifiedAssignBranchHead :: Tree, qualifiedAssignBranchNames :: NonEmpty String, qualifiedAssignBranchType :: AssignType, qualifiedAssignBranchValue :: Tree }
+  | VectorAssignBranch { vectorAssignBranchNames :: [String], vectorAssignBranchType :: AssignType, vectorAssignBranchValue :: Tree }
+  | HighRankAssignBranch { highRankAssignBranchNames :: [String], highRankAssignBranchType :: AssignType, highRankAssignBranchValue :: Tree }
   | DefinedBranch { definedBranchCategory :: Category, definedBranchStatements :: NonEmpty Tree }
   | GuardBranch { guardBranchCheck :: Tree, guardBranchResult :: Tree }
   | ExitBranch { exitBranchResult :: Tree }
@@ -505,46 +511,46 @@ instance Show Tree where
     indentCount = 2
     go :: Int -> Tree -> [String]
     go i t = let indent = replicate (indentCount * i) ' ' in case t of
-      (Leaf c l)                       -> [indent ++ show c ++ ": " ++ show l]
-      (QualifiedBranch c h ns)         -> [indent ++ show c ++ ": ..." ++ [G.access] ++ intercalate [G.access] (NE.toList ns)] ++ go (i + 1) h
-      (MonadCallBranch l r)            -> [indent ++ "monad call"] ++ go (i + 1) l ++ go (i + 1) r
-      (DyadCallBranch l r)             -> [indent ++ "dyad left call"] ++ go (i + 1) l ++ go (i + 1) r
-      (AdverbCallBranch l r)           -> [indent ++ "adverb call"] ++ go (i + 1) l ++ go (i + 1) r
-      (ConjunctionCallBranch l r)      -> [indent ++ "conjunction right call"] ++ go (i + 1) l ++ go (i + 1) r
-      (AssignBranch c n t v)           -> (indent ++ show c ++ " " ++ n ++ " " ++ [assignTypeArrow t] ++ "") : go (i + 1) v
-      (QualifiedAssignBranch c h ns v) -> (indent ++ show c ++ " ..." ++ [G.access] ++ intercalate [G.access] (NE.toList ns) ++ " ← ...") : go (i + 1) h ++ (indent ++ "←") : go (i + 1) v
-      (VectorAssignBranch ns v)        -> (indent ++ "⟨⟩ " ++ unwords (show <$> ns) ++ " ←") : go (i + 1) v
-      (HighRankAssignBranch ns v)      -> (indent ++ "[] " ++ unwords (show <$> ns) ++ " ←") : go (i + 1) v
-      (DefinedBranch c ts)             -> (indent ++ show c ++ " {}") : concatMap (go (i + 1)) ts
-      (GuardBranch ch res)             -> [indent ++ "guard"] ++ go (i + 1) ch ++ [indent ++ ":"] ++ go (i + 1) res
-      (ExitBranch res)                 -> (indent ++ "■") : go (i + 1) res
-      (VectorBranch es)                -> (indent ++ "⟨⟩") : concatMap (go (i + 1)) es
-      (HighRankBranch es)              -> (indent ++ "[]") : concatMap (go (i + 1)) es
-      (TrainBranch c ts)               -> (indent ++ (if c == CatFunction then "" else "_") ++ "⦅" ++ (if c == CatConjunction then "_" else "") ++ "⦆") : concatMap (maybe [""] (go (i + 1))) ts
-      (WrapBranch fn)                  -> (indent ++ "□") : go (i + 1) fn
-      (UnwrapBranch c fn)              -> (indent ++ (if c == CatFunction then "" else "_") ++ "⊏" ++ (if c == CatConjunction then "_" else "")) : go (i + 1) fn
-      (StructBranch ts)                -> (indent ++ "⦃⦄") : concatMap (go (i + 1)) ts
+      (Leaf c l)                         -> [indent ++ show c ++ ": " ++ show l]
+      (QualifiedBranch c h ns)           -> [indent ++ show c ++ ": ..." ++ [G.access] ++ intercalate [G.access] (NE.toList ns)] ++ go (i + 1) h
+      (MonadCallBranch l r)              -> [indent ++ "monad call"] ++ go (i + 1) l ++ go (i + 1) r
+      (DyadCallBranch l r)               -> [indent ++ "dyad left call"] ++ go (i + 1) l ++ go (i + 1) r
+      (AdverbCallBranch l r)             -> [indent ++ "adverb call"] ++ go (i + 1) l ++ go (i + 1) r
+      (ConjunctionCallBranch l r)        -> [indent ++ "conjunction right call"] ++ go (i + 1) l ++ go (i + 1) r
+      (AssignBranch c n t v)             -> (indent ++ show c ++ " " ++ n ++ " " ++ [assignTypeArrow t] ++ "") : go (i + 1) v
+      (QualifiedAssignBranch c h ns t v) -> (indent ++ show c ++ " ..." ++ [assignTypeArrow t] ++ intercalate [G.access] (NE.toList ns) ++ " ← ...") : go (i + 1) h ++ (indent ++ "←") : go (i + 1) v
+      (VectorAssignBranch ns c v)        -> (indent ++ "⟨⟩ " ++ unwords (show <$> ns) ++ [' ', assignTypeArrow c]) : go (i + 1) v
+      (HighRankAssignBranch ns c v)      -> (indent ++ "[] " ++ unwords (show <$> ns) ++ [' ', assignTypeArrow c]) : go (i + 1) v
+      (DefinedBranch c ts)               -> (indent ++ show c ++ " {}") : concatMap (go (i + 1)) ts
+      (GuardBranch ch res)               -> [indent ++ "guard"] ++ go (i + 1) ch ++ [indent ++ ":"] ++ go (i + 1) res
+      (ExitBranch res)                   -> (indent ++ "■") : go (i + 1) res
+      (VectorBranch es)                  -> (indent ++ "⟨⟩") : concatMap (go (i + 1)) es
+      (HighRankBranch es)                -> (indent ++ "[]") : concatMap (go (i + 1)) es
+      (TrainBranch c ts)                 -> (indent ++ (if c == CatFunction then "" else "_") ++ "⦅" ++ (if c == CatConjunction then "_" else "") ++ "⦆") : concatMap (maybe [""] (go (i + 1))) ts
+      (WrapBranch fn)                    -> (indent ++ "□") : go (i + 1) fn
+      (UnwrapBranch c fn)                -> (indent ++ (if c == CatFunction then "" else "_") ++ "⊏" ++ (if c == CatConjunction then "_" else "")) : go (i + 1) fn
+      (StructBranch ts)                  -> (indent ++ "⦃⦄") : concatMap (go (i + 1)) ts
 
 treeCategory :: Tree -> Category
-treeCategory (Leaf c _)                      = c
-treeCategory (QualifiedBranch c _ _)         = c
-treeCategory (MonadCallBranch _ _)           = CatArray
-treeCategory (DyadCallBranch _ _)            = CatAppliedFunction
-treeCategory (AdverbCallBranch _ _)          = CatFunction
-treeCategory (ConjunctionCallBranch _ _)     = CatAdverb
-treeCategory (AssignBranch c _ _ _)          = c
-treeCategory (QualifiedAssignBranch c _ _ _) = c
-treeCategory (VectorAssignBranch _ _)        = CatArray
-treeCategory (HighRankAssignBranch _ _)      = CatArray
-treeCategory (DefinedBranch c _)             = c
-treeCategory (GuardBranch _ t)               = treeCategory t
-treeCategory (ExitBranch _)                  = CatArray
-treeCategory (VectorBranch _)                = CatArray
-treeCategory (HighRankBranch _)              = CatArray
-treeCategory (TrainBranch c _)               = c
-treeCategory (WrapBranch _)                  = CatArray
-treeCategory (UnwrapBranch c _)              = c
-treeCategory (StructBranch _)                = CatArray
+treeCategory (Leaf c _)                        = c
+treeCategory (QualifiedBranch c _ _)           = c
+treeCategory (MonadCallBranch _ _)             = CatArray
+treeCategory (DyadCallBranch _ _)              = CatAppliedFunction
+treeCategory (AdverbCallBranch _ _)            = CatFunction
+treeCategory (ConjunctionCallBranch _ _)       = CatAdverb
+treeCategory (AssignBranch c _ _ _)            = c
+treeCategory (QualifiedAssignBranch c _ _ _ _) = c
+treeCategory (VectorAssignBranch _ _ _)        = CatArray
+treeCategory (HighRankAssignBranch _ _ _)      = CatArray
+treeCategory (DefinedBranch c _)               = c
+treeCategory (GuardBranch _ t)                 = treeCategory t
+treeCategory (ExitBranch _)                    = CatArray
+treeCategory (VectorBranch _)                  = CatArray
+treeCategory (HighRankBranch _)                = CatArray
+treeCategory (TrainBranch c _)                 = c
+treeCategory (WrapBranch _)                    = CatArray
+treeCategory (UnwrapBranch c _)                = c
+treeCategory (StructBranch _)                  = CatArray
 
 bindingMap :: [((Category, Category), (Int, Tree -> Tree -> Tree))]
 bindingMap =
@@ -606,13 +612,13 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   assignment cat name ty ts pos = AssignBranch cat name ty <$> (categorizeAndBind ts >>=
     requireOfCategory cat (\c -> makeSyntaxError pos source $ "Invalid assignment of " ++ show c ++ " to " ++ show cat ++ " name"))
 
-  qualifiedAssignment :: Category -> Token -> NonEmpty String -> NonEmpty Token -> Result Tree
-  qualifiedAssignment cat h ns ts = liftA2 (\h' as -> QualifiedAssignBranch cat h' ns as) (tokenToTree h >>=
+  qualifiedAssignment :: Category -> Token -> NonEmpty String -> AssignType -> NonEmpty Token -> Result Tree
+  qualifiedAssignment cat h ns ty ts = liftA2 (\h' as -> QualifiedAssignBranch cat h' ns ty as) (tokenToTree h >>=
     requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos h) source $ "Invalid qualified access to value of type " ++ show c)) (categorizeAndBind ts >>=
     requireOfCategory cat (\c -> makeSyntaxError (tokenPos $ NE.head ts) source $ "Invalid assignment of " ++ show c ++ " to " ++ show cat ++ " name"))
 
-  destructureAssignment :: ([String] -> Tree -> Tree) -> [String] -> NonEmpty Token -> SourcePos -> Result Tree
-  destructureAssignment h names ts pos = h names <$> (categorizeAndBind ts >>= requireOfCategory CatArray (\c -> makeSyntaxError pos source $ "Invalid destructure assignment of " ++ show c ++ ", array required"))
+  destructureAssignment :: ([String] -> AssignType -> Tree -> Tree) -> [String] -> AssignType -> NonEmpty Token -> SourcePos -> Result Tree
+  destructureAssignment h names ty ts pos = h names ty <$> (categorizeAndBind ts >>= requireOfCategory CatArray (\c -> makeSyntaxError pos source $ "Invalid destructure assignment of " ++ show c ++ ", array required"))
 
   vector :: [NonEmpty Token] -> SourcePos -> Result Tree
   vector es _ = VectorBranch <$> mapM (\x -> categorizeAndBind x) es
@@ -630,44 +636,44 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   struct es _ = StructBranch <$> mapM (\x -> categorizeAndBind x) es
 
   tokenToTree :: Token -> Result Tree
-  tokenToTree num@(TokenNumber _ _)                       = return $ Leaf CatArray num
-  tokenToTree ch@(TokenChar _ _)                          = return $ Leaf CatArray ch
-  tokenToTree str@(TokenString _ _)                       = return $ Leaf CatArray str
-  tokenToTree arr@(TokenPrimArray _ _)                    = return $ Leaf CatArray arr
-  tokenToTree fn@(TokenPrimFunction _ _)                  = return $ Leaf CatFunction fn
-  tokenToTree adv@(TokenPrimAdverb _ _)                   = return $ Leaf CatAdverb adv
-  tokenToTree conj@(TokenPrimConjunction _ _)             = return $ Leaf CatConjunction conj
-  tokenToTree (TokenDfn statements pos)                   = defined CatFunction "dfn" statements pos
-  tokenToTree (TokenDadv statements pos)                  = defined CatAdverb "dadv" statements pos
-  tokenToTree (TokenDconj statements pos)                 = defined CatConjunction "dconj" statements pos
-  tokenToTree arr@(TokenArrayName _ _)                    = return $ Leaf CatArray arr
-  tokenToTree fn@(TokenFunctionName _ _)                  = return $ Leaf CatFunction fn
-  tokenToTree adv@(TokenAdverbName _ _)                   = return $ Leaf CatAdverb adv
-  tokenToTree conj@(TokenConjunctionName _ _)             = return $ Leaf CatConjunction conj
-  tokenToTree (TokenQualifiedArrayName h ns _)            = qualified CatArray h ns
-  tokenToTree (TokenQualifiedFunctionName h ns _)         = qualified CatFunction h ns
-  tokenToTree (TokenQualifiedAdverbName h ns _)           = qualified CatAdverb h ns
-  tokenToTree (TokenQualifiedConjunctionName h ns _)      = qualified CatConjunction h ns
-  tokenToTree (TokenArrayAssign name c ts pos)            = assignment CatArray name c ts pos
-  tokenToTree (TokenFunctionAssign name c ts pos)         = assignment CatFunction name c ts pos
-  tokenToTree (TokenAdverbAssign name c ts pos)           = assignment CatAdverb name c ts pos
-  tokenToTree (TokenConjunctionAssign name c ts pos)      = assignment CatConjunction name c ts pos
-  tokenToTree (TokenQualifiedArrayAssign h ns ts _)       = qualifiedAssignment CatArray h ns ts
-  tokenToTree (TokenQualifiedFunctionAssign h ns ts _)    = qualifiedAssignment CatFunction h ns ts
-  tokenToTree (TokenQualifiedAdverbAssign h ns ts _)      = qualifiedAssignment CatAdverb h ns ts
-  tokenToTree (TokenQualifiedConjunctionAssign h ns ts _) = qualifiedAssignment CatConjunction h ns ts
-  tokenToTree (TokenVectorAssign names ts pos)            = destructureAssignment VectorAssignBranch names ts pos
-  tokenToTree (TokenHighRankAssign names ts pos)          = destructureAssignment HighRankAssignBranch names ts pos
-  tokenToTree (TokenTieAssign names ts pos)               = destructureAssignment VectorAssignBranch (NE.toList names) ts pos
-  tokenToTree (TokenParens ts _)                          = categorizeAndBind ts
-  tokenToTree (TokenGuard check result _)                 = liftA2 GuardBranch (categorizeAndBind check >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head check) source $ "Invalid guard of type " ++ show c ++ ", array required")) (categorizeAndBind result)
-  tokenToTree (TokenExit result _)                        = ExitBranch <$> (categorizeAndBind result >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head result) source $ "Invalid exit statement of type " ++ show c ++ ", array required"))
-  tokenToTree (TokenVector es pos)                        = vector es pos
-  tokenToTree (TokenHighRank es pos)                      = highRank es pos
-  tokenToTree (TokenTrain fs pos)                         = train CatFunction fs pos
-  tokenToTree (TokenAdverbTrain fs pos)                   = train CatAdverb fs pos
-  tokenToTree (TokenConjunctionTrain fs pos)              = train CatConjunction fs pos
-  tokenToTree (TokenWrap val _)                           = WrapBranch <$> (tokenToTree val >>= (\x -> case treeCategory x of
+  tokenToTree num@(TokenNumber _ _)                         = return $ Leaf CatArray num
+  tokenToTree ch@(TokenChar _ _)                            = return $ Leaf CatArray ch
+  tokenToTree str@(TokenString _ _)                         = return $ Leaf CatArray str
+  tokenToTree arr@(TokenPrimArray _ _)                      = return $ Leaf CatArray arr
+  tokenToTree fn@(TokenPrimFunction _ _)                    = return $ Leaf CatFunction fn
+  tokenToTree adv@(TokenPrimAdverb _ _)                     = return $ Leaf CatAdverb adv
+  tokenToTree conj@(TokenPrimConjunction _ _)               = return $ Leaf CatConjunction conj
+  tokenToTree (TokenDfn statements pos)                     = defined CatFunction "dfn" statements pos
+  tokenToTree (TokenDadv statements pos)                    = defined CatAdverb "dadv" statements pos
+  tokenToTree (TokenDconj statements pos)                   = defined CatConjunction "dconj" statements pos
+  tokenToTree arr@(TokenArrayName _ _)                      = return $ Leaf CatArray arr
+  tokenToTree fn@(TokenFunctionName _ _)                    = return $ Leaf CatFunction fn
+  tokenToTree adv@(TokenAdverbName _ _)                     = return $ Leaf CatAdverb adv
+  tokenToTree conj@(TokenConjunctionName _ _)               = return $ Leaf CatConjunction conj
+  tokenToTree (TokenQualifiedArrayName h ns _)              = qualified CatArray h ns
+  tokenToTree (TokenQualifiedFunctionName h ns _)           = qualified CatFunction h ns
+  tokenToTree (TokenQualifiedAdverbName h ns _)             = qualified CatAdverb h ns
+  tokenToTree (TokenQualifiedConjunctionName h ns _)        = qualified CatConjunction h ns
+  tokenToTree (TokenArrayAssign name c ts pos)              = assignment CatArray name c ts pos
+  tokenToTree (TokenFunctionAssign name c ts pos)           = assignment CatFunction name c ts pos
+  tokenToTree (TokenAdverbAssign name c ts pos)             = assignment CatAdverb name c ts pos
+  tokenToTree (TokenConjunctionAssign name c ts pos)        = assignment CatConjunction name c ts pos
+  tokenToTree (TokenQualifiedArrayAssign h ns c ts _)       = qualifiedAssignment CatArray h ns c ts
+  tokenToTree (TokenQualifiedFunctionAssign h ns c ts _)    = qualifiedAssignment CatFunction h ns c ts
+  tokenToTree (TokenQualifiedAdverbAssign h ns c ts _)      = qualifiedAssignment CatAdverb h ns c ts
+  tokenToTree (TokenQualifiedConjunctionAssign h ns c ts _) = qualifiedAssignment CatConjunction h ns c ts
+  tokenToTree (TokenVectorAssign names c ts pos)            = destructureAssignment VectorAssignBranch names c ts pos
+  tokenToTree (TokenHighRankAssign names c ts pos)          = destructureAssignment HighRankAssignBranch names c ts pos
+  tokenToTree (TokenTieAssign names c ts pos)               = destructureAssignment VectorAssignBranch (NE.toList names) c ts pos
+  tokenToTree (TokenParens ts _)                            = categorizeAndBind ts
+  tokenToTree (TokenGuard check result _)                   = liftA2 GuardBranch (categorizeAndBind check >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head check) source $ "Invalid guard of type " ++ show c ++ ", array required")) (categorizeAndBind result)
+  tokenToTree (TokenExit result _)                          = ExitBranch <$> (categorizeAndBind result >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head result) source $ "Invalid exit statement of type " ++ show c ++ ", array required"))
+  tokenToTree (TokenVector es pos)                          = vector es pos
+  tokenToTree (TokenHighRank es pos)                        = highRank es pos
+  tokenToTree (TokenTrain fs pos)                           = train CatFunction fs pos
+  tokenToTree (TokenAdverbTrain fs pos)                     = train CatAdverb fs pos
+  tokenToTree (TokenConjunctionTrain fs pos)                = train CatConjunction fs pos
+  tokenToTree (TokenWrap val _)                             = WrapBranch <$> (tokenToTree val >>= (\x -> case treeCategory x of
     CatFunction -> pure x
     CatAdverb -> pure x
     CatConjunction -> pure x

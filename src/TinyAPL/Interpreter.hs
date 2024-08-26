@@ -121,6 +121,12 @@ scopeModify name (VFunction val) sc    = scopeModifyFunction name val sc
 scopeModify name (VAdverb val) sc      = scopeModifyAdverb name val sc
 scopeModify name (VConjunction val) sc = scopeModifyConjunction name val sc
 
+scopeShallowModify :: String -> Value -> Scope -> St Scope
+scopeShallowModify name (VArray val) sc       = scopeShallowModifyArray name val sc
+scopeShallowModify name (VFunction val) sc    = scopeShallowModifyFunction name val sc
+scopeShallowModify name (VAdverb val) sc      = scopeShallowModifyAdverb name val sc
+scopeShallowModify name (VConjunction val) sc = scopeShallowModifyConjunction name val sc
+
 inChildScope :: [(String, Value)] -> St a -> Context -> St a
 inChildScope vals x parent = do
   ref <- createRef $ foldr (\(name, val) sc -> scopeUpdate name val sc) (Scope [] [] [] [] (Just $ contextScope parent)) vals
@@ -141,42 +147,42 @@ run' file src = do
   last <$> mapM eval (forceTrees trees)
 
 eval :: Tree -> St Value
-eval (Leaf _ tok)                   = evalLeaf tok
-eval (QualifiedBranch _ h ns)       = eval h >>= flip evalQualified ns
-eval (MonadCallBranch l r)          = do
+eval (Leaf _ tok) = evalLeaf tok
+eval (QualifiedBranch _ h ns) = eval h >>= flip evalQualified ns
+eval (MonadCallBranch l r) = do
   r' <- eval r
   l' <- eval l
   evalMonadCall l' r'
-eval (DyadCallBranch l r)           = do
+eval (DyadCallBranch l r) = do
   r' <- eval r
   l' <- eval l
   evalDyadCall l' r'
-eval (AdverbCallBranch l r)         = do
+eval (AdverbCallBranch l r) = do
   r' <- eval r
   l' <- eval l
   evalAdverbCall l' r'
-eval (ConjunctionCallBranch l r)    = do
+eval (ConjunctionCallBranch l r) = do
   r' <- eval r
   l' <- eval l
   evalConjunctionCall l' r'
-eval (AssignBranch _ n t val)       = eval val >>= evalAssign n t
-eval (QualifiedAssignBranch _ h ns val) = do
+eval (AssignBranch _ n t val) = eval val >>= evalAssign False n t
+eval (QualifiedAssignBranch _ h ns c val) = do
   rs <- eval val
   head <- eval h
-  evalQualifiedAssign head ns rs
-eval (VectorAssignBranch ns val)    = eval val >>= evalVectorAssign ns
-eval (HighRankAssignBranch ns val)  = eval val >>= evalHighRankAssign ns
+  evalQualifiedAssign head ns c rs
+eval (VectorAssignBranch ns c val) = eval val >>= evalVectorAssign ns c
+eval (HighRankAssignBranch ns c val) = eval val >>= evalHighRankAssign ns c
 eval (DefinedBranch cat statements) = evalDefined statements cat
-eval (GuardBranch _ _)              = throwError $ DomainError "Guards are not allowed outside of dfns"
-eval (ExitBranch _)                 = throwError $ DomainError "Exits are not allowed outside of dfns"
-eval (VectorBranch es)              = do
+eval (GuardBranch _ _) = throwError $ DomainError "Guards are not allowed outside of dfns"
+eval (ExitBranch _) = throwError $ DomainError "Exits are not allowed outside of dfns"
+eval (VectorBranch es) = do
   entries <- mapM (eval >=> \case
     VArray x -> pure $ box x
     VFunction f -> pure $ Wrap f
     VAdverb a -> pure $ AdverbWrap a
     VConjunction c -> pure $ ConjunctionWrap c) $ reverse es
   return $ VArray $ vector $ reverse entries
-eval (HighRankBranch es)            = do
+eval (HighRankBranch es) = do
   entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) $ reverse es
   case entries of
     [] -> return $ VArray $ fromMajorCells []
@@ -184,14 +190,14 @@ eval (HighRankBranch es)            = do
       if all ((== arrayShape e) . arrayShape) es
       then return $ VArray $ fromMajorCells $ reverse entries
       else throwError $ DomainError "High rank notation entries must be of the same shape"
-eval (TrainBranch cat es)           = evalTrain cat es
-eval (WrapBranch fn)                = eval fn >>= (\case
+eval (TrainBranch cat es) = evalTrain cat es
+eval (WrapBranch fn) = eval fn >>= (\case
   VFunction fn -> pure $ VArray $ scalar $ Wrap fn
   VAdverb adv -> pure $ VArray $ scalar $ AdverbWrap adv
   VConjunction conj -> pure $ VArray $ scalar $ ConjunctionWrap conj
   _ -> throwError $ DomainError "Wrap notation: function or modifier required")
-eval (UnwrapBranch cat fn)          = eval fn >>= evalUnwrap cat
-eval (StructBranch es)              = evalStruct es
+eval (UnwrapBranch cat fn) = eval fn >>= evalUnwrap cat
+eval (StructBranch es) = evalStruct es
 
 resolve :: Context -> [String] -> St Context
 resolve ctx [] = pure ctx
@@ -312,8 +318,8 @@ evalConjunctionCall (VConjunction conj) (VFunction r) =
   return $ VAdverb $ Adverb { adverbOnArray = Just (\x -> callOnArrayAndFunction conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndFunction conj x r), adverbRepr = "(" ++ show conj ++ show r ++ ")", adverbContext = conjContext conj }
 evalConjunctionCall _ _                               = throwError $ DomainError "Invalid arguments to conjunction call evaluation"
 
-evalAssign :: String -> AssignType -> Value -> St Value
-evalAssign name ty val
+evalAssign :: Bool -> String -> AssignType -> Value -> St Value
+evalAssign shallow name ty val
   | name == [G.quad] = if ty == AssignNormal then do
     arr <- unwrapArray (DomainError "Cannot print non-array") val
     out <- gets contextOut
@@ -337,43 +343,39 @@ evalAssign name ty val
   | ty == AssignNormal = do
     gets contextScope >>= flip modifyRef (scopeUpdate name val)
     return val
-  | ty == AssignModify = do
+  | ty == AssignModify && not shallow = do
     sc <- gets contextScope
     readRef sc >>= scopeModify name val >>= writeRef sc
     return val
+  | ty == AssignModify && shallow = do
+    sc <- gets contextScope
+    readRef sc >>= scopeShallowModify name val >>= writeRef sc
+    return val
   | otherwise = throwError unreachable
 
-evalQualifiedAssign :: Value -> NonEmpty String -> Value -> St Value
-evalQualifiedAssign head ns val = do
+evalQualifiedAssign :: Value -> NonEmpty String -> AssignType -> Value -> St Value
+evalQualifiedAssign head ns c val = do
   let err = DomainError "Qualified name head should be a scalar struct"
   let (q, l) = unsnocNE ns
   headCtx <- unwrapArray err head >>= asScalar err >>= asStruct err
   ctx <- resolve headCtx q
-  scope <- readRef $ contextScope ctx
-  scopeLookup l scope >>= lift . except . maybeToEither (SyntaxError $ "Qualified variable " ++ l ++ " does not exist")
-  runWithContext ctx $ evalAssign l AssignNormal val
+  runWithContext ctx $ evalAssign True l c val
 
-evalVectorAssign :: [String] -> Value -> St Value
-evalVectorAssign ns val =
+evalVectorAssign :: [String] -> AssignType -> Value -> St Value
+evalVectorAssign ns c val =
   if any (\(n:_) -> n == G.quad || n == G.quadQuote) ns then throwError $ DomainError "Vector assignment: cannot assign to quad names"
   else do
     es <- fmap fromScalar <$> (unwrapArray (DomainError "Vector assign: not a vector") val >>= asVector (DomainError "Vector assignment: not a vector"))
     if length ns /= length es then throwError $ DomainError "Vector assignment: wrong number of names"
-    else do
-      scope <- gets contextScope
-      modifyRef scope $ (\sc -> foldr (\(n, e) sc' -> scopeUpdateArray n e sc') sc $ zip ns es)
-      return val
+    else zipWithM_ (\name value -> evalAssign False name c (VArray value)) ns es $> val
 
-evalHighRankAssign :: [String] -> Value -> St Value
-evalHighRankAssign ns val =
+evalHighRankAssign :: [String] -> AssignType -> Value -> St Value
+evalHighRankAssign ns c val =
   if any (\(n:_) -> n == G.quad || n == G.quadQuote) ns then throwError $ DomainError "High rank assignment: cannot assign to quad names"
   else do
     es <- majorCells <$> unwrapArray (DomainError "High rank assign: not an array") val
     if length ns /= length es then throwError $ DomainError "High rank assignment: wrong number of names"
-    else do
-      scope <- gets contextScope
-      modifyRef scope $ (\sc -> foldr (\(n, e) sc' -> scopeUpdateArray n e sc') sc $ zip ns es)
-      return val
+    else zipWithM_ (\name value -> evalAssign False name c (VArray value)) ns es $> val
 
 evalDefined :: NonEmpty Tree -> Category -> St Value
 evalDefined statements cat = let

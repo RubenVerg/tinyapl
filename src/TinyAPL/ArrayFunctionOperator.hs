@@ -647,6 +647,26 @@ scopeModifyConjunction name val sc = if name `elem` specialNames then throwError
     Nothing -> throwError $ DomainError "Modifying a non-existent variable"
     Just p -> readRef p >>= scopeModifyConjunction name val >>= writeRef p >>= const (pure sc)
 
+scopeShallowModifyArray :: String -> Array -> Scope -> St Scope
+scopeShallowModifyArray name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeArrays sc) of
+  Just _ -> pure $ scopeUpdateArray name val sc
+  Nothing -> throwError $ DomainError "Modifying a non-existent variable"
+
+scopeShallowModifyFunction :: String -> Function -> Scope -> St Scope
+scopeShallowModifyFunction name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeFunctions sc) of
+  Just _ -> pure $ scopeUpdateFunction name val sc
+  Nothing -> throwError $ DomainError "Modifying a non-existent variable"
+
+scopeShallowModifyAdverb :: String -> Adverb -> Scope -> St Scope
+scopeShallowModifyAdverb name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeAdverbs sc) of
+  Just _ -> pure $ scopeUpdateAdverb name val sc
+  Nothing -> throwError $ DomainError "Modifying a non-existent variable"
+
+scopeShallowModifyConjunction :: String -> Conjunction -> Scope -> St Scope
+scopeShallowModifyConjunction name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeConjunctions sc) of
+  Just _ -> pure $ scopeUpdateConjunction name val sc
+  Nothing -> throwError $ DomainError "Modifying a non-existent variable"
+
 data Context = Context
   { contextScope :: IORef Scope
   , contextQuads :: Quads
