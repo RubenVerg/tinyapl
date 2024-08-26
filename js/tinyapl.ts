@@ -10,9 +10,11 @@ declare global {
 }
 
 export type Complex = [number, number];
+export type VariableType = 'normal' | 'constant';
+export type StructEntry = [VariableType, Value];
 export interface Struct {
 	type: 'struct';
-	entries: Record<string, Value>;
+	entries: Record<string, StructEntry>;
 }
 export type ScalarValue = Complex | string | Arr | Fun | Adv | Conj | Struct;
 export interface Arr {
@@ -167,4 +169,11 @@ export async function show(o: Err | Value): Promise<string> {
  */
 export async function repr(o: Value): Promise<string> {
 	return await exports.tinyapl_repr(o);
+}
+
+/**
+ * Arrow corresponding to a variable type
+ */
+export async function varArrow(varType: VariableType): Promise<string> {
+	return await exports.tinyapl_varArrow(varType);
 }

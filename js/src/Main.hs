@@ -38,14 +38,15 @@ module Main
   , errSyntax
   , errAssertion
   , showJS
-  , reprJS ) where  
+  , reprJS
+  , varArrowJS ) where  
 
 import JSBridge
 
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.CoreQuads
 import TinyAPL.Error
-import TinyAPL.Glyphs (syntax, identifiers, arrays, functions, adverbs, conjunctions, quad)
+import TinyAPL.Glyphs (syntax, identifiers, arrays, functions, adverbs, conjunctions, quad, assign, assignConstant)
 import TinyAPL.Highlighter
 import TinyAPL.Interpreter
 import TinyAPL.Util
@@ -204,9 +205,10 @@ setGlobal :: Int -> JSString -> JSVal -> IO JSVal
 setGlobal contextId name val = do
   context <- (!! contextId) <$> readIORef contexts
   toJSVal . fmap fst <$> (runResult $ runSt (do
-    ref <- readRef (contextScope context)
+    sc <- readRef (contextScope context)
     v <- fromJSValSt val
-    writeRef (contextScope context) $ scopeUpdate (fromJSString name) v ref) context)
+    sc' <- scopeUpdate (fromJSString name) VariableNormal v sc
+    writeRef (contextScope context) sc') context)
   
 foreign export javascript "tinyapl_glyphsSyntax" glyphsSyntaxJS :: JSArray
 foreign export javascript "tinyapl_glyphsIdentifiers" glyphsIdentifiersJS :: JSArray
@@ -302,3 +304,12 @@ reprJS val = do
   pure $ toJSString $ case r of
     VArray arr -> arrayRepr arr
     o -> show o
+
+varArrow :: VariableType -> Char
+varArrow VariableNormal = assign
+varArrow VariableConstant = assignConstant
+
+foreign export javascript "tinyapl_varArrow" varArrowJS :: JSVal -> JSVal
+
+varArrowJS :: JSVal -> JSVal
+varArrowJS = toJSVal . varArrow . fromJSVal

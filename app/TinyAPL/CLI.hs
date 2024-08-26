@@ -84,10 +84,13 @@ repl context = let
     putStrLn $ "* numbers: " ++ [G.decimal] ++ " decimal separator, " ++ [G.negative] ++ " negative sign, " ++ [G.exponent] ++ " exponent notation, " ++ [G.imaginary] ++ " complex separator"
     putStrLn $ "* character literals: " ++ [G.charDelimiter] ++ "abc" ++ [G.charDelimiter]
     putStrLn $ "* string literals: " ++ [G.stringDelimiter] ++ "abc" ++ [G.stringDelimiter] ++ " with escapes using " ++ [G.stringEscape]
-    putStrLn $ "* names: abc array, Abc function, _Abc monadic op, _Abc_ dyadic op, assignment with " ++ [G.assign]
+    putStrLn $ "* names: abc array, Abc function, _Abc monadic op, _Abc_ dyadic op"
     putStrLn $ "* get " ++ [G.quad] ++ " read evaluated input, get " ++ [G.quadQuote] ++ " read string input, set " ++ [G.quad] ++ " print with newline, set " ++ [G.quadQuote] ++ " print without newline"
-    putStrLn $ "* array notation: " ++ [fst G.vector, G.separator, snd G.vector] ++ " vector, " ++ [fst G.highRank, G.separator, snd G.highRank] ++ " higher rank array (combine major cells)"
+    putStrLn $ "* array notation: " ++ [fst G.vector, G.separator, snd G.vector] ++ " vector, " ++ [fst G.highRank, G.separator, snd G.highRank] ++ " higher rank array (combine major cells), " ++ [G.tie] ++ " tie (like vector notation)"
     putStrLn $ "* trains: " ++ [fst G.train, snd G.train] ++ " deriving function, " ++ [G.underscore, fst G.train, snd G.train] ++ " deriving adverb, " ++ [G.underscore, fst G.train, snd G.train, G.underscore] ++ " deriving conjunction"
+    putStrLn $ "* structs: " ++ [fst G.struct] ++ "statements" ++ [snd G.struct] ++ ", qualified access " ++ [G.access]
+    putStrLn $ "* assignment with " ++ [G.assign] ++ ", modify assignment with " ++ [G.assignModify] ++ ", constant assignment with " ++ [G.assignConstant]
+    putStrLn $ "* array assignment with array notation of names"
     putStrLn $ "* comments: " ++ [G.comment] ++ " until end of line, " ++ [fst G.inlineComment, snd G.inlineComment] ++ " inline"
 
     go context

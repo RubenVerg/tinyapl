@@ -103,7 +103,7 @@ artanhF :: Function
 artanhF = Function (Just $ scalarMonad artanhS) Nothing "Artanh" Nothing
 
 math = Nilad (Just $ do
-  scope <- createRef (Scope [("pi", piA)] ((\n -> (functionRepr n, n)) <$>
+  scope <- createRef (Scope [("pi", (VariableConstant, piA))] ((\n -> (functionRepr n, (VariableConstant, n))) <$>
     [ complementaryF
     , sinF
     , arcsinF

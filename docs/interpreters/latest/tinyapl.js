@@ -99,3 +99,9 @@ export async function show(o) {
 export async function repr(o) {
     return await exports.tinyapl_repr(o);
 }
+/**
+ * Arrow corresponding to a variable type
+ */
+export async function varArrow(varType) {
+    return await exports.tinyapl_varArrow(varType);
+}

@@ -1,6 +1,6 @@
 ⍝⍝ std:prototype: functions that work with a pseudo-prototype system
 
-Proto ← {
+Proto ⇇ {
   t←{⍵≡⍬:2↗"Prototype of empty array"⋄⊃⍵},⎕Type ⍵
 ⋄ 0=t: ■0
 ⋄ 1=t: ■' '
@@ -8,7 +8,7 @@ Proto ← {
 ⋄ 2↗"Prototype of illegal type"
 }
 
-Overtake ← {
+Overtake ⇇ {
   (|⍺)≤≢⍵: ■⍺↑⍵
 ⋄ ⍺>0: ■⍵⍪((⍺-≢⍵)⍪1↓⍴⍵)⍴Proto ⍵
 ⋄ ⍺<0: ■⍵⍪⍨((-⍺+≢⍵)⍪1↓⍴⍵)⍴Proto ⍵

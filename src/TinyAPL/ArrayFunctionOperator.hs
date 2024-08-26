@@ -552,11 +552,16 @@ quadsFromReprs ns fs as cs = Quads ((\x -> (niladRepr x, x)) <$> ns) ((\x -> (fu
 
 -- * State
 
+data VariableType
+  = VariableNormal
+  | VariableConstant
+  deriving (Show, Eq)
+
 data Scope = Scope
-  { scopeArrays :: [(String, Array)]
-  , scopeFunctions :: [(String, Function)]
-  , scopeAdverbs :: [(String, Adverb)]
-  , scopeConjunctions :: [(String, Conjunction)]
+  { scopeArrays :: [(String, (VariableType, Array))]
+  , scopeFunctions :: [(String, (VariableType, Function))]
+  , scopeAdverbs :: [(String, (VariableType, Adverb))]
+  , scopeConjunctions :: [(String, (VariableType, Conjunction))]
   , scopeParent :: Maybe (IORef Scope) }
 
 instance Show Scope where
@@ -568,84 +573,128 @@ specialNames :: [String]
 specialNames = [[G.alpha], [G.omega], [G.alpha, G.alpha], [G.omega, G.omega], [G.alphaBar, G.alphaBar], [G.omegaBar, G.omegaBar], [G.del], [G.underscore, G.del], [G.underscore, G.del, G.underscore]]
 
 scopeShallowLookupArray :: String -> Scope -> Maybe Array
-scopeShallowLookupArray name sc = lookup name (scopeArrays sc)
+scopeShallowLookupArray name sc = case lookup name (scopeArrays sc) of
+  Nothing -> Nothing
+  Just (VariableNormal, x) -> Just x
+  Just (VariableConstant, x) -> Just x
 
 scopeShallowLookupFunction :: String -> Scope -> Maybe Function
-scopeShallowLookupFunction name sc = lookup name (scopeFunctions sc)
+scopeShallowLookupFunction name sc = case lookup name (scopeFunctions sc) of
+  Nothing -> Nothing
+  Just (VariableNormal, x) -> Just x
+  Just (VariableConstant, x) -> Just x
 
 scopeShallowLookupAdverb :: String -> Scope -> Maybe Adverb
-scopeShallowLookupAdverb name sc = lookup name (scopeAdverbs sc)
+scopeShallowLookupAdverb name sc = case lookup name (scopeAdverbs sc) of
+  Nothing -> Nothing
+  Just (VariableNormal, x) -> Just x
+  Just (VariableConstant, x) -> Just x
 
 scopeShallowLookupConjunction :: String -> Scope -> Maybe Conjunction
-scopeShallowLookupConjunction name sc = lookup name (scopeConjunctions sc)
+scopeShallowLookupConjunction name sc = case lookup name (scopeConjunctions sc) of
+  Nothing -> Nothing
+  Just (VariableNormal, x) -> Just x
+  Just (VariableConstant, x) -> Just x
 
 scopeLookupArray :: String -> Scope -> St (Maybe Array)
-scopeLookupArray name sc = case lookup name (scopeArrays sc) of
+scopeLookupArray name sc = case scopeShallowLookupArray name sc of
   Just x -> pure $ Just x
   Nothing -> if name `elem` specialNames then pure Nothing else case scopeParent sc of
     Nothing -> pure Nothing
     Just p -> (liftToSt $ IORef.readIORef p) >>= scopeLookupArray name
 
 scopeLookupFunction :: String -> Scope -> St (Maybe Function)
-scopeLookupFunction name sc = case lookup name (scopeFunctions sc) of
+scopeLookupFunction name sc = case scopeShallowLookupFunction name sc of
   Just x -> pure $ Just x
   Nothing -> if name `elem` specialNames then pure $ Nothing else case scopeParent sc of
     Nothing -> pure $ Nothing
     Just p -> (liftToSt $ IORef.readIORef p) >>= scopeLookupFunction name
 
 scopeLookupAdverb :: String -> Scope -> St (Maybe Adverb)
-scopeLookupAdverb name sc = case lookup name (scopeAdverbs sc) of
+scopeLookupAdverb name sc = case scopeShallowLookupAdverb name sc of
   Just x -> pure $ Just x
   Nothing -> if name `elem` specialNames then pure $ Nothing else case scopeParent sc of
     Nothing -> pure $ Nothing
     Just p -> (liftToSt $ IORef.readIORef p) >>= scopeLookupAdverb name
 
 scopeLookupConjunction :: String -> Scope -> St (Maybe Conjunction)
-scopeLookupConjunction name sc = case lookup name (scopeConjunctions sc) of
+scopeLookupConjunction name sc = case scopeShallowLookupConjunction name sc of
   Just x -> pure $ Just x
   Nothing -> if name `elem` specialNames then pure $ Nothing else case scopeParent sc of
     Nothing -> pure $ Nothing
     Just p -> (liftToSt $ IORef.readIORef p) >>= scopeLookupConjunction name
 
-scopeUpdateArray :: String -> Array -> Scope -> Scope
-scopeUpdateArray name val sc = sc{ scopeArrays = update name val (scopeArrays sc) }
+scopeUpdateArray :: String -> VariableType -> Array -> Scope -> St Scope
+scopeUpdateArray name ty val sc = case lookup name (scopeArrays sc) of
+  Nothing -> pure $ sc{ scopeArrays = update name (ty, val) (scopeArrays sc) }
+  Just (VariableNormal, _) -> pure $ sc{ scopeArrays = update name (VariableNormal, val) (scopeArrays sc) }
+  Just (VariableConstant, _) -> throwError $ DomainError "Cannot modify constant variable"
 
-scopeUpdateFunction :: String -> Function -> Scope -> Scope
-scopeUpdateFunction name val sc = sc{ scopeFunctions = update name val (scopeFunctions sc) }
+scopeUpdateFunction :: String -> VariableType -> Function -> Scope -> St Scope
+scopeUpdateFunction name ty val sc = case lookup name (scopeFunctions sc) of
+  Nothing -> pure $ sc{ scopeFunctions = update name (ty, val) (scopeFunctions sc) }
+  Just (VariableNormal, _) -> pure $ sc{ scopeFunctions = update name (VariableNormal, val) (scopeFunctions sc) }
+  Just (VariableConstant, _) -> throwError $ DomainError "Cannot modify constant variable"
 
-scopeUpdateAdverb :: String -> Adverb -> Scope -> Scope
-scopeUpdateAdverb name val sc = sc{ scopeAdverbs = update name val (scopeAdverbs sc) }
+scopeUpdateAdverb :: String -> VariableType -> Adverb -> Scope -> St Scope
+scopeUpdateAdverb name ty val sc = case lookup name (scopeAdverbs sc) of
+  Nothing -> pure $ sc{ scopeAdverbs = update name (ty, val) (scopeAdverbs sc) }
+  Just (VariableNormal, _) -> pure $ sc{ scopeAdverbs = update name (VariableNormal, val) (scopeAdverbs sc) }
+  Just (VariableConstant, _) -> throwError $ DomainError "Cannot modify constant variable"
 
-scopeUpdateConjunction :: String -> Conjunction -> Scope -> Scope
-scopeUpdateConjunction name val sc = sc{ scopeConjunctions = update name val (scopeConjunctions sc) }
+scopeUpdateConjunction :: String -> VariableType -> Conjunction -> Scope -> St Scope
+scopeUpdateConjunction name ty val sc = case lookup name (scopeConjunctions sc) of
+  Nothing -> pure $ sc{ scopeConjunctions = update name (ty, val) (scopeConjunctions sc) }
+  Just (VariableNormal, _) -> pure $ sc{ scopeConjunctions = update name (VariableNormal, val) (scopeConjunctions sc) }
+  Just (VariableConstant, _) -> throwError $ DomainError "Cannot modify constant variable"
 
 scopeModifyArray :: String -> Array -> Scope -> St Scope
 scopeModifyArray name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeArrays sc) of
-  Just _ -> pure $ scopeUpdateArray name val sc
+  Just _ -> scopeUpdateArray name VariableNormal val sc
   Nothing -> case scopeParent sc of
     Nothing -> throwError $ DomainError "Modifying a non-existent variable"
     Just p -> readRef p >>= scopeModifyArray name val >>= writeRef p >>= const (pure sc)
 
 scopeModifyFunction :: String -> Function -> Scope -> St Scope
 scopeModifyFunction name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeFunctions sc) of
-  Just _ -> pure $ scopeUpdateFunction name val sc
+  Just _ -> scopeUpdateFunction name VariableNormal val sc
   Nothing -> case scopeParent sc of
     Nothing -> throwError $ DomainError "Modifying a non-existent variable"
     Just p -> readRef p >>= scopeModifyFunction name val >>= writeRef p >>= const (pure sc)
 
 scopeModifyAdverb :: String -> Adverb -> Scope -> St Scope
 scopeModifyAdverb name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeAdverbs sc) of
-  Just _ -> pure $ scopeUpdateAdverb name val sc
+  Just _ -> scopeUpdateAdverb name VariableNormal val sc
   Nothing -> case scopeParent sc of
     Nothing -> throwError $ DomainError "Modifying a non-existent variable"
     Just p -> readRef p >>= scopeModifyAdverb name val >>= writeRef p >>= const (pure sc)
 
 scopeModifyConjunction :: String -> Conjunction -> Scope -> St Scope
 scopeModifyConjunction name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeConjunctions sc) of
-  Just _ -> pure $ scopeUpdateConjunction name val sc
+  Just _ -> scopeUpdateConjunction name VariableNormal val sc
   Nothing -> case scopeParent sc of
     Nothing -> throwError $ DomainError "Modifying a non-existent variable"
     Just p -> readRef p >>= scopeModifyConjunction name val >>= writeRef p >>= const (pure sc)
+
+scopeShallowModifyArray :: String -> Array -> Scope -> St Scope
+scopeShallowModifyArray name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeArrays sc) of
+  Just _ -> scopeUpdateArray name VariableNormal val sc
+  Nothing -> throwError $ DomainError "Modifying a non-existent variable"
+
+scopeShallowModifyFunction :: String -> Function -> Scope -> St Scope
+scopeShallowModifyFunction name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeFunctions sc) of
+  Just _ -> scopeUpdateFunction name VariableNormal val sc
+  Nothing -> throwError $ DomainError "Modifying a non-existent variable"
+
+scopeShallowModifyAdverb :: String -> Adverb -> Scope -> St Scope
+scopeShallowModifyAdverb name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeAdverbs sc) of
+  Just _ -> scopeUpdateAdverb name VariableNormal val sc
+  Nothing -> throwError $ DomainError "Modifying a non-existent variable"
+
+scopeShallowModifyConjunction :: String -> Conjunction -> Scope -> St Scope
+scopeShallowModifyConjunction name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeConjunctions sc) of
+  Just _ -> scopeUpdateConjunction name VariableNormal val sc
+  Nothing -> throwError $ DomainError "Modifying a non-existent variable"
 
 data Context = Context
   { contextScope :: IORef Scope
