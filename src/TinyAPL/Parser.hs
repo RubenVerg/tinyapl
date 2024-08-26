@@ -28,6 +28,7 @@ type Parser = Parsec Void String
 data AssignType
   = AssignNormal
   | AssignModify
+  | AssignConstant
   deriving (Eq, Enum, Bounded)
 
 assignTypes :: [AssignType]
@@ -36,10 +37,12 @@ assignTypes = [minBound .. maxBound]
 instance Show AssignType where
   show AssignNormal = "normal"
   show AssignModify = "modify"
+  show AssignConstant = "constant"
 
 assignTypeArrow :: AssignType -> Char
 assignTypeArrow AssignNormal = G.assign
 assignTypeArrow AssignModify = G.assignModify
+assignTypeArrow AssignConstant = G.assignConstant
 
 assignArrows :: [(AssignType, Char)]
 assignArrows = map (liftA2 (,) id assignTypeArrow) assignTypes

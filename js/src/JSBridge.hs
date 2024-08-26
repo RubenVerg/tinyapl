@@ -166,6 +166,22 @@ objectToVal = jsFromEntries . fromJSVal . toJSVal . map (first toJSString)
 foreign import javascript unsafe "return typeof $1;" jsTypeOf :: JSVal -> JSString
 foreign import javascript unsafe "return Array.isArray($1);" jsIsArray :: JSVal -> Bool
 
+instance IsJS VariableType where
+  fromJSVal v = case fromJSString $ fromJSVal v of
+    "normal" -> VariableNormal
+    "constant" -> VariableConstant
+    _ -> error "fromJSVal VariableType: wrong type"
+  toJSVal VariableNormal = toJSVal $ toJSString "normal"
+  toJSVal VariableConstant = toJSVal $ toJSString "constant"
+
+instance IsJSSt VariableType where
+  fromJSValSt v = case fromJSString $ fromJSVal v of
+    "normal" -> pure VariableNormal
+    "constant" -> pure VariableConstant
+    _ -> throwError $ DomainError "fromJSValSt VariableType: wrong type"
+  toJSValSt VariableNormal = pure $ toJSVal $ toJSString "normal"
+  toJSValSt VariableConstant = pure $ toJSVal $ toJSString "constant"
+
 instance IsJS ScalarValue where
   fromJSVal v = case fromJSString $ jsTypeOf v of
     "number" -> Number $ fromJSVal v :+ 0
@@ -192,7 +208,7 @@ instance IsJSSt ScalarValue where
       else if fromJSVal (jsLookup v $ toJSString "type") == "conjunction" then ConjunctionWrap <$> fromJSValSt v
       else if fromJSVal (jsLookup v $ toJSString "type") == "struct" then do
         ctx <- getContext
-        scope <- foldrM (\(n, v) s -> flip (scopeUpdate n) s <$> fromJSValSt v) (Scope [] [] [] [] Nothing) (valToObject $ jsLookup v $ toJSString "entries") >>= createRef
+        scope <- foldrM (\(n, v) s -> fromJSValSt v >>= \(t, v') -> scopeUpdate n t v' s) (Scope [] [] [] [] Nothing) (valToObject $ jsLookup v $ toJSString "entries") >>= createRef
         pure $ Struct ctx{ contextScope = scope }
       else throwError $ DomainError "fromJSValSt ScalarValue: wrong type"
     _ -> throwError $ DomainError "fromJSValSt ScalarValue: wrong type"

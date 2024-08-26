@@ -240,10 +240,10 @@ async function fancyShow(result, depth = 0) {
             tdName.textContent = k;
             tr.appendChild(tdName);
             const tdArrow = document.createElement('td');
-            tdArrow.textContent = '←';
+            tdArrow.textContent = await tinyapl.varArrow(v[0]);
             tr.appendChild(tdArrow);
             const tdValue = document.createElement('td');
-            tdValue.appendChild(await fsScalar(v));
+            tdValue.appendChild(await fsScalar(v[1]));
             tr.appendChild(tdValue);
             tbody.appendChild(tr);
         }

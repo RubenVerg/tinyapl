@@ -4,9 +4,11 @@ declare global {
     }
 }
 export type Complex = [number, number];
+export type VariableType = 'normal' | 'constant';
+export type StructEntry = [VariableType, Value];
 export interface Struct {
     type: 'struct';
-    entries: Record<string, Value>;
+    entries: Record<string, StructEntry>;
 }
 export type ScalarValue = Complex | string | Arr | Fun | Adv | Conj | Struct;
 export interface Arr {
@@ -106,3 +108,7 @@ export declare function show(o: Err | Value): Promise<string>;
  * Turn a `Value` into a string that is more likely to be parseable again
  */
 export declare function repr(o: Value): Promise<string>;
+/**
+ * Arrow corresponding to a variable type
+ */
+export declare function varArrow(varType: VariableType): Promise<string>;
