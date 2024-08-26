@@ -1,6 +1,6 @@
 ⍝⍝ std:bitwise: Two's complement bitwise operations
 
-⟃private⟄ PadStart ⇇ {⍵⍪⍨0⍴⍨0⌈⍺-≢⍵}
+PadStart ↚ {⍵⍪⍨0⍴⍨0⌈⍺-≢⍵}
 
 ⍝⍝ Turn a number into a list of bits
 Encode ⇇ ⍬∘{ ⍵<0: 2↗"Negative number" ⋄ q←⌊⍵÷2 ⋄ r←2|⍵ ⋄ q=0: ■r⍪⍺ ⋄ q∇⍨r⍪⍺ } ⟃ replace with ⊤ ⟄
@@ -11,9 +11,9 @@ Decode ⇇ { ⍵≡⍬: ■0 ⋄ (⊇⍵)+2×∇¯1↓⍵ } ⟃ replace with ⊥
 ⍝⍝ Bitwise NOT (~)
 Not ⇇ 1∘+⍛-
 
-⟃private⟄ _BinaryOp ⇇ _{ a←Encode ⍺ ⋄ w←Encode ⍵ ⋄ l←a⌈⍥≢w⋄ Decode a ⍶⍶⍥(l∘PadStart) w }
+_BinaryOp ↚ _{ a←Encode ⍺ ⋄ w←Encode ⍵ ⋄ l←a⌈⍥≢w⋄ Decode a ⍶⍶⍥(l∘PadStart) w }
 
-⟃private⟄ _NegativeCasesBinary ⇇ _{ ⟨pp⋄pn⋄np⋄nn⟩←⍺⍺ ⋄ s←0>⍺⍮⍵ ⋄ 0‿0≡s: ■⍺ ⊐pp ⍵ ⋄ 0‿1≡s: ■⍺ ⊐pn ⍵ ⋄ 1‿0≡s: ■⍺ ⊐np ⍵ ⋄ 1‿1≡s: ■⍺ ⊐nn ⍵ ⋄ ↗"Unreachable" }
+_NegativeCasesBinary ↚ _{ ⟨pp⋄pn⋄np⋄nn⟩←⍺⍺ ⋄ s←0>⍺⍮⍵ ⋄ 0‿0≡s: ■⍺ ⊐pp ⍵ ⋄ 0‿1≡s: ■⍺ ⊐pn ⍵ ⋄ 1‿0≡s: ■⍺ ⊐np ⍵ ⋄ 1‿1≡s: ■⍺ ⊐nn ⍵ ⋄ ↗"Unreachable" }
 
 ⍝⍝ Bitwise AND (∧)
 And ⇇ ⟨∧_BinaryOp ⋄ ≠_BinaryOp⇽(∧_BinaryOp∘Not) ⋄ Not⍛(∧_BinaryOp)⇾(≠_BinaryOp) ⋄ Not⍤(∨_BinaryOp⍥Not)⟩_NegativeCasesBinary

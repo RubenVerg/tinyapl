@@ -29,6 +29,7 @@ data AssignType
   = AssignNormal
   | AssignModify
   | AssignConstant
+  | AssignPrivate
   deriving (Eq, Enum, Bounded)
 
 assignTypes :: [AssignType]
@@ -38,11 +39,13 @@ instance Show AssignType where
   show AssignNormal = "normal"
   show AssignModify = "modify"
   show AssignConstant = "constant"
+  show AssignPrivate = "private"
 
 assignTypeArrow :: AssignType -> Char
 assignTypeArrow AssignNormal = G.assign
 assignTypeArrow AssignModify = G.assignModify
 assignTypeArrow AssignConstant = G.assignConstant
+assignTypeArrow AssignPrivate = G.assignPrivate
 
 assignArrows :: [(AssignType, Char)]
 assignArrows = map (liftA2 (,) id assignTypeArrow) assignTypes

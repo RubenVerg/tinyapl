@@ -243,6 +243,7 @@ async function fancyShow(result: tinyapl.Value, depth: number = 0): Promise<Node
 		const tbody = document.createElement('tbody');
 		table.appendChild(tbody);
 		for (const [k, v] of Object.entries(struct.entries)) {
+			if (v[0] === 'private') continue;
 			const tr = document.createElement('tr');
 			const tdName = document.createElement('td');
 			tdName.textContent = k;

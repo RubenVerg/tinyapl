@@ -46,7 +46,7 @@ import JSBridge
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.CoreQuads
 import TinyAPL.Error
-import TinyAPL.Glyphs (syntax, identifiers, arrays, functions, adverbs, conjunctions, quad, assign, assignConstant)
+import TinyAPL.Glyphs (syntax, identifiers, arrays, functions, adverbs, conjunctions, quad, assign, assignConstant, assignPrivate)
 import TinyAPL.Highlighter
 import TinyAPL.Interpreter
 import TinyAPL.Util
@@ -195,7 +195,7 @@ foreign export javascript "tinyapl_getGlobal" getGlobal :: Int -> JSString -> IO
 getGlobal :: Int -> JSString -> IO JSVal
 getGlobal contextId name = do
   context <- (!! contextId) <$> readIORef contexts
-  toJSVal . fmap fst <$> (runResult $ runSt (readRef (contextScope context) >>= scopeLookup (fromJSString name) >>= (\case
+  toJSVal . fmap fst <$> (runResult $ runSt (readRef (contextScope context) >>= scopeLookup True (fromJSString name) >>= (\case
     Just x -> toJSValSt x
     Nothing -> throwError $ DomainError $ "Global " ++ fromJSString name ++ " not found")) context)
 
@@ -207,7 +207,7 @@ setGlobal contextId name val = do
   toJSVal . fmap fst <$> (runResult $ runSt (do
     sc <- readRef (contextScope context)
     v <- fromJSValSt val
-    sc' <- scopeUpdate (fromJSString name) VariableNormal v sc
+    sc' <- scopeUpdate True (fromJSString name) VariableNormal v sc
     writeRef (contextScope context) sc') context)
   
 foreign export javascript "tinyapl_glyphsSyntax" glyphsSyntaxJS :: JSArray
@@ -308,6 +308,7 @@ reprJS val = do
 varArrow :: VariableType -> Char
 varArrow VariableNormal = assign
 varArrow VariableConstant = assignConstant
+varArrow VariablePrivate = assignPrivate
 
 foreign export javascript "tinyapl_varArrow" varArrowJS :: JSVal -> JSVal
 
