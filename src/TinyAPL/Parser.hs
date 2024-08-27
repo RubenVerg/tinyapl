@@ -485,6 +485,33 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   definedBits :: Parser (NonEmpty Token)
   definedBits = spaceConsumer *> NE.some1 (lexeme guard <|> lexeme exit <|> bit)
 
+isArrayName :: String -> Bool
+isArrayName [] = False
+isArrayName [x] | x `elem` [G.quad, G.quadQuote] = True
+isArrayName (x : xs)
+  | x == G.quad = isArrayName xs
+  | otherwise = x `elem` ['a'..'z'] ++ [G.alpha, G.omega, G.delta]
+
+isFunctionName :: String -> Bool
+isFunctionName [] = False
+isFunctionName (x : xs)
+  | x == G.quad = isFunctionName xs
+  | otherwise = x `elem` ['A'..'Z'] ++ [G.alphaBar, G.omegaBar, G.deltaBar, G.del]
+
+isAdverbName :: String -> Bool
+isAdverbName [] = False
+isAdverbName [_] = False
+isAdverbName (x : xs) 
+  | x == G.quad = isAdverbName xs
+  | otherwise = x == '_' && not (last xs == '_')
+
+isConjunctionName :: String -> Bool
+isConjunctionName [] = False
+isConjunctionName [_] = False
+isConjunctionName (x : xs)
+  | x == G.quad = isConjunctionName xs
+  | otherwise = x == '_' && last xs == '_'
+
 data Category
   = CatArray
   | CatFunction
@@ -640,7 +667,16 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   destructureAssignment h names ty ts pos = h names ty <$> (categorizeAndBind ts >>= requireOfCategory CatArray (\c -> makeSyntaxError pos source $ "Invalid destructure assignment of " ++ show c ++ ", array required"))
 
   structAssignment :: [(String, Maybe (AssignType, String))] -> AssignType -> NonEmpty Token -> SourcePos -> Result Tree
-  structAssignment names ty ts pos = StructAssignBranch names ty <$> (categorizeAndBind ts >>= requireOfCategory CatArray (\c -> makeSyntaxError pos source $ "Invalid struct assignment of " ++ show c ++ ", array required"))
+  structAssignment names ty ts pos = do
+    let ns = mapMaybe (\case { (_, Nothing) -> Nothing; (n, Just (_, n')) -> Just (n, n') }) names
+    mapM_ (\(n, n') -> if not $
+      (isArrayName n && isArrayName n') ||
+      (isFunctionName n && isFunctionName n') ||
+      (isAdverbName n && isAdverbName n') ||
+      (isConjunctionName n && isConjunctionName n')
+      then throwError $ makeSyntaxError pos source $ "Struct assignment: same type required for both the original and aliased name"
+      else pure ()) ns
+    StructAssignBranch names ty <$> (categorizeAndBind ts >>= requireOfCategory CatArray (\c -> makeSyntaxError pos source $ "Invalid struct assignment of " ++ show c ++ ", array required"))
 
   vector :: [NonEmpty Token] -> SourcePos -> Result Tree
   vector es _ = VectorBranch <$> mapM (\x -> categorizeAndBind x) es
