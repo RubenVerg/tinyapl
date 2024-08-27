@@ -301,7 +301,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   conjunctionName = try ((\x y z w -> x : y : z ++ [w]) <$> char G.quad <*> char G.underscore <*> many (oneOf identifierRest) <*> char G.underscore) <|> try (string [G.underscore, G.del, G.underscore]) <|> liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (some $ oneOf identifierRest) (char G.underscore)
 
   anyName :: Parser String
-  anyName = conjunctionName <|> adverbName <|> functionName <|> arrayName
+  anyName = try conjunctionName <|> try adverbName <|> try functionName <|> try arrayName
 
   maybeQualifiedTie :: (NonEmpty Token -> SourcePos -> Token) -> [(Token -> NonEmpty String -> SourcePos -> Token, Token -> NonEmpty String -> AssignType -> NonEmpty Token -> SourcePos -> Token, Parser String)] -> Parser Token
   maybeQualifiedTie tie xs = do
