@@ -7,8 +7,8 @@ if [[ $PWD == */app ]]; then
 	exit 1
 fi
 
-rm -rf dist
-mkdir dist
+rm -rf app/dist
+mkdir app/dist
 
 echo "Compiling executable"
 
@@ -19,4 +19,4 @@ out_path=$(wasm32-wasi-cabal list-bin tinyapl | tail -n1)
 
 echo "Compiled, embedding standard library"
 
-wizer --allow-wasi --wasm-bulk-memory true $out_path -o dist/tinyapl.wasm --mapdir /std::./std
+wizer --allow-wasi --wasm-bulk-memory true $out_path -o app/dist/tinyapl.wasm --mapdir /std::./std

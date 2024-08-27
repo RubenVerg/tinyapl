@@ -19,6 +19,7 @@ separator = '⋄'
 assign = '←'
 assignModify = '↩'
 assignConstant = '⇇'
+assignPrivate = '↚'
 guard = ':'
 exit = '■'
 comment = '⍝'
@@ -51,6 +52,7 @@ syntax =
   , TinyAPL.Glyphs.separator
   , TinyAPL.Glyphs.assign
   , TinyAPL.Glyphs.assignModify
+  , TinyAPL.Glyphs.assignPrivate
   , TinyAPL.Glyphs.guard
   , TinyAPL.Glyphs.exit
   , TinyAPL.Glyphs.comment

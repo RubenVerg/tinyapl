@@ -10,7 +10,7 @@ declare global {
 }
 
 export type Complex = [number, number];
-export type VariableType = 'normal' | 'constant';
+export type VariableType = 'normal' | 'constant' | 'private';
 export type StructEntry = [VariableType, Value];
 export interface Struct {
 	type: 'struct';

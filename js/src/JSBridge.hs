@@ -170,17 +170,21 @@ instance IsJS VariableType where
   fromJSVal v = case fromJSString $ fromJSVal v of
     "normal" -> VariableNormal
     "constant" -> VariableConstant
+    "private" -> VariablePrivate
     _ -> error "fromJSVal VariableType: wrong type"
   toJSVal VariableNormal = toJSVal $ toJSString "normal"
   toJSVal VariableConstant = toJSVal $ toJSString "constant"
+  toJSVal VariablePrivate = toJSVal $ toJSString "private"
 
 instance IsJSSt VariableType where
   fromJSValSt v = case fromJSString $ fromJSVal v of
     "normal" -> pure VariableNormal
     "constant" -> pure VariableConstant
+    "private" -> pure VariablePrivate
     _ -> throwError $ DomainError "fromJSValSt VariableType: wrong type"
   toJSValSt VariableNormal = pure $ toJSVal $ toJSString "normal"
   toJSValSt VariableConstant = pure $ toJSVal $ toJSString "constant"
+  toJSValSt VariablePrivate = pure $ toJSVal $ toJSString "private"
 
 instance IsJS ScalarValue where
   fromJSVal v = case fromJSString $ jsTypeOf v of
@@ -208,7 +212,7 @@ instance IsJSSt ScalarValue where
       else if fromJSVal (jsLookup v $ toJSString "type") == "conjunction" then ConjunctionWrap <$> fromJSValSt v
       else if fromJSVal (jsLookup v $ toJSString "type") == "struct" then do
         ctx <- getContext
-        scope <- foldrM (\(n, v) s -> fromJSValSt v >>= \(t, v') -> scopeUpdate n t v' s) (Scope [] [] [] [] Nothing) (valToObject $ jsLookup v $ toJSString "entries") >>= createRef
+        scope <- foldrM (\(n, v) s -> fromJSValSt v >>= \(t, v') -> scopeUpdate True n t v' s) (Scope [] [] [] [] Nothing) (valToObject $ jsLookup v $ toJSString "entries") >>= createRef
         pure $ Struct ctx{ contextScope = scope }
       else throwError $ DomainError "fromJSValSt ScalarValue: wrong type"
     _ -> throwError $ DomainError "fromJSValSt ScalarValue: wrong type"

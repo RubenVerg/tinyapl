@@ -1,7 +1,6 @@
 ⍝⍝ std:math: Mathematical functions
 
-⟃ make this private when available ⟄
-Circular ⇇ {
+Circular ↚ {
   ⍺=  0: ■√1-⍵*2
 ⋄ ⍺=  1: ■⎕math→Sin ⍵
 ⋄ ⍺= ¯1: ■⎕math→Arcsin ⍵

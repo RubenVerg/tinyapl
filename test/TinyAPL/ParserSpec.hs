@@ -93,20 +93,28 @@ spec = do
       tok "Abc⇇3" `shouldBe` pure [[TokenFunctionAssign "Abc" AssignConstant [TokenNumber 3 emptyPos] emptyPos]]
       tok "_Abc⇇3" `shouldBe` pure [[TokenAdverbAssign "_Abc" AssignConstant [TokenNumber 3 emptyPos] emptyPos]]
       tok "_Abc_⇇3" `shouldBe` pure [[TokenConjunctionAssign "_Abc_" AssignConstant [TokenNumber 3 emptyPos] emptyPos]]
+      tok "abc↚3" `shouldBe` pure [[TokenArrayAssign "abc" AssignPrivate [TokenNumber 3 emptyPos] emptyPos]]
+      tok "Abc↚3" `shouldBe` pure [[TokenFunctionAssign "Abc" AssignPrivate [TokenNumber 3 emptyPos] emptyPos]]
+      tok "_Abc↚3" `shouldBe` pure [[TokenAdverbAssign "_Abc" AssignPrivate [TokenNumber 3 emptyPos] emptyPos]]
+      tok "_Abc_↚3" `shouldBe` pure [[TokenConjunctionAssign "_Abc_" AssignPrivate [TokenNumber 3 emptyPos] emptyPos]]
 
     it "parses qualified assignment" $ do
       tok "a→b→c←3" `shouldBe` pure [[TokenQualifiedArrayAssign (TokenArrayName "a" emptyPos) ["b", "c"] AssignNormal [TokenNumber 3 emptyPos] emptyPos]]
       tok "a→b→c↩3" `shouldBe` pure [[TokenQualifiedArrayAssign (TokenArrayName "a" emptyPos) ["b", "c"] AssignModify [TokenNumber 3 emptyPos] emptyPos]]
       tok "a→b→c⇇3" `shouldBe` pure [[TokenQualifiedArrayAssign (TokenArrayName "a" emptyPos) ["b", "c"] AssignConstant [TokenNumber 3 emptyPos] emptyPos]]
+      tok "a→b→C↚3" `shouldBe` pure [[TokenQualifiedFunctionAssign (TokenArrayName "a" emptyPos) ["b", "C"] AssignPrivate [TokenNumber 3 emptyPos] emptyPos]]
       tok "a→b→C←3" `shouldBe` pure [[TokenQualifiedFunctionAssign (TokenArrayName "a" emptyPos) ["b", "C"] AssignNormal [TokenNumber 3 emptyPos] emptyPos]]
       tok "a→b→C↩3" `shouldBe` pure [[TokenQualifiedFunctionAssign (TokenArrayName "a" emptyPos) ["b", "C"] AssignModify [TokenNumber 3 emptyPos] emptyPos]]
       tok "a→b→C⇇3" `shouldBe` pure [[TokenQualifiedFunctionAssign (TokenArrayName "a" emptyPos) ["b", "C"] AssignConstant [TokenNumber 3 emptyPos] emptyPos]]
+      tok "a→b→_C↚3" `shouldBe` pure [[TokenQualifiedAdverbAssign (TokenArrayName "a" emptyPos) ["b", "_C"] AssignPrivate [TokenNumber 3 emptyPos] emptyPos]]
       tok "a→b→_C←3" `shouldBe` pure [[TokenQualifiedAdverbAssign (TokenArrayName "a" emptyPos) ["b", "_C"] AssignNormal [TokenNumber 3 emptyPos] emptyPos]]
       tok "a→b→_C↩3" `shouldBe` pure [[TokenQualifiedAdverbAssign (TokenArrayName "a" emptyPos) ["b", "_C"] AssignModify [TokenNumber 3 emptyPos] emptyPos]]
       tok "a→b→_C⇇3" `shouldBe` pure [[TokenQualifiedAdverbAssign (TokenArrayName "a" emptyPos) ["b", "_C"] AssignConstant [TokenNumber 3 emptyPos] emptyPos]]
+      tok "a→b→_C_↚3" `shouldBe` pure [[TokenQualifiedConjunctionAssign (TokenArrayName "a" emptyPos) ["b", "_C_"] AssignPrivate [TokenNumber 3 emptyPos] emptyPos]]
       tok "a→b→_C_←3" `shouldBe` pure [[TokenQualifiedConjunctionAssign (TokenArrayName "a" emptyPos) ["b", "_C_"] AssignNormal [TokenNumber 3 emptyPos] emptyPos]]
       tok "a→b→_C_↩3" `shouldBe` pure [[TokenQualifiedConjunctionAssign (TokenArrayName "a" emptyPos) ["b", "_C_"] AssignModify [TokenNumber 3 emptyPos] emptyPos]]
       tok "a→b→_C_⇇3" `shouldBe` pure [[TokenQualifiedConjunctionAssign (TokenArrayName "a" emptyPos) ["b", "_C_"] AssignConstant [TokenNumber 3 emptyPos] emptyPos]]
+      tok "a→b→_C_↚3" `shouldBe` pure [[TokenQualifiedConjunctionAssign (TokenArrayName "a" emptyPos) ["b", "_C_"] AssignPrivate [TokenNumber 3 emptyPos] emptyPos]]
 
     it "parses dfns and dops" $ do
       tok "{3⋄1}" `shouldBe` pure [[TokenDfn [[TokenNumber 3 emptyPos], [TokenNumber 1 emptyPos]] emptyPos]]
@@ -153,12 +161,21 @@ spec = do
       tok "⟨a⋄b⟩←9" `shouldBe` pure [[TokenVectorAssign ["a", "b"] AssignNormal [TokenNumber 9 emptyPos] emptyPos]]
       tok "⟨a⋄b⟩↩9" `shouldBe` pure [[TokenVectorAssign ["a", "b"] AssignModify [TokenNumber 9 emptyPos] emptyPos]]
       tok "⟨a⋄b⟩⇇9" `shouldBe` pure [[TokenVectorAssign ["a", "b"] AssignConstant [TokenNumber 9 emptyPos] emptyPos]]
+      tok "⟨a⋄b⟩↚9" `shouldBe` pure [[TokenVectorAssign ["a", "b"] AssignPrivate [TokenNumber 9 emptyPos] emptyPos]]
       tok "[a⋄b]←7" `shouldBe` pure [[TokenHighRankAssign ["a", "b"] AssignNormal [TokenNumber 7 emptyPos] emptyPos]]
       tok "[a⋄b]↩7" `shouldBe` pure [[TokenHighRankAssign ["a", "b"] AssignModify [TokenNumber 7 emptyPos] emptyPos]]
       tok "[a⋄b]⇇7" `shouldBe` pure [[TokenHighRankAssign ["a", "b"] AssignConstant [TokenNumber 7 emptyPos] emptyPos]]
+      tok "[a⋄b]↚7" `shouldBe` pure [[TokenHighRankAssign ["a", "b"] AssignPrivate [TokenNumber 7 emptyPos] emptyPos]]
       tok "a‿b←11" `shouldBe` pure [[TokenTieAssign ["a", "b"] AssignNormal [TokenNumber 11 emptyPos] emptyPos]]
       tok "a‿b↩11" `shouldBe` pure [[TokenTieAssign ["a", "b"] AssignModify [TokenNumber 11 emptyPos] emptyPos]]
       tok "a‿b⇇11" `shouldBe` pure [[TokenTieAssign ["a", "b"] AssignConstant [TokenNumber 11 emptyPos] emptyPos]]
+      tok "a‿b↚11" `shouldBe` pure [[TokenTieAssign ["a", "b"] AssignPrivate [TokenNumber 11 emptyPos] emptyPos]]
+
+    it "parses struct assignment" $ do
+      tok "⦃a⦄←3" `shouldBe` pure [[TokenStructAssign [("a", Nothing)] AssignNormal [TokenNumber 3 emptyPos] emptyPos]]
+      tok "⦃a←b⦄←3" `shouldBe` pure [[TokenStructAssign [("a", Just (AssignNormal, "b"))] AssignNormal [TokenNumber 3 emptyPos] emptyPos]]
+      tok "⦃a↩b⦄⇇3" `shouldBe` pure [[TokenStructAssign [("a", Just (AssignModify, "b"))] AssignConstant [TokenNumber 3 emptyPos] emptyPos]]
+      tok "⦃a⋄b←c⦄↚3" `shouldBe` pure [[TokenStructAssign [("a", Nothing), ("b", Just (AssignNormal, "c"))] AssignPrivate [TokenNumber 3 emptyPos] emptyPos]]
 
     it "parses structs" $ do
       tok "⦃1⋄2⋄3⦄" `shouldBe` pure [[TokenStruct [[TokenNumber 1 emptyPos], [TokenNumber 2 emptyPos], [TokenNumber 3 emptyPos]] emptyPos]]

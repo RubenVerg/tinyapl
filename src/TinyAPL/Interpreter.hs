@@ -95,42 +95,42 @@ makeValueConjunction a s = Conjunction
 scopeEntries :: Scope -> [(String, (VariableType, Value))]
 scopeEntries sc = (second (second VArray) <$> scopeArrays sc) ++ (second (second VFunction) <$> scopeFunctions sc) ++ (second (second VAdverb) <$> scopeAdverbs sc) ++ (second (second VConjunction) <$> scopeConjunctions sc)
 
-scopeShallowLookup :: String -> Scope -> Maybe Value
-scopeShallowLookup name sc =
-  VArray <$> scopeShallowLookupArray name sc
-  <|> VFunction <$> scopeShallowLookupFunction name sc
-  <|> VAdverb <$> scopeShallowLookupAdverb name sc
-  <|> VConjunction <$> scopeShallowLookupConjunction name sc
+scopeShallowLookup :: Bool -> String -> Scope -> Maybe Value
+scopeShallowLookup private name sc =
+  VArray <$> scopeShallowLookupArray private name sc
+  <|> VFunction <$> scopeShallowLookupFunction private name sc
+  <|> VAdverb <$> scopeShallowLookupAdverb private name sc
+  <|> VConjunction <$> scopeShallowLookupConjunction private name sc
 
-scopeLookup :: String -> Scope -> St (Maybe Value)
-scopeLookup name sc = do
-  a <- scopeLookupArray name sc
-  f <- scopeLookupFunction name sc
-  adv <- scopeLookupAdverb name sc
-  conj <- scopeLookupConjunction name sc
+scopeLookup :: Bool -> String -> Scope -> St (Maybe Value)
+scopeLookup private name sc = do
+  a <- scopeLookupArray private name sc
+  f <- scopeLookupFunction private name sc
+  adv <- scopeLookupAdverb private name sc
+  conj <- scopeLookupConjunction private name sc
   pure $ (VArray <$> a) <|> (VFunction <$> f) <|> (VAdverb <$> adv) <|> (VConjunction <$> conj)
 
-scopeUpdate :: String -> VariableType -> Value -> Scope -> St Scope
-scopeUpdate name ty (VArray val) sc       = scopeUpdateArray name ty val sc
-scopeUpdate name ty (VFunction val) sc    = scopeUpdateFunction name ty val sc
-scopeUpdate name ty (VAdverb val) sc      = scopeUpdateAdverb name ty val sc
-scopeUpdate name ty (VConjunction val) sc = scopeUpdateConjunction name ty val sc
+scopeUpdate :: Bool -> String -> VariableType -> Value -> Scope -> St Scope
+scopeUpdate private name ty (VArray val) sc       = scopeUpdateArray private name ty val sc
+scopeUpdate private name ty (VFunction val) sc    = scopeUpdateFunction private name ty val sc
+scopeUpdate private name ty (VAdverb val) sc      = scopeUpdateAdverb private name ty val sc
+scopeUpdate private name ty (VConjunction val) sc = scopeUpdateConjunction private name ty val sc
 
-scopeModify :: String -> Value -> Scope -> St Scope
-scopeModify name (VArray val) sc       = scopeModifyArray name val sc
-scopeModify name (VFunction val) sc    = scopeModifyFunction name val sc
-scopeModify name (VAdverb val) sc      = scopeModifyAdverb name val sc
-scopeModify name (VConjunction val) sc = scopeModifyConjunction name val sc
+scopeModify :: Bool -> String -> Value -> Scope -> St Scope
+scopeModify private name (VArray val) sc       = scopeModifyArray private name val sc
+scopeModify private name (VFunction val) sc    = scopeModifyFunction private name val sc
+scopeModify private name (VAdverb val) sc      = scopeModifyAdverb private name val sc
+scopeModify private name (VConjunction val) sc = scopeModifyConjunction private name val sc
 
-scopeShallowModify :: String -> Value -> Scope -> St Scope
-scopeShallowModify name (VArray val) sc       = scopeShallowModifyArray name val sc
-scopeShallowModify name (VFunction val) sc    = scopeShallowModifyFunction name val sc
-scopeShallowModify name (VAdverb val) sc      = scopeShallowModifyAdverb name val sc
-scopeShallowModify name (VConjunction val) sc = scopeShallowModifyConjunction name val sc
+scopeShallowModify :: Bool -> String -> Value -> Scope -> St Scope
+scopeShallowModify private name (VArray val) sc       = scopeShallowModifyArray private name val sc
+scopeShallowModify private name (VFunction val) sc    = scopeShallowModifyFunction private name val sc
+scopeShallowModify private name (VAdverb val) sc      = scopeShallowModifyAdverb private name val sc
+scopeShallowModify private name (VConjunction val) sc = scopeShallowModifyConjunction private name val sc
 
 inChildScope :: [(String, (VariableType, Value))] -> St a -> Context -> St a
 inChildScope vals x parent = do
-  ref <- foldrM (\(name, (t, val)) sc -> scopeUpdate name t val sc) (Scope [] [] [] [] (Just $ contextScope parent)) vals >>= createRef
+  ref <- foldrM (\(name, (t, val)) sc -> scopeUpdate True name t val sc) (Scope [] [] [] [] (Just $ contextScope parent)) vals >>= createRef
   runWithContext parent{ contextScope = ref } x
 
 interpret :: Tree -> Context -> ResultIO (Value, Context)
@@ -166,13 +166,14 @@ eval (ConjunctionCallBranch l r) = do
   r' <- eval r
   l' <- eval l
   evalConjunctionCall l' r'
-eval (AssignBranch _ n t val) = eval val >>= evalAssign False n t
+eval (AssignBranch _ n t val) = eval val >>= evalAssign False True n t
 eval (QualifiedAssignBranch _ h ns c val) = do
   rs <- eval val
   head <- eval h
   evalQualifiedAssign head ns c rs
 eval (VectorAssignBranch ns c val) = eval val >>= evalVectorAssign ns c
 eval (HighRankAssignBranch ns c val) = eval val >>= evalHighRankAssign ns c
+eval (StructAssignBranch ns c val) = eval val >>= evalStructAssign ns c
 eval (DefinedBranch cat statements) = evalDefined statements cat
 eval (GuardBranch _ _) = throwError $ DomainError "Guards are not allowed outside of dfns"
 eval (ExitBranch _) = throwError $ DomainError "Exits are not allowed outside of dfns"
@@ -204,7 +205,7 @@ resolve :: Context -> [String] -> St Context
 resolve ctx [] = pure ctx
 resolve ctx (name:ns) = do
   sc <- readRef $ contextScope ctx
-  arr <- scopeLookupArray name sc >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist"))
+  arr <- scopeLookupArray False name sc >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist"))
   asScalar (DomainError "Names of a qualifid identifier should be structs") arr
     >>= asStruct (DomainError "Names of a qualified identifier should be structs")
     >>= flip resolve ns
@@ -243,7 +244,7 @@ evalLeaf (TokenArrayName name _)
       Just x -> VArray <$> getNilad x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                             =
-    gets contextScope >>= readRef >>= scopeLookupArray name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray)
+    gets contextScope >>= readRef >>= scopeLookupArray True name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray)
 -- evalLeaf (TokenArrayName names val)       = do
 --   let (q, l) = fromJust $ unsnoc names
 --   ctx <- resolve q
@@ -256,7 +257,7 @@ evalLeaf (TokenFunctionName name _)
       Just x -> return $ VFunction x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                             =
-    gets contextScope >>= readRef >>= scopeLookupFunction name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VFunction)
+    gets contextScope >>= readRef >>= scopeLookupFunction True name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VFunction)
 -- evalLeaf (TokenFunctionName names val)    = do
 --   let (q, l) = fromJust $ unsnoc names
 --   ctx <- resolve q
@@ -269,7 +270,7 @@ evalLeaf (TokenAdverbName name _)
       Just x -> return $ VAdverb x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                             =
-    gets contextScope >>= readRef >>= scopeLookupAdverb name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VAdverb)
+    gets contextScope >>= readRef >>= scopeLookupAdverb True name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VAdverb)
 -- evalLeaf (TokenAdverbName names val)      = do
 --   let (q, l) = fromJust $ unsnoc names
 --   ctx <- resolve q
@@ -282,7 +283,7 @@ evalLeaf (TokenConjunctionName name _)
       Just x -> return $ VConjunction x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                             =
-    gets contextScope >>= readRef >>= scopeLookupConjunction name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VConjunction)
+    gets contextScope >>= readRef >>= scopeLookupConjunction True name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VConjunction)
 -- evalLeaf (TokenConjunctionName names val) = do
 --   let (q, l) = fromJust $ unsnoc names
 --   ctx <- resolve q
@@ -296,7 +297,7 @@ evalQualified head ns = do
   headCtx <- unwrapArray err head >>= asScalar err >>= asStruct err
   ctx <- resolve headCtx q
   scope <- readRef $ contextScope ctx
-  lift $ except $ maybeToEither (SyntaxError $ "Qualified variable " ++ l ++ " does not exist") $ scopeShallowLookup l scope
+  lift $ except $ maybeToEither (SyntaxError $ "Qualified variable " ++ l ++ " does not exist") $ scopeShallowLookup False l scope
 
 evalMonadCall :: Value -> Value -> St Value
 evalMonadCall (VFunction fn) (VArray arr) = VArray <$> callMonad fn arr
@@ -319,8 +320,8 @@ evalConjunctionCall (VConjunction conj) (VFunction r) =
   return $ VAdverb $ Adverb { adverbOnArray = Just (\x -> callOnArrayAndFunction conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndFunction conj x r), adverbRepr = "(" ++ show conj ++ show r ++ ")", adverbContext = conjContext conj }
 evalConjunctionCall _ _                               = throwError $ DomainError "Invalid arguments to conjunction call evaluation"
 
-evalAssign :: Bool -> String -> AssignType -> Value -> St Value
-evalAssign shallow name ty val
+evalAssign :: Bool -> Bool -> String -> AssignType -> Value -> St Value
+evalAssign shallow private name ty val
   | name == [G.quad] = if ty == AssignNormal then do
     arr <- unwrapArray (DomainError "Cannot print non-array") val
     out <- gets contextOut
@@ -343,19 +344,24 @@ evalAssign shallow name ty val
     else throwError $ DomainError "Can only assign normally to quads"
   | ty == AssignNormal = do
     sc <- gets contextScope
-    readRef sc >>= scopeUpdate name VariableNormal val >>= writeRef sc
+    readRef sc >>= scopeUpdate private name VariableNormal val >>= writeRef sc
     return val
   | ty == AssignConstant = do
     sc <- gets contextScope
-    readRef sc >>= scopeUpdate name VariableConstant val >>= writeRef sc
+    readRef sc >>= scopeUpdate private name VariableConstant val >>= writeRef sc
     return val
+  | ty == AssignPrivate && private = do
+    sc <- gets contextScope
+    readRef sc >>= scopeUpdate True name VariablePrivate val >>= writeRef sc
+    return val
+  | ty == AssignPrivate && not private = throwError $ DomainError "Cannot access private variable"
   | ty == AssignModify && not shallow = do
     sc <- gets contextScope
-    readRef sc >>= scopeModify name val >>= writeRef sc
+    readRef sc >>= scopeModify private name val >>= writeRef sc
     return val
   | ty == AssignModify && shallow = do
     sc <- gets contextScope
-    readRef sc >>= scopeShallowModify name val >>= writeRef sc
+    readRef sc >>= scopeShallowModify private name val >>= writeRef sc
     return val
   | otherwise = throwError unreachable
 
@@ -365,7 +371,7 @@ evalQualifiedAssign head ns c val = do
   let (q, l) = unsnocNE ns
   headCtx <- unwrapArray err head >>= asScalar err >>= asStruct err
   ctx <- resolve headCtx q
-  runWithContext ctx $ evalAssign True l c val
+  runWithContext ctx $ evalAssign True False l c val
 
 evalVectorAssign :: [String] -> AssignType -> Value -> St Value
 evalVectorAssign ns c val =
@@ -373,7 +379,7 @@ evalVectorAssign ns c val =
   else do
     es <- fmap fromScalar <$> (unwrapArray (DomainError "Vector assign: not a vector") val >>= asVector (DomainError "Vector assignment: not a vector"))
     if length ns /= length es then throwError $ DomainError "Vector assignment: wrong number of names"
-    else zipWithM_ (\name value -> evalAssign False name c (VArray value)) ns es $> val
+    else zipWithM_ (\name value -> evalAssign False True name c (VArray value)) ns es $> val
 
 evalHighRankAssign :: [String] -> AssignType -> Value -> St Value
 evalHighRankAssign ns c val =
@@ -381,7 +387,22 @@ evalHighRankAssign ns c val =
   else do
     es <- majorCells <$> unwrapArray (DomainError "High rank assign: not an array") val
     if length ns /= length es then throwError $ DomainError "High rank assignment: wrong number of names"
-    else zipWithM_ (\name value -> evalAssign False name c (VArray value)) ns es $> val
+    else zipWithM_ (\name value -> evalAssign False True name c (VArray value)) ns es $> val
+
+evalStructAssign :: [(String, Maybe (AssignType, String))] -> AssignType -> Value -> St Value
+evalStructAssign ns c val = do
+  let err = DomainError "Struct assignment: not a struct"
+  s <- unwrapArray err val >>= asScalar err >>= asStruct err >>= readRef . contextScope
+  mapM_ (\(name, alias) -> do {
+      let (n, t) = case alias of {
+          Nothing -> (name, c)
+        ; Just ((t', n')) -> (n', t') }
+    ; let v = scopeShallowLookup False n s
+    ; case v of
+        Nothing -> throwError $ SyntaxError $ "Struct assignment: variable " ++ n ++ " does not exist"
+        Just v' -> evalAssign False True name t v'
+    ; pure () }) ns
+  pure val
 
 evalDefined :: NonEmpty Tree -> Category -> St Value
 evalDefined statements cat = let
