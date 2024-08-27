@@ -212,7 +212,7 @@ export const { register: rDisplayImage, done: dDisplayImage, fn: qDisplayImage }
 	} else a = x;
 	const data = toImageData(a, '⎕DisplayImage');
 	await runListeners(id, data);
-	throw { type: 'array', shape: [0], contents: [] };
+	return { type: 'array', shape: [0], contents: [] };
 }, '⎕DisplayImage');
 
 export const { register: rPlayAnimation, done: dPlayAnimation, fn: qPlayAnimation } = makeAmbivalent1<[number, ImageData[]]>(async (runListeners, x: tinyapl.Arr, y?: tinyapl.Arr) => {

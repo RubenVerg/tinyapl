@@ -1,6 +1,7 @@
 module TinyAPL.Highlighter where
 
 import qualified TinyAPL.Glyphs as G
+import TinyAPL.Parser
 import TinyAPL.Util
 
 import Control.Monad.State
@@ -28,33 +29,6 @@ data HState = HState
   , hStr :: String }
 
 type HSt = State HState
-
-isArrayName :: String -> Bool
-isArrayName [] = False
-isArrayName [x] | x `elem` [G.quad, G.quadQuote] = True
-isArrayName (x : xs)
-  | x == G.quad = isArrayName xs
-  | otherwise = x `elem` ['a'..'z'] ++ [G.alpha, G.omega, G.delta]
-
-isFunctionName :: String -> Bool
-isFunctionName [] = False
-isFunctionName (x : xs)
-  | x == G.quad = isFunctionName xs
-  | otherwise = x `elem` ['A'..'Z'] ++ [G.alphaBar, G.omegaBar, G.deltaBar, G.del]
-
-isAdverbName :: String -> Bool
-isAdverbName [] = False
-isAdverbName [_] = False
-isAdverbName (x : xs) 
-  | x == G.quad = isAdverbName xs
-  | otherwise = x == '_' && not (last xs == '_')
-
-isConjunctionName :: String -> Bool
-isConjunctionName [] = False
-isConjunctionName [_] = False
-isConjunctionName (x : xs)
-  | x == G.quad = isConjunctionName xs
-  | otherwise = x == '_' && last xs == '_'
 
 highlight :: String -> [Color]
 highlight str = reverse $ hColors $ execState hl (HState [] str) where

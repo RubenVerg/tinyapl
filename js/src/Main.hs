@@ -49,6 +49,7 @@ import TinyAPL.Error
 import TinyAPL.Glyphs (syntax, identifiers, arrays, functions, adverbs, conjunctions, quad, assign, assignConstant, assignPrivate)
 import TinyAPL.Highlighter
 import TinyAPL.Interpreter
+import TinyAPL.Parser
 import TinyAPL.Util
 
 import Data.IORef
