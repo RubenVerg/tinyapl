@@ -173,6 +173,7 @@ eval (QualifiedAssignBranch _ h ns c val) = do
   evalQualifiedAssign head ns c rs
 eval (VectorAssignBranch ns c val) = eval val >>= evalVectorAssign ns c
 eval (HighRankAssignBranch ns c val) = eval val >>= evalHighRankAssign ns c
+eval (StructAssignBranch ns c val) = eval val >>= evalStructAssign ns c
 eval (DefinedBranch cat statements) = evalDefined statements cat
 eval (GuardBranch _ _) = throwError $ DomainError "Guards are not allowed outside of dfns"
 eval (ExitBranch _) = throwError $ DomainError "Exits are not allowed outside of dfns"
@@ -387,6 +388,21 @@ evalHighRankAssign ns c val =
     es <- majorCells <$> unwrapArray (DomainError "High rank assign: not an array") val
     if length ns /= length es then throwError $ DomainError "High rank assignment: wrong number of names"
     else zipWithM_ (\name value -> evalAssign False True name c (VArray value)) ns es $> val
+
+evalStructAssign :: [(String, Maybe (AssignType, String))] -> AssignType -> Value -> St Value
+evalStructAssign ns c val = do
+  let err = DomainError "Struct assignment: not a struct"
+  s <- unwrapArray err val >>= asScalar err >>= asStruct err >>= readRef . contextScope
+  mapM_ (\(name, alias) -> do {
+      let (n, t) = case alias of {
+          Nothing -> (name, c)
+        ; Just ((t', n')) -> (n', t') }
+    ; let v = scopeShallowLookup False n s
+    ; case v of
+        Nothing -> throwError $ SyntaxError $ "Struct assignment: variable " ++ n ++ " does not exist"
+        Just v' -> evalAssign False True name t v'
+    ; pure () }) ns
+  pure val
 
 evalDefined :: NonEmpty Tree -> Category -> St Value
 evalDefined statements cat = let

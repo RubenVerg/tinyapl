@@ -15,7 +15,7 @@ import Data.Maybe (fromJust, fromMaybe, mapMaybe)
 import Data.List (elemIndex, intercalate)
 import Control.Applicative (liftA3, (<**>))
 import Data.Function (on)
-import Data.Bifunctor (Bifunctor(first))
+import Data.Bifunctor
 import Control.Monad ((>=>))
 import Data.Void (Void)
 import Text.Parser.Combinators (sepByNonEmpty)
@@ -80,6 +80,7 @@ data Token
   | TokenVectorAssign [String] AssignType (NonEmpty Token) SourcePos
   | TokenHighRankAssign [String] AssignType (NonEmpty Token) SourcePos
   | TokenTieAssign (NonEmpty String) AssignType (NonEmpty Token) SourcePos
+  | TokenStructAssign [(String, Maybe (AssignType, String))] AssignType (NonEmpty Token) SourcePos
   | TokenParens (NonEmpty Token) SourcePos
   | TokenGuard (NonEmpty Token) (NonEmpty Token) SourcePos
   | TokenExit (NonEmpty Token) SourcePos
@@ -125,6 +126,7 @@ instance Eq Token where
   (TokenVectorAssign xn xt x _) == (TokenVectorAssign yn yt y _) = xn == yn && xt == yt && x == y
   (TokenHighRankAssign xn xt x _) == (TokenHighRankAssign yn yt y _) = xn == yn && xt == yt && x == y
   (TokenTieAssign xn xt x _) == (TokenTieAssign yn yt y _) = xn == yn && xt == yt && x == y
+  (TokenStructAssign xn xt x _) == (TokenStructAssign yn yt y _) = xn == yn && xt == yt && x == y
   (TokenParens x _) == (TokenParens y _) = x == y
   (TokenGuard xc xe _) == (TokenGuard yc ye _) = xc == yc && xe == ye
   (TokenExit x _) == (TokenExit y _) = x == y
@@ -171,6 +173,7 @@ instance Show Token where
   show (TokenVectorAssign ns c xs _) = "(vector assign " ++ unwords (show <$> ns) ++ " " ++ [assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenHighRankAssign ns c xs _) = "(high rank assign " ++ unwords (show <$> ns) ++ " " ++ [assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenTieAssign ns c xs _) = "(tie assign " ++ unwords (NE.toList $ show <$> ns) ++ " " ++ [assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
+  show (TokenStructAssign ns c xs _) = "(struct assign " ++ unwords (uncurry (++) . second (maybe "" (\(c, n) -> assignTypeArrow c : n)) <$> ns) ++ " " ++ [assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenParens xs _) = "(parens (" ++ unwords (NE.toList $ show <$> xs) ++ "))"
   show (TokenGuard gs rs _) = "(guard " ++ unwords (NE.toList $ show <$> gs) ++ " : " ++ unwords (NE.toList $ show <$> rs) ++ ")"
   show (TokenExit xs _) = "(exit " ++ [G.exit, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
@@ -216,6 +219,7 @@ tokenPos (TokenQualifiedConjunctionAssign _ _ _ _ pos) = pos
 tokenPos (TokenVectorAssign _ _ _ pos) = pos
 tokenPos (TokenHighRankAssign _ _ _ pos) = pos
 tokenPos (TokenTieAssign _ _ _ pos) = pos
+tokenPos (TokenStructAssign _ _ _ pos) = pos
 tokenPos (TokenParens _ pos) = pos
 tokenPos (TokenGuard _ _ pos) = pos
 tokenPos (TokenExit _ pos) = pos
@@ -296,6 +300,9 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   conjunctionName :: Parser String
   conjunctionName = try ((\x y z w -> x : y : z ++ [w]) <$> char G.quad <*> char G.underscore <*> many (oneOf identifierRest) <*> char G.underscore) <|> try (string [G.underscore, G.del, G.underscore]) <|> liftA3 (\a b c -> a : b ++ [c]) (char G.underscore) (some $ oneOf identifierRest) (char G.underscore)
 
+  anyName :: Parser String
+  anyName = conjunctionName <|> adverbName <|> functionName <|> arrayName
+
   maybeQualifiedTie :: (NonEmpty Token -> SourcePos -> Token) -> [(Token -> NonEmpty String -> SourcePos -> Token, Token -> NonEmpty String -> AssignType -> NonEmpty Token -> SourcePos -> Token, Parser String)] -> Parser Token
   maybeQualifiedTie tie xs = do
     pos <- getSourcePos
@@ -371,7 +378,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     struct = withPos $ TokenStruct <$> (string [fst G.struct] *> sepBy bits separator <* string [snd G.struct])
 
   array'' :: Parser Token
-  array'' = vectorAssign <|> highRankAssign <|> tieAssign <|> arrayAssign where
+  array'' = vectorAssign <|> highRankAssign <|> tieAssign <|> structAssign <|> arrayAssign where
     vectorAssign :: Parser Token
     vectorAssign = assign' TokenVectorAssign $ between (lexeme $ char $ fst G.vector) (lexeme $ char $ snd G.vector) (sepBy (lexeme arrayName) separator)
 
@@ -380,6 +387,9 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
 
     tieAssign :: Parser Token
     tieAssign = assign' TokenTieAssign $ liftA2 (:|) (lexeme arrayName `commitOn` lexeme (char G.tie)) (sepBy (lexeme arrayName) (lexeme $ char G.tie))
+
+    structAssign :: Parser Token
+    structAssign = assign' TokenStructAssign $ between (lexeme $ char $ fst G.struct) (lexeme $ char $ snd G.struct) (sepBy (liftA2 (,) (lexeme anyName) (option Nothing $ Just <$> liftA2 (,) (lexeme assignArrow) (lexeme anyName))) separator)
 
     arrayAssign :: Parser Token
     arrayAssign = assign' TokenArrayAssign arrayName
@@ -501,6 +511,7 @@ data Tree
   | QualifiedAssignBranch { qualifiedAssignBranchCategory :: Category, qualifiedAssignBranchHead :: Tree, qualifiedAssignBranchNames :: NonEmpty String, qualifiedAssignBranchType :: AssignType, qualifiedAssignBranchValue :: Tree }
   | VectorAssignBranch { vectorAssignBranchNames :: [String], vectorAssignBranchType :: AssignType, vectorAssignBranchValue :: Tree }
   | HighRankAssignBranch { highRankAssignBranchNames :: [String], highRankAssignBranchType :: AssignType, highRankAssignBranchValue :: Tree }
+  | StructAssignBranch { structAssignBranchNames :: [(String, Maybe (AssignType, String))], structAssignBranchType :: AssignType, structAssignBranchValue :: Tree }
   | DefinedBranch { definedBranchCategory :: Category, definedBranchStatements :: NonEmpty Tree }
   | GuardBranch { guardBranchCheck :: Tree, guardBranchResult :: Tree }
   | ExitBranch { exitBranchResult :: Tree }
@@ -527,6 +538,7 @@ instance Show Tree where
       (QualifiedAssignBranch c h ns t v) -> (indent ++ show c ++ " ..." ++ [assignTypeArrow t] ++ intercalate [G.access] (NE.toList ns) ++ " ← ...") : go (i + 1) h ++ (indent ++ "←") : go (i + 1) v
       (VectorAssignBranch ns c v)        -> (indent ++ "⟨⟩ " ++ unwords (show <$> ns) ++ [' ', assignTypeArrow c]) : go (i + 1) v
       (HighRankAssignBranch ns c v)      -> (indent ++ "[] " ++ unwords (show <$> ns) ++ [' ', assignTypeArrow c]) : go (i + 1) v
+      (StructAssignBranch ns c v)        -> (indent ++ "⦃⦄ " ++ unwords (uncurry (++) . second (maybe "" (\(c, n) -> assignTypeArrow c : n)) <$> ns) ++ [' ', assignTypeArrow c]) : go (i + 1) v
       (DefinedBranch c ts)               -> (indent ++ show c ++ " {}") : concatMap (go (i + 1)) ts
       (GuardBranch ch res)               -> [indent ++ "guard"] ++ go (i + 1) ch ++ [indent ++ ":"] ++ go (i + 1) res
       (ExitBranch res)                   -> (indent ++ "■") : go (i + 1) res
@@ -548,6 +560,7 @@ treeCategory (AssignBranch c _ _ _)            = c
 treeCategory (QualifiedAssignBranch c _ _ _ _) = c
 treeCategory (VectorAssignBranch _ _ _)        = CatArray
 treeCategory (HighRankAssignBranch _ _ _)      = CatArray
+treeCategory (StructAssignBranch _ _ _)        = CatArray
 treeCategory (DefinedBranch c _)               = c
 treeCategory (GuardBranch _ t)                 = treeCategory t
 treeCategory (ExitBranch _)                    = CatArray
@@ -626,6 +639,9 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   destructureAssignment :: ([String] -> AssignType -> Tree -> Tree) -> [String] -> AssignType -> NonEmpty Token -> SourcePos -> Result Tree
   destructureAssignment h names ty ts pos = h names ty <$> (categorizeAndBind ts >>= requireOfCategory CatArray (\c -> makeSyntaxError pos source $ "Invalid destructure assignment of " ++ show c ++ ", array required"))
 
+  structAssignment :: [(String, Maybe (AssignType, String))] -> AssignType -> NonEmpty Token -> SourcePos -> Result Tree
+  structAssignment names ty ts pos = StructAssignBranch names ty <$> (categorizeAndBind ts >>= requireOfCategory CatArray (\c -> makeSyntaxError pos source $ "Invalid struct assignment of " ++ show c ++ ", array required"))
+
   vector :: [NonEmpty Token] -> SourcePos -> Result Tree
   vector es _ = VectorBranch <$> mapM (\x -> categorizeAndBind x) es
 
@@ -671,6 +687,7 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   tokenToTree (TokenVectorAssign names c ts pos)            = destructureAssignment VectorAssignBranch names c ts pos
   tokenToTree (TokenHighRankAssign names c ts pos)          = destructureAssignment HighRankAssignBranch names c ts pos
   tokenToTree (TokenTieAssign names c ts pos)               = destructureAssignment VectorAssignBranch (NE.toList names) c ts pos
+  tokenToTree (TokenStructAssign names c ts pos)            = structAssignment names c ts pos
   tokenToTree (TokenParens ts _)                            = categorizeAndBind ts
   tokenToTree (TokenGuard check result _)                   = liftA2 GuardBranch (categorizeAndBind check >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head check) source $ "Invalid guard of type " ++ show c ++ ", array required")) (categorizeAndBind result)
   tokenToTree (TokenExit result _)                          = ExitBranch <$> (categorizeAndBind result >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head result) source $ "Invalid exit statement of type " ++ show c ++ ", array required"))

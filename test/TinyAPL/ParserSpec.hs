@@ -171,6 +171,12 @@ spec = do
       tok "a‿b⇇11" `shouldBe` pure [[TokenTieAssign ["a", "b"] AssignConstant [TokenNumber 11 emptyPos] emptyPos]]
       tok "a‿b↚11" `shouldBe` pure [[TokenTieAssign ["a", "b"] AssignPrivate [TokenNumber 11 emptyPos] emptyPos]]
 
+    it "parses struct assignment" $ do
+      tok "⦃a⦄←3" `shouldBe` pure [[TokenStructAssign [("a", Nothing)] AssignNormal [TokenNumber 3 emptyPos] emptyPos]]
+      tok "⦃a←b⦄←3" `shouldBe` pure [[TokenStructAssign [("a", Just (AssignNormal, "b"))] AssignNormal [TokenNumber 3 emptyPos] emptyPos]]
+      tok "⦃a↩b⦄⇇3" `shouldBe` pure [[TokenStructAssign [("a", Just (AssignModify, "b"))] AssignConstant [TokenNumber 3 emptyPos] emptyPos]]
+      tok "⦃a⋄b←c⦄↚3" `shouldBe` pure [[TokenStructAssign [("a", Nothing), ("b", Just (AssignNormal, "c"))] AssignPrivate [TokenNumber 3 emptyPos] emptyPos]]
+
     it "parses structs" $ do
       tok "⦃1⋄2⋄3⦄" `shouldBe` pure [[TokenStruct [[TokenNumber 1 emptyPos], [TokenNumber 2 emptyPos], [TokenNumber 3 emptyPos]] emptyPos]]
 
