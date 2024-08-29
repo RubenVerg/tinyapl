@@ -63,6 +63,8 @@ Marked features are supported, unmarked features are planned
 	* [x] console I/O with `⎕` and `⍞`
 	* [x] array notation `⟨`/`⋄`/`⟩` and `[`/`⋄`/`]`
 	* [x] trains and modifier trains \[`_`\]`⦅`/`⋄`/`⦆`\[`_`\]
+	* [ ] multiple statements in an expression `(`/`⋄`/`)`
+	* [ ] ternary expressions `⍰`/`⍠`
 * primitives
 	* arrays
 		* [x] `⍬`
