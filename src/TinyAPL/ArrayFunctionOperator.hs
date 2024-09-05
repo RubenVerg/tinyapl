@@ -191,11 +191,18 @@ instance Show ScalarValue where
   show (ConjunctionWrap conj) = [G.wrap, fst G.parens] ++ show conj ++ [snd G.parens]
   show (Struct _) = [fst G.struct] ++ "..." ++ [snd G.struct]
 
+showElement :: ScalarValue -> String
+showElement (Box xs) = show xs
+showElement (Wrap fn) = show fn
+showElement (AdverbWrap adv) = show adv
+showElement (ConjunctionWrap conj) = show conj
+showElement x = show x
+
 instance Show Array where
   show (Array [] [s])                     = show s
   show (Array [_] xs)
     | not (null xs) && all isCharacter xs = xs >>= show
-    | otherwise                           = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (show . fromScalar <$> xs) ++ [snd G.vector]
+    | otherwise                           = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (showElement <$> xs) ++ [snd G.vector]
   show arr                                = [fst G.highRank] ++ intercalate [' ', G.separator, ' '] (show <$> majorCells arr) ++ [snd G.highRank]
 
 charRepr :: Char -> (String, Bool)
