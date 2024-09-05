@@ -227,9 +227,6 @@ spec = do
         par "_{1}" `shouldBe` pure [Just $ DefinedBranch CatAdverb [Leaf CatArray (TokenNumber 1 emptyPos)]]
         par "_{1}_" `shouldBe` pure [Just $ DefinedBranch CatConjunction [Leaf CatArray (TokenNumber 1 emptyPos)]]
       
-      it "requires at least one statement" $ do
-        par "{}" `shouldBe` Nothing
-
       it "requires the last statement to be an array" $ do
         par "{+}" `shouldBe` Nothing
     

@@ -12,7 +12,7 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Functor (($>), void)
 import Data.Maybe (fromJust, fromMaybe, mapMaybe)
-import Data.List (elemIndex, intercalate)
+import Data.List (elemIndex, intercalate, singleton)
 import Control.Applicative (liftA3, (<**>))
 import Data.Function (on)
 import Data.Bifunctor
@@ -58,9 +58,9 @@ data Token
   | TokenPrimFunction Char SourcePos
   | TokenPrimAdverb Char SourcePos
   | TokenPrimConjunction Char SourcePos
-  | TokenDfn (NonEmpty (NonEmpty Token)) SourcePos
-  | TokenDadv (NonEmpty (NonEmpty Token)) SourcePos
-  | TokenDconj (NonEmpty (NonEmpty Token)) SourcePos
+  | TokenDfn (NonEmpty [Token]) SourcePos
+  | TokenDadv (NonEmpty [Token]) SourcePos
+  | TokenDconj (NonEmpty [Token]) SourcePos
   | TokenArrayName String SourcePos
   | TokenFunctionName String SourcePos
   | TokenAdverbName String SourcePos
@@ -82,7 +82,7 @@ data Token
   | TokenTieAssign (NonEmpty String) AssignType (NonEmpty Token) SourcePos
   | TokenStructAssign [(String, Maybe (AssignType, String))] AssignType (NonEmpty Token) SourcePos
   | TokenParens (NonEmpty Token) SourcePos
-  | TokenGuard (NonEmpty Token) (NonEmpty Token) SourcePos
+  | TokenGuard (NonEmpty Token) [Token] SourcePos
   | TokenExit (NonEmpty Token) SourcePos
   | TokenVector [NonEmpty Token] SourcePos
   | TokenHighRank [NonEmpty Token] SourcePos
@@ -151,9 +151,9 @@ instance Show Token where
   show (TokenPrimFunction x _) = "(primitive function " ++ [x] ++ ")"
   show (TokenPrimAdverb x _) = "(primitive adverb " ++ [x] ++ ")"
   show (TokenPrimConjunction x _) = "(primitive conjunction " ++ [x] ++ ")"
-  show (TokenDfn xs _) = "(dfn " ++ [fst G.braces, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . NE.toList . fmap show <$> NE.toList xs) ++ [' ', snd G.braces] ++ ")"
-  show (TokenDadv xs _) = "(dadv " ++ [G.underscore, fst G.braces, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . NE.toList . fmap show <$> NE.toList xs) ++ [' ', snd G.braces] ++ ")"
-  show (TokenDconj xs _) = "(dconj " ++ [G.underscore, fst G.braces, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . NE.toList . fmap show <$> NE.toList xs) ++ [' ', snd G.braces, G.underscore] ++ ")"
+  show (TokenDfn xs _) = "(dfn " ++ [fst G.braces, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> NE.toList xs) ++ [' ', snd G.braces] ++ ")"
+  show (TokenDadv xs _) = "(dadv " ++ [G.underscore, fst G.braces, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> NE.toList xs) ++ [' ', snd G.braces] ++ ")"
+  show (TokenDconj xs _) = "(dconj " ++ [G.underscore, fst G.braces, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> NE.toList xs) ++ [' ', snd G.braces, G.underscore] ++ ")"
   show (TokenArrayName x _) = "(array name " ++ x ++ ")"
   show (TokenFunctionName x _) = "(function name " ++ x ++ ")"
   show (TokenAdverbName x _) = "(adverb name " ++ x ++ ")"
@@ -175,7 +175,7 @@ instance Show Token where
   show (TokenTieAssign ns c xs _) = "(tie assign " ++ unwords (NE.toList $ show <$> ns) ++ " " ++ [assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenStructAssign ns c xs _) = "(struct assign " ++ unwords (uncurry (++) . second (maybe "" (\(c, n) -> assignTypeArrow c : n)) <$> ns) ++ " " ++ [assignTypeArrow c, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenParens xs _) = "(parens (" ++ unwords (NE.toList $ show <$> xs) ++ "))"
-  show (TokenGuard gs rs _) = "(guard " ++ unwords (NE.toList $ show <$> gs) ++ " : " ++ unwords (NE.toList $ show <$> rs) ++ ")"
+  show (TokenGuard gs rs _) = "(guard " ++ unwords (NE.toList $ show <$> gs) ++ " : " ++ unwords (show <$> rs) ++ ")"
   show (TokenExit xs _) = "(exit " ++ [G.exit, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenVector xs _) = "(vector " ++ [fst G.vector, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . NE.toList . fmap show <$> xs) ++ [snd G.vector] ++ ")"
   show (TokenHighRank xs _) = "(high rank " ++ [fst G.highRank, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . NE.toList . fmap show <$> xs) ++ [snd G.highRank] ++ ")"
@@ -451,12 +451,6 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     conjunctionAssign :: Parser Token
     conjunctionAssign = assign' TokenConjunctionAssign conjunctionName
 
-  guard :: Parser Token
-  guard = withPos $ liftA2 TokenGuard (bits `commitOn` char G.guard) definedBits
-
-  exit :: Parser Token
-  exit = withPos $ TokenExit <$> (char G.exit *> bits)
-
   bracketed :: Parser Token
   bracketed = withPos $ TokenParens <$> between (char $ fst G.parens) (char $ snd G.parens) bits
 
@@ -482,8 +476,16 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
   bits :: Parser (NonEmpty Token)
   bits = spaceConsumer *> NE.some1 bit
 
-  definedBits :: Parser (NonEmpty Token)
-  definedBits = spaceConsumer *> NE.some1 (lexeme guard <|> lexeme exit <|> bit)
+  definedBits :: Parser [Token]
+  definedBits = spaceConsumer *> (do
+    choice [fmap singleton $ withPos $ do
+      char G.exit
+      TokenExit <$> bits, do
+      head <- bits
+      option (NE.toList head) $ fmap singleton $ withPos $ do
+        char G.guard
+        tail <- definedBits
+        pure $ TokenGuard head tail, pure []])
 
 isArrayName :: String -> Bool
 isArrayName [] = False
@@ -633,6 +635,10 @@ categorize :: String -> String -> Result [[Tree]]
 categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty xs of
   Nothing -> pure []
   Just xs -> NE.toList <$> categorizeTokens xs) where
+  orEmptyToken :: [Token] -> NonEmpty Token
+  orEmptyToken [] = TokenVector [] emptyPos :| []
+  orEmptyToken xs = NE.fromList xs
+
   categorizeTokens :: NonEmpty Token -> Result (NonEmpty Tree)
   categorizeTokens = mapM tokenToTree
 
@@ -647,11 +653,12 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   qualified cat h ns = QualifiedBranch cat <$> (tokenToTree h >>=
     requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos h) source $ "Invalid qualified access to value of type " ++ show c)) <*> pure ns
 
-  defined :: Category -> String -> NonEmpty (NonEmpty Token) -> SourcePos -> Result Tree
+  defined :: Category -> String -> NonEmpty [Token] -> SourcePos -> Result Tree
   defined cat name statements pos = do
-    ss <- mapM categorizeAndBind statements
+    let statements' = orEmptyToken <$> statements
+    ss <- mapM categorizeAndBind statements'
     if null ss then throwError $ makeSyntaxError pos source $ "Invalid empty " ++ name
-    else if treeCategory (NE.last ss) /= CatArray then throwError $ makeSyntaxError (tokenPos $ NE.head $ NE.last statements) source $ "Invalid " ++ name ++ ": last statement must be an array"
+    else if treeCategory (NE.last ss) /= CatArray then throwError $ makeSyntaxError (tokenPos $ NE.head $ NE.last statements') source $ "Invalid " ++ name ++ ": last statement must be an array"
     else Right $ DefinedBranch cat ss
 
   assignment :: Category -> String -> AssignType -> NonEmpty Token -> SourcePos -> Result Tree
@@ -725,7 +732,7 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   tokenToTree (TokenTieAssign names c ts pos)               = destructureAssignment VectorAssignBranch (NE.toList names) c ts pos
   tokenToTree (TokenStructAssign names c ts pos)            = structAssignment names c ts pos
   tokenToTree (TokenParens ts _)                            = categorizeAndBind ts
-  tokenToTree (TokenGuard check result _)                   = liftA2 GuardBranch (categorizeAndBind check >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head check) source $ "Invalid guard of type " ++ show c ++ ", array required")) (categorizeAndBind result)
+  tokenToTree (TokenGuard check result _)                   = liftA2 GuardBranch (categorizeAndBind check >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head check) source $ "Invalid guard of type " ++ show c ++ ", array required")) (categorizeAndBind $ orEmptyToken result)
   tokenToTree (TokenExit result _)                          = ExitBranch <$> (categorizeAndBind result >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head result) source $ "Invalid exit statement of type " ++ show c ++ ", array required"))
   tokenToTree (TokenVector es pos)                          = vector es pos
   tokenToTree (TokenHighRank es pos)                        = highRank es pos
