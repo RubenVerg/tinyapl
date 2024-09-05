@@ -724,7 +724,7 @@ factorial (Number n) = case asInt (DomainError "") n of
   Left _ -> pure $ Number $ Gamma.gamma $ n + 1
   Right i
     | i < 0 -> throwError $ DomainError "Factorial of a negative integer"
-    | otherwise-> pure $ Number $ Gamma.factorial i
+    | otherwise -> pure $ Number $ Gamma.factorial i
 factorial _ = throwError expectedNumber
 
 factorial' :: MonadError Error m => Array -> m Array

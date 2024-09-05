@@ -13,6 +13,7 @@ TinyAPL (read like *tiny apple*) is a tiny APL dialect and interpreter in Haskel
 * Part 7: [Quads, Key, Index](https://blog.rubenverg.com/tinyapl_7_quads_key_index)
 * Part 8: [All About Rank, and a Web Interface](https://blog.rubenverg.com/tinyapl_8_rank_web)
 * Part 9: [More Tacit!](https://blog.rubenverg.com/tinyapl_9_more_tacit)
+* Part 10: [Wraps, Structs, a Standard Library](https://blog.rubenverg.com/tinyapl_10_wraps_structs_stdlib)
 
 Documentation is available [here](https://tinyapl.rubenverg.com) and you can run the latest interpreter [here](https://tinyapl.rubenverg.com/run/latest)
 

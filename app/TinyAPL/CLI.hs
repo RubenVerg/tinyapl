@@ -89,7 +89,7 @@ repl context = let
     putStrLn $ "* array notation: " ++ [fst G.vector, G.separator, snd G.vector] ++ " vector, " ++ [fst G.highRank, G.separator, snd G.highRank] ++ " higher rank array (combine major cells), " ++ [G.tie] ++ " tie (like vector notation)"
     putStrLn $ "* trains: " ++ [fst G.train, snd G.train] ++ " deriving function, " ++ [G.underscore, fst G.train, snd G.train] ++ " deriving adverb, " ++ [G.underscore, fst G.train, snd G.train, G.underscore] ++ " deriving conjunction"
     putStrLn $ "* structs: " ++ [fst G.struct] ++ "statements" ++ [snd G.struct] ++ ", qualified access " ++ [G.access]
-    putStrLn $ "* assignment with " ++ [G.assign] ++ ", modify assignment with " ++ [G.assignModify] ++ ", constant assignment with " ++ [G.assignConstant]
+    putStrLn $ "* assignment with " ++ [G.assign] ++ ", modify assignment with " ++ [G.assignModify] ++ ", constant assignment with " ++ [G.assignConstant] ++ ", private assignment with " ++ [G.assignPrivate]
     putStrLn $ "* array assignment with array notation of names"
     putStrLn $ "* comments: " ++ [G.comment] ++ " until end of line, " ++ [fst G.inlineComment, snd G.inlineComment] ++ " inline"
 
