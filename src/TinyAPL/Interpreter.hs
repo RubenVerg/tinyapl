@@ -27,7 +27,7 @@ asWraps err arr = do
   else pure $ Function
     { functionMonad = Just $ \x -> F.onScalars1 (\w -> asScalar err w >>= asWrap err >>= (\f -> callMonad f x)) arr
     , functionDyad = Just $ \x y -> F.onScalars1 (\w -> asScalar err w >>= asWrap err >>= (\f -> callDyad f x y)) arr
-    , functionRepr = [fst G.parens, G.unwrap] ++ show arr ++ [snd G.parens]
+    , functionRepr = [G.unwrap, fst G.parens] ++ show arr ++ [snd G.parens]
     , functionContext = Nothing }
 
 data Value
