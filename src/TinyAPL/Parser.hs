@@ -737,11 +737,11 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
     CatAdverb -> pure x
     CatConjunction -> pure x
     _ -> throwError $ makeSyntaxError (tokenPos val) source $ "Invalid wrap of type " ++ show (treeCategory x) ++ ", function, adverb or conjunction required"))
-  tokenToTree (TokenUnwrap val _)                         = UnwrapBranch CatFunction <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap of type " ++ show c ++ ", array required"))
-  tokenToTree (TokenUnwrapAdverb val _)                   = UnwrapBranch CatAdverb <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap adverb of type " ++ show c ++ ", array required"))
-  tokenToTree (TokenUnwrapConjunction val _)              = UnwrapBranch CatConjunction <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap conjunction of type " ++ show c ++ ", array required"))
-  tokenToTree (TokenStruct es pos)                        = struct es pos
-  tokenToTree (TokenTie es pos)                           = vector (NE.toList $ fmap NE.singleton $ es) pos
+  tokenToTree (TokenUnwrap val _)                           = UnwrapBranch CatFunction <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap of type " ++ show c ++ ", array required"))
+  tokenToTree (TokenUnwrapAdverb val _)                     = UnwrapBranch CatAdverb <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap adverb of type " ++ show c ++ ", array required"))
+  tokenToTree (TokenUnwrapConjunction val _)                = UnwrapBranch CatConjunction <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap conjunction of type " ++ show c ++ ", array required"))
+  tokenToTree (TokenStruct es pos)                          = struct es pos
+  tokenToTree (TokenTie es pos)                             = vector (NE.toList $ fmap NE.singleton $ es) pos
 
 parse :: String -> String -> Result [Maybe Tree]
 parse name = categorize name >=> mapM (\xs -> case NE.nonEmpty xs of

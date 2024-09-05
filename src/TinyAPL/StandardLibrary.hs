@@ -55,7 +55,6 @@ foreign export ccall loadStandardLibrary :: IO ()
 loadStandardLibrary :: IO ()
 loadStandardLibrary = void $ evaluate $ rnf standardLibrary
 #else
-
 standardLibrary :: [([String], String)]
 standardLibrary = listToStd $ $(ListE <$> ((runIO $ fileList "std") >>= mapM (pairToExp "std")))
 #endif
