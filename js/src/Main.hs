@@ -56,6 +56,8 @@ import Data.IORef
 import GHC.Wasm.Prim
 import System.IO.Unsafe
 import Data.Bifunctor
+import Control.Exception
+import Control.DeepSeq
 
 foreign export javascript "hs_start" main :: IO ()
 
@@ -163,9 +165,11 @@ runCode contextId code = do
   context <- (!! contextId) <$> readIORef contexts
   let file = "<tinyapl js>"
   result <- runResult $ run file code context
-  case result of
-    (Left err) -> return $ Left err
-    Right (res, context') -> do
+  r <- try $ evaluate $ force result
+  case r of
+    Left (ErrorCall err) -> return $ Left $ UserError err
+    Right (Left err) -> return $ Left err
+    Right (Right (res, context')) -> do
       modifyIORef contexts (setAt contextId context')
       modifyIORef lasts (setAt contextId $ Just res)
       return $ Right res

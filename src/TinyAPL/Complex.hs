@@ -25,6 +25,7 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
 import Data.Coerce
+import Control.DeepSeq
 
 infix 6 :+
 
@@ -255,3 +256,6 @@ instance (VU.Unbox a) => VG.Vector VU.Vector (Complex a) where
                        $ VG.elemseq (undefined :: VU.Vector a) y z
 
 instance (VU.Unbox a) => VU.Unbox (Complex a)
+
+instance NFData a => NFData (Complex a) where
+  rnf (x :+ y) = rnf x `seq` rnf y `seq` ()
