@@ -57,7 +57,7 @@ const keyboard = [
 	['KeyJ', 'j', 'J', '∘', '⍤', 'ᴊ', undefined],
 	['KeyK', 'k', 'K', '⍆', '⌸', '⍅', undefined],
 	['KeyL', 'l', 'L', '⎕', '⌷', undefined, undefined],
-	['Semicolon', ';', ':', '⍎', '≡', '⍮', '■'],
+	['Semicolon', ';', ':', '⍎', '≡', '⍮', '⍠'],
 	['Quote', '\'', '"', '⍕', '≢', '⍘', '⍞'],
 	['Backslash', '\\', '|', '⊢', '⊣', '⊩', '⫣'],
 	['KeyZ', 'z', 'Z', '⊂', '⊆', '⊏', 'ᑣ'],
@@ -68,8 +68,8 @@ const keyboard = [
 	['KeyN', 'n', 'N', '⊤', undefined, '↚', undefined],
 	['KeyM', 'm', 'M', '«', '»', '↩', undefined],
 	['Comma', ',', '<', '⍪', 'ᑈ', '⊲', undefined],
-	['Period', '.', '>', '∙', 'ᐵ', '⊳', undefined],
-	['Slash', '/', '?', '⌿', undefined, undefined, undefined],
+	['Period', '.', '>', '∙', 'ᐵ', '⊳', '■'],
+	['Slash', '/', '?', '⌿', undefined, undefined, '⍰'],
 	['Space', 'Space', 'Space', '`', '‿', undefined, undefined],
 ].map(([code, sym, symS, symP, symPS, symPP, symPPS]) => ({ code, sym, symS, symP, symPS, symPP, symPPS }));
 
