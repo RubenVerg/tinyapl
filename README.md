@@ -266,6 +266,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⎕ct` (constant) `1⏨¯14`
 		* [x] `⎕seed` (set only) seed the random number generator
 		* [x] `⎕math` math functions
+		* [ ] `⎕systemInfo` system information
 	* system functions
 		* [ ] `⎕File` read/write files
 		* [ ] `⎕DateTime` (or `⎕DT` maybe?) convert between time formats
