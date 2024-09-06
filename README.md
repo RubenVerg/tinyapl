@@ -260,7 +260,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⎕u` (constant) the uppercase alphabet
 		* [x] `⎕l` (constant) the lowercase alphabet
 		* [x] `⎕d` (constant) the digits
-		* [ ] `⎕ts` current timestamp (year, month, day, hour, minute, second, millisecond)
+		* [x] `⎕ts` current timestamp (year, month, day, hour, minute, second, millisecond)
 		* [x] `⎕unix` current Unix timestamp
 		* [x] `⎕io` (constant) `1`
 		* [x] `⎕ct` (constant) `1⏨¯14`
