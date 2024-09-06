@@ -30,6 +30,7 @@ wrap = '⊏'
 unwrap = '⊐'
 struct = ('⦃', '⦄')
 access = '→'
+ternary = ('⍰', '⍠')
 
 syntax =
   [ TinyAPL.Glyphs.decimal
@@ -65,7 +66,9 @@ syntax =
   , TinyAPL.Glyphs.unwrap
   , fst TinyAPL.Glyphs.struct
   , snd TinyAPL.Glyphs.struct
-  , TinyAPL.Glyphs.access ]
+  , TinyAPL.Glyphs.access
+  , fst TinyAPL.Glyphs.ternary
+  , snd TinyAPL.Glyphs.ternary ]
 
 escapes =
   [ (stringDelimiter, stringDelimiter)
