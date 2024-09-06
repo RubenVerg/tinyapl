@@ -2,15 +2,17 @@
 module TinyAPL.CoreQuads where
 
 import TinyAPL.ArrayFunctionOperator
+import TinyAPL.Complex
 import TinyAPL.CoreQuads.Math
 import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
 import TinyAPL.Interpreter
 import TinyAPL.Random
 import TinyAPL.StandardLibrary
+import TinyAPL.Util
 
-import TinyAPL.Complex
 import Control.Monad.State
+import Data.Time
 import Data.Time.Clock.POSIX
 import Control.Concurrent
 import Data.List
@@ -27,9 +29,12 @@ seed = Nilad Nothing (Just $ \x -> do
   setSeed s) (G.quad : "seed") Nothing
 unix = Nilad (Just $ scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "unix") Nothing
 ts = Nilad (Just $ do
-  err <- gets contextErr
-  err "Deprecation warning: ⎕ts has been replaced by ⎕unix and will be used for something else in a future version\n"
-  scalar . Number . realToFrac <$> liftToSt getPOSIXTime) Nothing (G.quad : "ts") Nothing
+  utc <- liftToSt $ posixSecondsToUTCTime <$> getPOSIXTime
+  let (YearMonthDay y m d) = utctDay utc
+  let (TimeOfDay h min s') = timeToTimeOfDay $ utctDayTime utc
+  let s = floor $ fixedToFractional s'
+  let ms = round $ fracPart (fixedToFractional s') * 1000
+  pure $ vector [Number $ fromIntegral y, Number $ fromIntegral m, Number $ fromIntegral d, Number $ fromIntegral h, Number $ fromIntegral min, Number $ fromIntegral s, Number $ fromIntegral ms]) Nothing (G.quad : "ts") Nothing
 
 exists = Function (Just $ \y -> do
   var <- asString (DomainError "Exists argument must be a string") y

@@ -10,6 +10,7 @@ import Data.Char (intToDigit)
 import Data.List (genericLength, genericIndex, unsnoc)
 import Data.Vector.Internal.Check (HasCallStack)
 import qualified Data.List.NonEmpty as NE
+import Data.Fixed
 
 infixr 9 .:
 (.:) f g x y = f $ g x y
@@ -205,3 +206,6 @@ secondM f (a, b) = (a, ) <$> f b
 fromRight' :: HasCallStack => Show a => Either a b -> b
 fromRight' (Left e) = error $ "fromRight': Left " ++ show e
 fromRight' (Right x) = x
+
+fixedToFractional :: (Fractional b, HasResolution r) => Fixed r -> b
+fixedToFractional f@(MkFixed v) = fromIntegral v / fromIntegral (resolution f)
