@@ -184,6 +184,9 @@ spec = do
       tok "1‿2‿3" `shouldBe` pure [[TokenTie [TokenNumber 1 emptyPos, TokenNumber 2 emptyPos, TokenNumber 3 emptyPos] emptyPos]]
       tok "+‿-‿×" `shouldBe` pure [[TokenTie [TokenPrimFunction '+' emptyPos, TokenPrimFunction '-' emptyPos, TokenPrimFunction '×' emptyPos] emptyPos]]
 
+    it "parses ternaries" $ do
+      tok "1⍰2⍠3" `shouldBe` pure [[TokenTernary [TokenNumber 1 emptyPos] [TokenNumber 2 emptyPos] [TokenNumber 3 emptyPos] emptyPos]]
+
   describe "binder" $ do
     let e2m (Right x) = Just x
         e2m (Left _)  = Nothing
@@ -300,3 +303,7 @@ spec = do
     describe "empty statements" $ do
       it "parses empty statements" $ do
         par "1⋄⋄2" `shouldBe` pure [Just $ Leaf CatArray (TokenNumber 1 emptyPos), Nothing, Just $ Leaf CatArray (TokenNumber 2 emptyPos)]
+
+    describe "ternaries" $ do
+      it "parses ternaries" $ do
+        par "1⍰2⍠3" `shouldBe` pure [Just $ TernaryBranch (Leaf CatArray (TokenNumber 1 emptyPos)) (Leaf CatArray (TokenNumber 2 emptyPos)) (Leaf CatArray (TokenNumber 3 emptyPos))]

@@ -200,6 +200,10 @@ eval (WrapBranch fn) = eval fn >>= (\case
   _ -> throwError $ DomainError "Wrap notation: function or modifier required")
 eval (UnwrapBranch cat fn) = eval fn >>= evalUnwrap cat
 eval (StructBranch es) = evalStruct es
+eval (TernaryBranch cond true false) = do
+  let err = DomainError "Ternary condition must be a scalar boolean"
+  c <- eval cond >>= unwrapArray err >>= asScalar err >>= asBool err
+  if c then eval true else eval false
 
 resolve :: Context -> [String] -> St Context
 resolve ctx [] = pure ctx

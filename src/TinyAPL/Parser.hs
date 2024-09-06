@@ -95,6 +95,7 @@ data Token
   | TokenUnwrapConjunction Token SourcePos
   | TokenStruct [NonEmpty Token] SourcePos
   | TokenTie (NonEmpty Token) SourcePos
+  | TokenTernary (NonEmpty Token) (NonEmpty Token) (NonEmpty Token) SourcePos
 
 instance Eq Token where
   (TokenNumber x _) == (TokenNumber y _) = x == y
@@ -141,6 +142,7 @@ instance Eq Token where
   (TokenUnwrapConjunction x _) == (TokenUnwrapConjunction y _) = x == y
   (TokenStruct x _) == (TokenStruct y _) = x == y
   (TokenTie x _) == (TokenTie y _) = x == y
+  (TokenTernary xh xt xf _) == (TokenTernary yh yt yf _) = xh == yh && xt == yt && xf == yf
   _ == _ = False
 
 instance Show Token where
@@ -188,6 +190,7 @@ instance Show Token where
   show (TokenUnwrapConjunction x _) = "(unwrap conjunction " ++ [G.underscore, G.unwrap, G.underscore] ++ show x ++ ")"
   show (TokenStruct xs _) = "(struct " ++ [fst G.struct] ++ intercalate [' ', G.separator, ' '] (unwords . NE.toList . fmap show <$> xs) ++ [snd G.struct] ++ ")"
   show (TokenTie xs _) = "(tie " ++ intercalate [G.tie] (NE.toList $ fmap show xs) ++ ")"
+  show (TokenTernary xh xt xf _) = "(ternary " ++ unwords (NE.toList $ show <$> xh) ++ [' ', fst G.ternary, ' '] ++ unwords (NE.toList $ show <$> xt) ++ [' ', snd G.ternary, ' '] ++ unwords (NE.toList $ show <$> xf) ++ ")"
 
 tokenPos :: Token -> SourcePos
 tokenPos (TokenNumber _ pos) = pos
@@ -234,6 +237,7 @@ tokenPos (TokenUnwrapAdverb _ pos) = pos
 tokenPos (TokenUnwrapConjunction _ pos) = pos
 tokenPos (TokenStruct _ pos) = pos
 tokenPos (TokenTie _ pos) = pos
+tokenPos (TokenTernary _ _ _ pos) = pos
 
 emptyPos :: SourcePos
 emptyPos = SourcePos "<empty>" (mkPos 1) (mkPos 1)
@@ -471,10 +475,17 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     <|> conjunction' <|> adverb' <|> function' <|> array'
 
   bitsMaybe :: Parser [Token]
-  bitsMaybe = spaceConsumer *> many bit
+  bitsMaybe = spaceConsumer *> option [] (NE.toList <$> bits)
 
   bits :: Parser (NonEmpty Token)
-  bits = spaceConsumer *> NE.some1 bit
+  bits = spaceConsumer *> (do
+    one <- NE.some1 bit
+    option one $ fmap NE.singleton $ withPos $ do
+      char $ fst G.ternary
+      two <- NE.some1 bit
+      char $ snd G.ternary
+      three <- NE.some1 bit
+      pure $ TokenTernary one two three)
 
   definedBits :: Parser [Token]
   definedBits = spaceConsumer *> (do
@@ -550,6 +561,7 @@ data Tree
   | WrapBranch { wrapBranchValue :: Tree }
   | UnwrapBranch { unwrapBranchCategory :: Category, unwrapBranchValue :: Tree }
   | StructBranch { structBranchStatements :: [Tree] }
+  | TernaryBranch { ternaryBranchCondition :: Tree, ternaryBranchTrue :: Tree, ternaryBranchFalse :: Tree }
   deriving (Eq)
 
 instance Show Tree where
@@ -574,9 +586,10 @@ instance Show Tree where
       (VectorBranch es)                  -> (indent ++ "⟨⟩") : concatMap (go (i + 1)) es
       (HighRankBranch es)                -> (indent ++ "[]") : concatMap (go (i + 1)) es
       (TrainBranch c ts)                 -> (indent ++ (if c == CatFunction then "" else "_") ++ "⦅" ++ (if c == CatConjunction then "_" else "") ++ "⦆") : concatMap (maybe [""] (go (i + 1))) ts
-      (WrapBranch fn)                    -> (indent ++ "□") : go (i + 1) fn
-      (UnwrapBranch c fn)                -> (indent ++ (if c == CatFunction then "" else "_") ++ "⊏" ++ (if c == CatConjunction then "_" else "")) : go (i + 1) fn
+      (WrapBranch fn)                    -> (indent ++ "⊏") : go (i + 1) fn
+      (UnwrapBranch c fn)                -> (indent ++ (if c == CatFunction then "" else "_") ++ "⊐" ++ (if c == CatConjunction then "_" else "")) : go (i + 1) fn
       (StructBranch ts)                  -> (indent ++ "⦃⦄") : concatMap (go (i + 1)) ts
+      (TernaryBranch c t f)              -> (indent ++ "⍰⍠") : go (i + 1) c ++ go (i + 1) t ++ go (i + 1) f
 
 treeCategory :: Tree -> Category
 treeCategory (Leaf c _)                        = c
@@ -599,6 +612,7 @@ treeCategory (TrainBranch c _)                 = c
 treeCategory (WrapBranch _)                    = CatArray
 treeCategory (UnwrapBranch c _)                = c
 treeCategory (StructBranch _)                  = CatArray
+treeCategory (TernaryBranch _ _ _)             = CatArray
 
 bindingMap :: [((Category, Category), (Int, Tree -> Tree -> Tree))]
 bindingMap =
@@ -700,6 +714,13 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   struct :: [NonEmpty Token] -> SourcePos -> Result Tree
   struct es _ = StructBranch <$> mapM (\x -> categorizeAndBind x) es
 
+  ternary :: NonEmpty Token -> NonEmpty Token -> NonEmpty Token -> Result Tree
+  ternary h t f = do
+    cond <- categorizeAndBind h >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head h) source $ "Invalid ternary condition of type " ++ show c ++ ", array required")
+    true <- categorizeAndBind t >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head t) source $ "Invalid ternary true of type " ++ show c ++ ", array required")
+    false <- categorizeAndBind f >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head f) source $ "Invalid ternary false of type " ++ show c ++ ", array required")
+    pure $ TernaryBranch cond true false
+
   tokenToTree :: Token -> Result Tree
   tokenToTree num@(TokenNumber _ _)                         = return $ Leaf CatArray num
   tokenToTree ch@(TokenChar _ _)                            = return $ Leaf CatArray ch
@@ -749,6 +770,7 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   tokenToTree (TokenUnwrapConjunction val _)                = UnwrapBranch CatConjunction <$> (tokenToTree val >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos val) source $ "Invalid unwrap conjunction of type " ++ show c ++ ", array required"))
   tokenToTree (TokenStruct es pos)                          = struct es pos
   tokenToTree (TokenTie es pos)                             = vector (NE.toList $ fmap NE.singleton $ es) pos
+  tokenToTree (TokenTernary c t f _)                        = ternary c t f
 
 parse :: String -> String -> Result [Maybe Tree]
 parse name = categorize name >=> mapM (\xs -> case NE.nonEmpty xs of
