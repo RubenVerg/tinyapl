@@ -20,6 +20,7 @@ import Data.Functor ( ($>) )
 import Control.Monad.Except (MonadError)
 import Data.Maybe (fromMaybe)
 import Data.Foldable (foldrM)
+import Control.DeepSeq
 
 asWraps :: MonadError Error m => Error -> Array -> m Function
 asWraps err arr = do
@@ -35,6 +36,12 @@ data Value
   | VFunction Function
   | VAdverb Adverb
   | VConjunction Conjunction
+
+instance NFData Value where
+  rnf (VArray x) = rnf x `seq` ()
+  rnf (VFunction x) = rnf x `seq` ()
+  rnf (VAdverb x) = rnf x `seq` ()
+  rnf (VConjunction x) = rnf x `seq` ()
 
 valueCategory :: Value -> Category
 valueCategory (VArray _) = CatArray

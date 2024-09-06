@@ -1,8 +1,10 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, DeriveGeneric #-}
 
 module TinyAPL.Error where
 import GHC.Stack (HasCallStack)
 import Control.Monad.Except
+import Control.DeepSeq
+import GHC.Generics
 
 data Error
   = UserError String
@@ -12,7 +14,9 @@ data Error
   | NYIError String
   | SyntaxError String
   | AssertionError String
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Generic)
+
+instance NFData Error
 
 unreachable = AssertionError "Unreachable code reached!"
 

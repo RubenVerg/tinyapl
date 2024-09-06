@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, LambdaCase #-}
+{-# LANGUAGE FlexibleContexts, LambdaCase, DeriveGeneric #-}
 module TinyAPL.ArrayFunctionOperator where
 
 import TinyAPL.Error
@@ -16,6 +16,8 @@ import Data.Tuple (swap)
 import qualified Data.Matrix as M
 import qualified Data.IORef as IORef
 import Data.IORef (IORef)
+import Control.DeepSeq
+import GHC.Generics
 
 -- * Arrays
 
@@ -37,6 +39,18 @@ data ScalarValue
 data Array = Array
   { arrayShape :: [Natural]
   , arrayContents :: [ScalarValue] }
+
+instance NFData ScalarValue where
+  rnf (Number x) = rnf x `seq` ()
+  rnf (Character x) = rnf x `seq` ()
+  rnf (Box x) = rnf x `seq` ()
+  rnf (Wrap x) = rnf x `seq` ()
+  rnf (AdverbWrap x) = rnf x `seq` ()
+  rnf (ConjunctionWrap x) = rnf x `seq` ()
+  rnf (Struct x) = rnf x
+
+instance NFData Array where
+  rnf (Array sh xs) = rnf sh `seq` rnf xs `seq` ()
 
 -- * Array helper functions
 
@@ -443,6 +457,9 @@ data Function
     , functionRepr  :: String
     , functionContext :: Maybe Context }
 
+instance NFData Function where
+  rnf (Function m d r c) = rnf m `seq` rnf d `seq` rnf r `seq` rnf c `seq` ()
+
 makeAdverbRepr :: String -> Char -> String
 makeAdverbRepr l s = "(" ++ l ++ ")" ++ [s]
 
@@ -476,6 +493,9 @@ data Adverb = Adverb
   , adverbRepr       :: String
   , adverbContext    :: Maybe Context }
 
+instance NFData Adverb where
+  rnf (Adverb a f r c) = rnf a `seq` rnf f `seq` rnf r `seq` rnf c `seq` ()
+
 instance Show Adverb where
   show (Adverb _ _ repr _) = repr
 
@@ -496,6 +516,9 @@ data Conjunction = Conjunction
   , conjOnFunctionFunction :: Maybe (Function -> Function -> St Function)
   , conjRepr               :: String
   , conjContext            :: Maybe Context }
+
+instance NFData Conjunction where
+  rnf (Conjunction aa af fa ff r c) = rnf aa `seq` rnf af `seq` rnf fa `seq` rnf ff `seq` rnf r `seq` rnf c `seq` ()
 
 instance Show Conjunction where
   show (Conjunction _ _ _ _ repr _) = repr
@@ -528,6 +551,9 @@ data Nilad = Nilad
   , niladRepr :: String
   , niladContext :: Maybe Context }
 
+instance NFData Nilad where
+  rnf (Nilad g s r c) = rwhnf g `seq` rwhnf s `seq` rnf r `seq` rnf c `seq` ()
+
 getNilad :: Nilad -> St Array
 getNilad (Nilad (Just g) _ _ (Just ctx)) = runWithContext ctx g
 getNilad (Nilad (Just g) _ _ Nothing) = g
@@ -548,6 +574,9 @@ data Quads = Quads
   , quadConjunctions :: [(String, Conjunction)] }
   deriving (Show)
 
+instance NFData Quads where
+  rnf (Quads a f v c) = rnf a `seq` rnf f `seq` rnf v `seq` rnf c `seq` ()
+
 instance Semigroup Quads where
   (Quads aAr aFn aAd aCn) <> (Quads bAr bFn bAd bCn) = Quads (aAr ++ bAr) (aFn ++ bFn) (aAd ++ bAd) (aCn ++ bCn)
 
@@ -563,7 +592,9 @@ data VariableType
   = VariableNormal
   | VariableConstant
   | VariablePrivate
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
+
+instance NFData VariableType
 
 data Scope = Scope
   { scopeArrays :: [(String, (VariableType, Array))]
@@ -571,6 +602,9 @@ data Scope = Scope
   , scopeAdverbs :: [(String, (VariableType, Adverb))]
   , scopeConjunctions :: [(String, (VariableType, Conjunction))]
   , scopeParent :: Maybe (IORef Scope) }
+
+instance NFData Scope where
+  rnf (Scope a f v c p) = rnf a `seq` rnf f `seq` rnf v `seq` rnf c `seq` rnf p `seq` ()
 
 instance Show Scope where
   show (Scope arr fn adv conj p) = "Scope { arrays = " ++ show arr ++ ", functions = " ++ show fn ++ ", adverbs = " ++ show adv ++ ", conjunctions = " ++ show conj ++ ", " ++ (case p of
@@ -726,6 +760,9 @@ data Context = Context
   , contextIn :: St String
   , contextOut :: String -> St ()
   , contextErr :: String -> St () }
+
+instance NFData Context where
+  rnf (Context s q i o e) = rnf s `seq` rnf q `seq` rwhnf i `seq` rnf o `seq` rnf e `seq` ()
 
 type St = StateT Context (ExceptT Error IO)
 
