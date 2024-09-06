@@ -58,6 +58,7 @@ import System.IO.Unsafe
 import Data.Bifunctor
 import Control.Exception
 import Control.DeepSeq
+import System.Info
 
 foreign export javascript "hs_start" main :: IO ()
 
@@ -153,7 +154,7 @@ newContext input output error quads = do
       quadArrays = first (quad :) <$> nilads,
       quadFunctions = first (quad :) <$> functions,
       quadAdverbs = first (quad :) <$> adverbs,
-      quadConjunctions = first (quad :) <$> conjunctions } <> quadsFromReprs [] [ makeImport readImportUrl Nothing ] [] []
+      quadConjunctions = first (quad :) <$> conjunctions } <> quadsFromReprs [ makeSystemInfo os arch True ] [ makeImport readImportUrl Nothing ] [] []
     , contextIn = input'
     , contextOut = output'
     , contextErr = error' }])

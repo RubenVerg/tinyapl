@@ -82,3 +82,11 @@ makeImport read readStd = Function (Just $ \x -> do
     else read path
   runWithContext ctx' $ run' path source
   pure $ scalar $ Struct ctx') Nothing (G.quad : "Import") Nothing
+
+makeSystemInfo :: String -> String -> Bool -> Nilad
+makeSystemInfo os arch js = Nilad (Just $ do
+  scope <- createRef $ Scope [ ("os", (VariableConstant, vector $ Character <$> os))
+                             , ("arch", (VariableConstant, vector $ Character <$> arch))
+                             , ("js", (VariableConstant, scalar $ boolToScalar js))] [] [] [] Nothing
+  ctx <- get
+  pure $ scalar $ Struct $ ctx{ contextScope = scope } ) Nothing (G.quad : "systemInfo") Nothing

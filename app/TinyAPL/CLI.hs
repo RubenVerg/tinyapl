@@ -13,6 +13,7 @@ import System.IO
 import Data.Functor (($>))
 import Data.List (singleton)
 import Data.IORef
+import System.Info
 
 readImportFile :: FilePath -> St String
 readImportFile path = liftToSt $ readFile path
@@ -26,7 +27,7 @@ cli = do
 
   let context = Context {
       contextScope = scope
-    , contextQuads = core <> quadsFromReprs [] [ makeImport readImportFile Nothing ] [] []
+    , contextQuads = core <> quadsFromReprs [ makeSystemInfo os arch False ] [ makeImport readImportFile Nothing ] [] []
     , contextIn = liftToSt getLine
     , contextOut = \str -> do
       liftToSt $ putStr str
