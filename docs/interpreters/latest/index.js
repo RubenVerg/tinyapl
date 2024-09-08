@@ -320,10 +320,9 @@ async function runCode(code) {
     });
     quads.rScatterPlot(async (xs, ys, mode) => {
         endDiv();
-        const traces = xs.map((x, i) => ({ x, y: ys[i], mode, type: 'scatter', line: { shape: 'spline' } }));
+        const traces = xs.map((x, i) => ({ x, y: ys[i], mode: mode, type: 'scatter', line: { shape: 'spline' } }));
         const d = div('plot', '');
         output.appendChild(d);
-        // @ts-expect-error Plotly global not typed
         Plotly.newPlot(d, traces, { font: { family: 'var(--font-mono)' }, showlegend: false }, { responsive: true });
         newDiv();
     });
@@ -333,7 +332,6 @@ async function runCode(code) {
         console.log(traces);
         const d = div('plot', '');
         output.appendChild(d);
-        // @ts-expect-error Plotly global not typed
         Plotly.newPlot(d, traces, { font: { family: 'var(--font-mono)' }, showlegend: true }, { responsive: true });
         newDiv();
     });
