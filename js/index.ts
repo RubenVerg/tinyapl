@@ -7,6 +7,9 @@ import { encode as _encodeGIF } from 'https://esm.run/modern-gif@2.0.3';
 
 const encodeGIF = _encodeGIF as (_: { width: number, height: number, frames: { data: CanvasImageSource | BufferSource | string; delay: number; }[] }) => Promise<ArrayBuffer>;
 
+import * as _Plotly from 'plotly.js';
+declare const Plotly: typeof import('plotly.js');
+
 const buttons = document.querySelector<HTMLDivElement>('#buttons')!;
 const output = document.querySelector<HTMLPreElement>('#output')!;
 const input = document.querySelector<HTMLInputElement>('#input')!;
@@ -327,10 +330,9 @@ async function runCode(code: string) {
 	});
 	quads.rScatterPlot(async (xs, ys, mode) => {
 		endDiv();
-		const traces = xs.map((x, i) => ({ x, y: ys[i], mode, type: 'scatter', line: { shape: 'spline' } }));
+		const traces = xs.map((x, i) => ({ x, y: ys[i], mode: mode as _Plotly.ScatterData['mode'], type: 'scatter', line: { shape: 'spline' } } satisfies Partial<_Plotly.ScatterData> as Partial<_Plotly.ScatterData>));
 		const d = div('plot', '');
 		output.appendChild(d);
-		// @ts-expect-error Plotly global not typed
 		Plotly.newPlot(d, traces, { font: { family: 'var(--font-mono)' }, showlegend: false }, { responsive: true });
 		newDiv();
 	});
@@ -340,7 +342,6 @@ async function runCode(code: string) {
 		console.log(traces);
 		const d = div('plot', '');
 		output.appendChild(d);
-		// @ts-expect-error Plotly global not typed
 		Plotly.newPlot(d, traces, { font: { family: 'var(--font-mono)' }, showlegend: true }, { responsive: true });
 		newDiv();
 	});

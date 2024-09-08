@@ -1,0 +1,14 @@
+{
+  "name": "js",
+  "version": "0.7.0",
+  "description": "TinyAPL JavaScript runner source",
+  "main": "none.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "RubenVerg <me@rubenverg.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/plotly.js": "^2.33.3"
+  }
+}
