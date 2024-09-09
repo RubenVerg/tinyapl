@@ -173,6 +173,8 @@ transpose = '⍉'
 matrixInverse = '⌹'
 factorial = '!'
 raise = '↗'
+decode = '⊥'
+encode = '⊤'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -237,7 +239,9 @@ functions =
   , TinyAPL.Glyphs.transpose
   , TinyAPL.Glyphs.matrixInverse
   , TinyAPL.Glyphs.factorial
-  , TinyAPL.Glyphs.raise ]
+  , TinyAPL.Glyphs.raise
+  , TinyAPL.Glyphs.decode
+  , TinyAPL.Glyphs.encode ]
 
 -- * Adverbs
 

@@ -767,6 +767,52 @@ raise1 msg = do
   raise 1 $ show msg
   pure $ vector []
 
+decode :: MonadError Error m => [Complex Double] -> [Complex Double] -> m (Complex Double)
+decode ns cs =
+  if length ns /= length cs then throwError $ LengthError "Decode arguments must have the same length"
+  else pure $ sum $ zipWith (*) (Prelude.reverse $ scanl1 (*) (init $ 1 : Prelude.reverse ns)) cs
+
+decode' :: MonadError Error m => Array -> Array -> m Array
+decode' = (\ns cs -> do
+  let err = DomainError "Decode arguments must be number arrays"
+  cs' <- asVector err cs >>= mapM (asNumber err)
+  ns' <- case asScalar err ns of
+    Right x -> Prelude.replicate (length cs') <$> asNumber err x
+    Left _ -> asVector err ns >>= mapM (asNumber err)
+  scalar . Number <$> decode ns' cs') `atRank2` (1, 1)
+
+decodeBase2 :: MonadError Error m => Array -> m Array
+decodeBase2 = decode' (scalar $ Number 2)
+
+encode :: MonadError Error m => [Complex Double] -> Complex Double -> m [Complex Double]
+encode [] _ = pure []
+encode (bs :> b) n = do
+  let rem = if b == 0 then n else b `complexRemainder` n
+  let div = if b == 0 then 0 else complexFloor $ n / b
+  (`snoc` rem) <$> encode bs div
+
+encodeScalar :: MonadError Error m => Complex Double -> Complex Double -> m [Complex Double]
+encodeScalar b _ | Cx.magnitude b <= 1 = throwError $ DomainError "Scalar encode left argument must be greater than 1 in magnitude"
+encodeScalar _ n | Number n == Number 0 = pure []
+encodeScalar b n = do
+  let rem = b `complexRemainder` n
+  let div = complexFloor $ n / b
+  let rem1 = b `complexRemainder` div
+  let div1 = complexFloor $ div / b
+  if rem == rem1 && div == div1 then pure [n]
+  else (`snoc` rem) <$> encodeScalar b div
+
+encode' :: MonadError Error m => Array -> Array -> m Array
+encode' = (\b n -> do
+  let err = DomainError "Encode arguments must be number arrays"
+  n' <- asScalar err n >>= asNumber err
+  case asScalar err b of
+    Right b' -> vector . fmap Number . (\xs -> if null xs then [0] else xs) <$> (asNumber err b' >>= flip encodeScalar n')
+    Left _ -> vector . fmap Number <$> (asVector err b >>= mapM (asNumber err) >>= flip encode n')) `atRank2` (1, 0)
+
+encodeBase2 :: MonadError Error m => Array -> m Array
+encodeBase2 = encode' (scalar $ Number 2)
+
 -- * Operators
 
 compose :: MonadError Error m => (b -> m c) -> (a -> m b) -> a -> m c

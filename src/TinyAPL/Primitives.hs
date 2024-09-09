@@ -78,6 +78,8 @@ transpose = Function (Just F.transpose) (Just F.reorderAxes') [G.transpose] Noth
 matrixInverse = Function (Just F.matrixInverse') (Just F.matrixDivide') [G.matrixInverse] Nothing
 factorial = Function (Just F.factorial') (Just F.binomial') [G.factorial] Nothing
 raise = Function (Just F.raise1) (Just F.raise') [G.raise] Nothing
+decode = Function (Just F.decodeBase2) (Just F.decode') [G.decode] Nothing
+encode = Function (Just F.encodeBase2) (Just F.encode') [G.encode] Nothing
 
 functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -142,7 +144,9 @@ functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.transpose
   , TinyAPL.Primitives.matrixInverse
   , TinyAPL.Primitives.factorial
-  , TinyAPL.Primitives.raise ]
+  , TinyAPL.Primitives.raise
+  , TinyAPL.Primitives.decode
+  , TinyAPL.Primitives.encode ]
 
 -- * Primitive adverbs
 
