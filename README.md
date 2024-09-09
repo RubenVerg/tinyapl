@@ -111,10 +111,10 @@ Marked features are supported, unmarked features are planned
 		* [ ] `∡` atan2
 		* [x] `ℜ` real part
 		* [x] `ℑ` imaginary part
-		* [ ] `⊥` decode
-		* [ ] `⊥` base 2 decode
-		* [ ] `⊤` encode
-		* [ ] `⊤` base 2 encode
+		* [x] `⊥` decode
+		* [x] `⊥` base 2 decode
+		* [x] `⊤` encode
+		* [x] `⊤` base 2 encode
 	* boolean functions
 		* [x] `=` equals
 		* [x] `≠` not equals
