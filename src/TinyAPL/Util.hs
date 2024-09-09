@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, TupleSections #-}
+{-# LANGUAGE LambdaCase, TupleSections, PatternSynonyms, ViewPatterns #-}
 
 module TinyAPL.Util where
 import TinyAPL.Complex
@@ -25,6 +25,12 @@ snocNE (x:xs) y = x NE.:| snoc xs y
 
 unsnocNE :: NE.NonEmpty a -> ([a], a)
 unsnocNE xs = (NE.init xs, NE.last xs)
+
+{-# COMPLETE [], (:>) #-}
+infixl 5 :>
+pattern (:>) :: [a] -> a -> [a]
+pattern xs :> x <- (unsnoc -> Just (xs, x))
+  where (:>) = snoc
 
 headMaybe :: [a] -> Maybe a
 headMaybe [] = Nothing

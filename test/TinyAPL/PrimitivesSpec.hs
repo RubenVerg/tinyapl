@@ -643,6 +643,30 @@ spec = do
           d P.raise (scalar $ Number 7) (vector $ Character <$> "error") `shouldReturn` throwError (AssertionError "error")
         it "defaults to an user error" $ do
           m P.raise (vector $ Character <$> "error") `shouldReturn` throwError (UserError "error")
+
+    describe [G.decode] $ do
+      describe "decode" $ do
+        it "decodes a vector of numbers in the mixed base defined by another" $ do
+          d P.decode (vector [Number 4, Number 9]) (vector [Number 2, Number 3]) `shouldReturn` pure (scalar $ Number 21)
+      describe "scalar decode" $ do
+        it "decodes a vector of numbers in the base defined by a number" $ do
+          d P.decode (scalar $ Number 4) (vector [Number 2, Number 3]) `shouldReturn` pure (scalar $ Number 11)
+      describe "base 2 decode" $ do
+        it "decodes a vector of numbers in base 2" $ do
+          m P.decode (vector [Number 1, Number 0, Number 1, Number 0]) `shouldReturn` pure (scalar $ Number 10)
+
+    describe [G.encode] $ do
+      describe "encode" $ do
+        it "encodes a number to the mixed base defined by a vector of numbers" $ do
+          d P.encode (vector [Number 4, Number 9]) (scalar $ Number 21) `shouldReturn` pure (vector [Number 2, Number 3])
+      describe "scalar encode" $ do
+        it "encodes a number to the base defined by a number" $ do
+          d P.encode (scalar $ Number 4) (scalar $ Number 11) `shouldReturn` pure (vector [Number 2, Number 3])
+        it "exits when reaching a loop" $ do
+          d P.encode (scalar $ Number 1.5) (scalar $ Number -12) `shouldReturn` pure (vector [Number -2, Number 0, Number 0.5, Number 0, Number 1, Number 0])
+      describe "base 2 encode" $ do
+        it "encodes a number to base 2" $ do
+          m P.encode (scalar $ Number 10) `shouldReturn` pure (vector [Number 1, Number 0, Number 1, Number 0])
   
   describe "adverbs" $ do
     describe [G.selfie] $ do

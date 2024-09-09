@@ -2,11 +2,22 @@
 glyph: '⊤'
 pattern: 'r←[x]⊤y'
 name: Encode
-planned: true
 ---
 
 If `x` is not provided, it defaults to the scalar `2`.
 
-If `x` is non-scalar, operates on vectors of `x` and scalars of `y`: the last item of `r` is the remainder of `y` divided by the last element of `x`; the second-to-last item of `r` is the remainder of the integer division of `y` and the last element of `x` divided by the second-to-last element of `x`, and so on. If an item of `x` is `0`, that item in `r` is set to the remainder value being processed and all elements of `r` before it are `0`.
+If `x` is non-scalar, operates on vectors of `x` and scalars of `y`, the following recursive procedure is performed:
 
-If `x` is scalar, works as `⊤` were called with a left argument of an infinite list of `x`s, and all trailing `0`s are dropped.
+* let `b` be `⊇x` and `bs` be `¯1↓x`
+* let `rem` be `b=0⍰y⍠b|y` and `div` be `b=0⍰0⍠⌊y÷b`
+* `r` is `rem⍪⍨bs⊤div`
+
+If `x` is scalar, operates on vectors of `y`, `x` must have magnitude greater than `1` and the following recursive procedure is performed:
+
+* if `y=0`, then `r` is `⟨⟩`
+* let `rem` be `x|y` and `div` be `⌊y÷x`
+* let `rem1` be `x|div` and `div1` be `⌊div÷x`
+* if `rem=rem1` and `div=div1` then `r` is `y`
+* otherwise `r` is `rem⍪⍨x⊤div`
+
+with the difference that encoding `0` returns `⟨0⟩` instead of `⟨⟩`.
