@@ -766,6 +766,15 @@ spec = do
           afd P.table dr (vector [box $ vector [Number 1, Number 2], box $ vector [Number 3, Number 4]]) (vector [box $ vector [Number 5, Number 6], box $ vector [Number 7, Number 8]]) `shouldReturn`
             pure (fromMajorCells [fromMajorCells [vector [Number 5, Number 6], vector [Number 7, Number 8]], fromMajorCells [vector [Number 5, Number 6], vector [Number 7, Number 8]]])
 
+    describe [G.ident] $ do
+      describe "ident" $ do
+        it "returns the function operand" $ do
+          afm P.ident P.minus (scalar $ Number 3) `shouldReturn` pure (scalar $ Number -3)
+          afd P.ident P.minus (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Number -2)
+        it "makes an array operand into a constant function" $ do
+          aam P.ident (scalar $ Character 'a') (scalar $ Number 1) `shouldReturn` pure (scalar $ Character 'a')
+          aad P.ident (scalar $ Character 'a') (scalar $ Number 1) (scalar $ Number 2) `shouldReturn` pure (scalar $ Character 'a')
+
   describe "conjunctions" $ do
     describe [G.atop] $ do
       describe "at rank" $ do
@@ -907,3 +916,26 @@ spec = do
           Right pr <- runResult $ fst <$> runSt (callOnFunction P.reduce P.plus) context
           cffd P.innerProduct pr P.times (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) (fromMajorCells [vector [Number 5, Number 6], vector [Number 7, Number 8]]) `shouldReturn` pure (fromMajorCells [vector [Number 19, Number 22], vector [Number 43, Number 50]])
           
+    describe [G.lev] $ do
+      describe "lev" $ do
+        it "returns the left operand function" $ do
+          cffm P.lev P.minus P.times (scalar $ Number 3) `shouldReturn` pure (scalar $ Number -3)
+          cffd P.lev P.minus P.times (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Number -2)
+          cfam P.lev P.minus (scalar $ Character 'b') (scalar $ Number 5) `shouldReturn` pure (scalar $ Number -5)
+        it "makes an array left operand into a constant function" $ do
+          cafm P.lev (scalar $ Character 'a') P.times (scalar $ Number 3) `shouldReturn` pure (scalar $ Character 'a')
+          cafd P.lev (scalar $ Character 'a') P.times (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Character 'a')
+          caam P.lev (scalar $ Character 'a') (scalar $ Character 'b') (scalar $ Number 3) `shouldReturn` pure (scalar $ Character 'a')
+          caad P.lev (scalar $ Character 'a') (scalar $ Character 'b') (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Character 'a')
+
+    describe [G.dex] $ do
+      describe "dex" $ do
+        it "returns the right operand function" $ do
+          cffm P.dex P.minus P.times (scalar $ Number 3) `shouldReturn` pure (scalar $ Number 1)
+          cffd P.dex P.minus P.times (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Number 15)
+          cafm P.dex (scalar $ Character 'a') P.times (scalar $ Number 5) `shouldReturn` pure (scalar $ Number 1)
+        it "makes an array right operand into a constant function" $ do
+          cfam P.dex P.minus (scalar $ Character 'b') (scalar $ Number 3) `shouldReturn` pure (scalar $ Character 'b')
+          cfad P.dex P.minus (scalar $ Character 'b') (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Character 'b')
+          caam P.dex (scalar $ Character 'a') (scalar $ Character 'b') (scalar $ Number 3) `shouldReturn` pure (scalar $ Character 'b')
+          caad P.dex (scalar $ Character 'a') (scalar $ Character 'b') (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Character 'b')

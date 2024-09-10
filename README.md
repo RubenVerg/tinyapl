@@ -251,9 +251,9 @@ Marked features are supported, unmarked features are planned
 		* [ ] `«`/`»` fork
 		* [x] `⇾` left fork (`_{(⍺ ⍶⍶ ⍵) ⍹⍹ ⍵}_`)
 		* [x] `⇽` right fork (`_{⍺ ⍶⍶ (⍺ ⍹⍹ ⍵)}_`)
-		* [ ] `⫤` ident (adverb returning the operand)
-		* [ ] `⫣` lev (conjunction returning the left operand)
-		* [ ] `⊩` dex (conjunction returning the right operand)
+		* [x] `⫤` ident (adverb returning the operand)
+		* [x] `⫣` lev (conjunction returning the left operand)
+		* [x] `⊩` dex (conjunction returning the right operand)
 * system names (quad names)
 	* [x] support for system names in parsing and interpreting
 	* system arrays (nilads, i guess)
