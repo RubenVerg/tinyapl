@@ -259,6 +259,7 @@ onScalars = '◠'
 boxed = 'ᑣ'
 onContents = 'ᑒ'
 table = '⊞'
+ident = '⫤'
 
 adverbs =
   [ TinyAPL.Glyphs.selfie
@@ -274,7 +275,8 @@ adverbs =
   , TinyAPL.Glyphs.onScalars
   , TinyAPL.Glyphs.boxed
   , TinyAPL.Glyphs.onContents
-  , TinyAPL.Glyphs.table ]
+  , TinyAPL.Glyphs.table
+  , TinyAPL.Glyphs.ident ]
 
 -- * Conjunctions
 
@@ -291,6 +293,8 @@ repeat = '⍣'
 valences = '⁖'
 under = '⍢'
 innerProduct = '∙'
+lev = '⫣'
+dex = '⊩'
 
 conjunctions =
   [ TinyAPL.Glyphs.atop
@@ -305,4 +309,6 @@ conjunctions =
   , TinyAPL.Glyphs.repeat
   , TinyAPL.Glyphs.valences
   , TinyAPL.Glyphs.under
-  , TinyAPL.Glyphs.innerProduct ]
+  , TinyAPL.Glyphs.innerProduct
+  , TinyAPL.Glyphs.lev
+  , TinyAPL.Glyphs.dex ]

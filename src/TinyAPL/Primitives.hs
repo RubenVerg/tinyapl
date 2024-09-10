@@ -220,6 +220,11 @@ table = Adverb
   , adverbContext = Nothing
   , adverbOnArray = Nothing
   , adverbOnFunction = Just $ \f -> pure $ Function Nothing (Just $ F.table (callDyad f)) (makeAdverbRepr (show f) G.table) Nothing }
+ident = Adverb
+  { adverbRepr = [G.ident]
+  , adverbContext = Nothing
+  , adverbOnArray = Just $ \n -> pure $ Function (Just $ F.constant1 n) (Just $ F.constant2 n) (makeAdverbRepr (show n) G.ident) Nothing
+  , adverbOnFunction = Just $ \f -> pure $ Function (Just $ callMonad f) (Just $ callDyad f) (makeAdverbRepr (show f) G.ident) Nothing }
 
 adverbs = (\x -> (headPromise $ adverbRepr x, x)) <$>
   [ TinyAPL.Primitives.selfie
@@ -235,7 +240,8 @@ adverbs = (\x -> (headPromise $ adverbRepr x, x)) <$>
   , TinyAPL.Primitives.onScalars
   , TinyAPL.Primitives.boxed
   , TinyAPL.Primitives.onContents
-  , TinyAPL.Primitives.table ]
+  , TinyAPL.Primitives.table
+  , TinyAPL.Primitives.ident ]
 
 -- * Primitive conjunctions
 
@@ -330,6 +336,20 @@ innerProduct = Conjunction
   , conjOnArrayFunction = Nothing
   , conjOnFunctionArray = Nothing
   , conjOnFunctionFunction = Just $ \f g -> pure $ Function Nothing (Just $ F.innerProduct (callMonad f) (callDyad g)) (makeConjRepr (show f) G.innerProduct (show g)) Nothing }
+lev = Conjunction
+  { conjRepr = [G.lev]
+  , conjContext = Nothing
+  , conjOnArrayArray = Just $ \n m -> pure $ Function (Just $ F.constant1 n) (Just $ F.constant2 n) (makeConjRepr (show n) G.lev (show m)) Nothing
+  , conjOnArrayFunction = Just $ \n g -> pure $ Function (Just $ F.constant1 n) (Just $ F.constant2 n) (makeConjRepr (show n) G.lev (show g)) Nothing
+  , conjOnFunctionArray = Just $ \f m -> pure $ Function (Just $ callMonad f) (Just $ callDyad f) (makeConjRepr (show f) G.lev (show m)) Nothing
+  , conjOnFunctionFunction = Just $ \f g -> pure $ Function (Just $ callMonad f) (Just $ callDyad f) (makeConjRepr (show f) G.lev (show g)) Nothing }
+dex = Conjunction
+  { conjRepr = [G.dex]
+  , conjContext = Nothing
+  , conjOnArrayArray = Just $ \n m -> pure $ Function (Just $ F.constant1 m) (Just $ F.constant2 m) (makeConjRepr (show n) G.dex (show m)) Nothing
+  , conjOnArrayFunction = Just $ \n g -> pure $ Function (Just $ callMonad g) (Just $ callDyad g) (makeConjRepr (show n) G.dex (show g)) Nothing
+  , conjOnFunctionArray = Just $ \f m -> pure $ Function (Just $ F.constant1 m) (Just $ F.constant2 m) (makeConjRepr (show f) G.dex (show m)) Nothing
+  , conjOnFunctionFunction = Just $ \f g -> pure $ Function (Just $ callMonad g) (Just $ callDyad g) (makeConjRepr (show f) G.dex (show g)) Nothing }
 
 conjunctions = (\x -> (headPromise $ conjRepr x, x)) <$>
   [ TinyAPL.Primitives.atop
@@ -344,4 +364,6 @@ conjunctions = (\x -> (headPromise $ conjRepr x, x)) <$>
   , TinyAPL.Primitives.repeat
   , TinyAPL.Primitives.valences
   , TinyAPL.Primitives.under
-  , TinyAPL.Primitives.innerProduct ]
+  , TinyAPL.Primitives.innerProduct
+  , TinyAPL.Primitives.lev
+  , TinyAPL.Primitives.dex ]
