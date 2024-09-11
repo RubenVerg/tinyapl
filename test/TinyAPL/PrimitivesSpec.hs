@@ -435,6 +435,11 @@ spec = do
           m P.iota (vector [Number 2, Number 3]) `shouldReturn` pure (fromMajorCells
             [ vector [box $ vector [Number 1, Number 1], box $ vector [Number 1, Number 2], box $ vector [Number 1, Number 3]]
             , vector [box $ vector [Number 2, Number 1], box $ vector [Number 2, Number 2], box $ vector [Number 2, Number 3]] ])
+      describe "index of" $ do
+        it "returns the index of the first occurrence of a cell of an array in the major cells of another" $ do
+          d P.iota (vector $ Character <$> "hello world") (vector $ Character <$> "lw") `shouldReturn` pure (vector [Number 3, Number 7])
+        it "returns one more than the tally when the cell is not found" $ do
+          d P.iota (vector $ Character <$> "hello world") (scalar $ Character 'x') `shouldReturn` pure (scalar $ Number 12)
     
     describe [G.indices] $ do
       describe "where" $ do

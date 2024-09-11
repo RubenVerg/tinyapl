@@ -58,6 +58,18 @@ tailPromise :: HasCallStack => [a] -> [a]
 tailPromise [] = error "tailPromise: empty list"
 tailPromise (_:xs) = xs
 
+genericFindIndices :: (Num n, Enum n) => (a -> Bool) -> [a] -> [n]
+genericFindIndices p xs = [ i | (x, i) <- zip xs [0..], p x ]
+
+genericFindIndex :: (Num n, Enum n) => (a -> Bool) -> [a] -> Maybe n
+genericFindIndex = headMaybe .: genericFindIndices
+
+genericElemIndices :: (Eq a, Num n, Enum n) => a -> [a] -> [n]
+genericElemIndices x xs = genericFindIndices (== x) xs
+
+genericElemIndex :: (Eq a, Num n, Enum n) => a -> [a] -> Maybe n
+genericElemIndex = headMaybe .: genericElemIndices
+
 showAplDouble :: Double -> String
 showAplDouble x 
   | isNaN x = "<NaN>"
