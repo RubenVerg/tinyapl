@@ -20,6 +20,7 @@ import Data.Ord (Down(..))
 import qualified Data.Matrix as M
 import qualified TinyAPL.Gamma.Gamma as Gamma
 import Data.Foldable (foldlM, foldrM)
+import Debug.Trace
 
 -- * Functions
 
@@ -812,6 +813,16 @@ encode' = (\b n -> do
 
 encodeBase2 :: MonadError Error m => Array -> m Array
 encodeBase2 = encode' (scalar $ Number 2)
+
+elementOf :: MonadError Error m => Array -> Array -> m Array
+elementOf ns hs = let cutRank = if arrayRank hs == 0 then 0 else arrayRank hs - 1
+  in if arrayRank ns < cutRank then throwError $ DomainError "Element Of left argument must have rank at least equal to the rank of the major cells of the right argument"
+  else do
+    let hc = (\x -> trace ("cells of hs " ++ show x) x) $ majorCells hs
+    nc <- (\x -> trace ("cells of ns " ++ show x) x) <$> atRank1 enclose' (toInteger cutRank) ns
+    onScalars1 (\n -> do
+      n' <- first n
+      pure $ scalar $ boolToScalar $ (\b -> trace ("elem " ++ show n ++ ": " ++ show b) b) $ n' `elem` hc) nc
 
 -- * Operators
 

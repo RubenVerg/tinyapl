@@ -516,6 +516,12 @@ spec = do
       describe "enlist" $ do
         it "flattens a nested array" $ do
           m P.element (fromMajorCells [vector [Number 1, box $ vector [Number 2, Number 3]], vector [Number 4, box $ vector [Number 5, box $ vector [Number 6, Number 7]]]]) `shouldReturn` pure (vector [Number 1, Number 2, Number 3, Number 4, Number 5, Number 6, Number 7])
+      describe "element of" $ do
+        it "checks whether cells of an array are members of major cells of another array" $ do
+          d P.element (vector [Number 2, Number 4]) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [Number 1, Number 0])
+          d P.element (fromMajorCells [vector $ Character <$> "high", vector $ Character <$> "rank"]) (vector $ Character <$> "list arg") `shouldReturn` pure (fromMajorCells [vector [Number 0, Number 1, Number 1, Number 0], vector [Number 1, Number 1, Number 0, Number 0]])
+          d P.element (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 5, Number 6], vector [Number 7, Number 8]]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 1, Number 2]])
+            `shouldReturn` pure (vector [Number 1, Number 1, Number 0, Number 0])
 
     describe [G.squad] $ do
       describe "index" $ do
