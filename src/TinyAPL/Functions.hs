@@ -19,7 +19,7 @@ import Control.Monad.State (MonadIO)
 import Data.Ord (Down(..))
 import qualified Data.Matrix as M
 import qualified TinyAPL.Gamma.Gamma as Gamma
-import Debug.Trace
+import Data.Foldable (foldlM, foldrM)
 
 -- * Functions
 
@@ -736,7 +736,7 @@ binomial (Number x) (Number y) = let
   go n k = do
     let ni = asInt (DomainError "") n :: Either Error Integer
     let ki = asInt (DomainError "") k :: Either Error Integer
-    case (trace (show ni) ni, trace (show ki) ki) of
+    case (ni, ki) of
       (Right n', Right k')
         | n' < 0 && k' >= 0 -> (((-1) ^ k') *) <$> go (k - n - 1) k
         | n' < 0 && k' <= n' -> (((-1) ^ (n' - k')) *) <$> go (-k - 1) (n - k)
@@ -892,21 +892,29 @@ commute f x y = f y x
 
 reduce :: MonadError Error m => (a -> a -> m a) -> [a] -> m a
 reduce _ [] = throwError $ DomainError "Reduce empty axis"
-reduce _ [x] = pure x
-reduce f (a:b:xs) = do
-  x <- f a b
-  reduce f $ x : xs
+reduce f (x:xs) = foldlM f x xs
 
 reduce' :: MonadError Error m => (Array -> Array -> m Array) -> Array -> m Array
 reduce' f = reduce f . majorCells
 
+fold :: MonadError Error m => (a -> a -> m a) -> a -> [a] -> m a
+fold = foldlM
+
+fold' :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+fold' f s xs = fold f s $ majorCells xs
+
 reduceBack :: MonadError Error m => (a -> a -> m a) -> [a] -> m a
 reduceBack _ [] = throwError $ DomainError "Reduce empty axis"
-reduceBack _ [x] = pure x
-reduceBack f (x:xs) = reduceBack f xs >>= f x
+reduceBack f (xs:>x) = foldrM f x xs
 
 reduceBack' :: MonadError Error m => (Array -> Array -> m Array) -> Array -> m Array
 reduceBack' f = reduceBack f . majorCells
+
+foldBack :: MonadError Error m => (a -> a -> m a) -> a -> [a] -> m a
+foldBack = foldrM
+
+foldBack' :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+foldBack' f s xs = foldBack f s $ majorCells xs
 
 onPrefixes :: MonadError Error m => ([a] -> m b) -> [a] -> m [b]
 onPrefixes f = mapM f . prefixes
