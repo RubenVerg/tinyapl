@@ -824,10 +824,15 @@ searchFunction f ns hs = let cutRank = if arrayRank hs == 0 then 0 else arrayRan
       f n' hc) nc
 
 elementOf :: MonadError Error m => Array -> Array -> m Array
-elementOf = searchFunction (pure .: scalar .: boolToScalar .: elem)
+elementOf = searchFunction $ pure .: scalar .: boolToScalar .: elem
 
 count :: MonadError Error m => Array -> Array -> m Array
-count = searchFunction (pure .: scalar .: Number .: fromInteger .: toInteger .: countEqual)
+count = searchFunction $ pure .: scalar .: Number .: (:+ 0) .: countEqual
+
+indexOf :: MonadError Error m => Array -> Array -> m Array
+indexOf = flip $ searchFunction $ pure .: scalar .: Number .: (:+ 0) .: (\n hs -> case n `genericElemIndex` hs of
+  Just x -> x + 1
+  Nothing -> genericLength hs + 1)
 
 -- * Operators
 

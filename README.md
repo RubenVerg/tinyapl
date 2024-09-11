@@ -142,12 +142,12 @@ Marked features are supported, unmarked features are planned
 		* [x] `≠` nub sieve
 		* [ ] multisets?
 	* property functions
-		* [ ] `⍳` index of
+		* [x] `⍳` index of
 		* [ ] `⍸` interval index
-		* [ ] `∊` element of
+		* [x] `∊` element of
 		* [ ] `⍷` find
 		* [ ] `⋷` histogram (inverse of where)
-		* [ ] `⋷` count
+		* [x] `⋷` count
 		* [x] `≡` depth
 		* [x] `⍴` shape
 		* [x] `≢` tally
