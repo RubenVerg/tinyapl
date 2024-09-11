@@ -206,9 +206,9 @@ Marked features are supported, unmarked features are planned
 		* [x] `↾` maximal (TAO maximum)
 	* operators
 		* [x] `⍆` reduce (left-to-right)
-		* [ ] `⍆` fold (seeded reduce)
+		* [x] `⍆` fold (seeded reduce)
 		* [x] `⍅` reduce back (right-to-left)
-		* [ ] `⍅` fold back
+		* [x] `⍅` fold back
 		* [x] `↟` on prefixes
 		* [x] `↡` on suffixes
 		* [ ] `↡` on infixes
