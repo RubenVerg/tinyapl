@@ -3,10 +3,10 @@
 PadStart ↚ {⍵⍪⍨0⍴⍨0⌈⍺-≢⍵}
 
 ⍝⍝ Turn a number into a list of bits
-Encode ⇇ ⍬∘{ ⍵<0: 2↗"Negative number" ⋄ q←⌊⍵÷2 ⋄ r←2|⍵ ⋄ q=0: ■r⍪⍺ ⋄ q∇⍨r⍪⍺ } ⟃ replace with ⊤ ⟄
+Encode ⇇ ⊤
 
 ⍝⍝ Turn a list of bits into a number
-Decode ⇇ { ⍵≡⍬: ■0 ⋄ (⊇⍵)+2×∇¯1↓⍵ } ⟃ replace with ⊥ ⟄
+Decode ⇇ ⊥
 
 ⍝⍝ Bitwise NOT (~)
 Not ⇇ 1∘+⍛-
@@ -57,7 +57,7 @@ Cnimply ⇇ Not⍛And
 ⍝⍝ ≥: converse implication
 ⍝⍝ >: non-implication
 ⍝⍝ <: converse non-implication
-_Bitwise ⇇ _{
+_Bitwise ⇇ _⦅_{
   d←⎕Exists"⍺" ⋄ m←~d
 ⋄ _I ← _{⊏⍶⍶ ⦅⍋⋄=ᑒ⋄⍒⦆⍤⍮ ⍵}
 ⋄ ⎕Exists "⍶⍶": f←⊏⍶⍶
@@ -75,4 +75,4 @@ _Bitwise ⇇ _{
 ⋄ d∧>_I f: ■⍺ Nimply ⍵
 ⋄ d∧<_I f: ■⍺ Cnimply ⍵
 ⋄ 2↗"invalid operand"
-}
+}⋄◠ ⟃replace with ⌓⟄ ⦆
