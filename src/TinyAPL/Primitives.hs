@@ -80,6 +80,7 @@ factorial = Function (Just F.factorial') (Just F.binomial') [G.factorial] Nothin
 raise = Function (Just F.raise1) (Just F.raise') [G.raise] Nothing
 decode = Function (Just F.decodeBase2) (Just F.decode') [G.decode] Nothing
 encode = Function (Just F.encodeBase2) (Just F.encode') [G.encode] Nothing
+histogram = Function Nothing (Just F.count) [G.histogram] Nothing
 
 functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -146,7 +147,8 @@ functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.factorial
   , TinyAPL.Primitives.raise
   , TinyAPL.Primitives.decode
-  , TinyAPL.Primitives.encode ]
+  , TinyAPL.Primitives.encode
+  , TinyAPL.Primitives.histogram ]
 
 -- * Primitive adverbs
 

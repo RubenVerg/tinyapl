@@ -20,7 +20,6 @@ import Data.Ord (Down(..))
 import qualified Data.Matrix as M
 import qualified TinyAPL.Gamma.Gamma as Gamma
 import Data.Foldable (foldlM, foldrM)
-import Debug.Trace
 
 -- * Functions
 
@@ -410,7 +409,7 @@ shape' arr = do
 
 reshape :: MonadError Error m => [Integer] -> Array -> m Array
 reshape shape arr@(Array _ xs) = do
-  let negative = count (< 0) shape
+  let negative = TinyAPL.Util.count (< 0) shape
   if negative == 0 then case arrayReshaped (fromInteger . toInteger <$> shape) xs of
     Nothing -> throwError $ DomainError "Cannot reshape an empty array to a non-empty array"
     Just res -> pure res
@@ -814,15 +813,21 @@ encode' = (\b n -> do
 encodeBase2 :: MonadError Error m => Array -> m Array
 encodeBase2 = encode' (scalar $ Number 2)
 
-elementOf :: MonadError Error m => Array -> Array -> m Array
-elementOf ns hs = let cutRank = if arrayRank hs == 0 then 0 else arrayRank hs - 1
-  in if arrayRank ns < cutRank then throwError $ DomainError "Element Of left argument must have rank at least equal to the rank of the major cells of the right argument"
+searchFunction :: MonadError Error m => (Array -> [Array] -> m Array) -> Array -> Array -> m Array
+searchFunction f ns hs = let cutRank = if arrayRank hs == 0 then 0 else arrayRank hs - 1
+  in if arrayRank ns < cutRank then throwError $ DomainError "Search function neelde must have rank at least equal to the rank of the major cells of the haystack"
   else do
-    let hc = (\x -> trace ("cells of hs " ++ show x) x) $ majorCells hs
-    nc <- (\x -> trace ("cells of ns " ++ show x) x) <$> atRank1 enclose' (toInteger cutRank) ns
+    let hc = majorCells hs
+    nc <- atRank1 enclose' (toInteger cutRank) ns
     onScalars1 (\n -> do
       n' <- first n
-      pure $ scalar $ boolToScalar $ (\b -> trace ("elem " ++ show n ++ ": " ++ show b) b) $ n' `elem` hc) nc
+      f n' hc) nc
+
+elementOf :: MonadError Error m => Array -> Array -> m Array
+elementOf = searchFunction (pure .: scalar .: boolToScalar .: elem)
+
+count :: MonadError Error m => Array -> Array -> m Array
+count = searchFunction (pure .: scalar .: Number .: fromInteger .: toInteger .: countEqual)
 
 -- * Operators
 
