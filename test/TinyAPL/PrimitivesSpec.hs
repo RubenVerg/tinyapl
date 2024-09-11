@@ -523,6 +523,11 @@ spec = do
           d P.element (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 5, Number 6], vector [Number 7, Number 8]]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 1, Number 2]])
             `shouldReturn` pure (vector [Number 1, Number 1, Number 0, Number 0])
 
+    describe [G.histogram] $ do
+      describe "count" $ do
+        it "counts the number of occurrences cells of an array in the the major cells of another array" $ do
+          d P.histogram (vector [Number 1, Number 2, Number 4]) (vector [Number 1, Number 3, Number 2, Number 1, Number 1, Number 5]) `shouldReturn` pure (vector [Number 3, Number 1, Number 0])
+
     describe [G.squad] $ do
       describe "index" $ do
         it "indexes cells of an array" $ do

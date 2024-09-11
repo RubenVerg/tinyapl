@@ -51,7 +51,7 @@ lastMaybe xs = case unsnoc xs of
   Just (_, y) -> Just y
 
 headPromise :: HasCallStack => [a] -> a
-headPromise [] = error "headIPromise: empty list"
+headPromise [] = error "headPromise: empty list"
 headPromise (x:_) = x
 
 tailPromise :: HasCallStack => [a] -> [a]
@@ -93,6 +93,9 @@ count :: Num n => (a -> Bool) -> [a] -> n
 count _ [] = 0
 count p (x:xs) | p x       = 1 + count p xs
                | otherwise = count p xs
+
+countEqual :: (Num n, Eq a) => a -> [a] -> n
+countEqual n h = count (== n) h
 
 generateIndices :: (Enum a, Num a) => [a] -> [[a]]
 generateIndices = foldr (liftA2 (:) . enumFromTo 1) [[]]
