@@ -115,6 +115,9 @@ generateIndices = foldr (liftA2 (:) . enumFromTo 1) [[]]
 mapAdjacent :: (a -> a -> b) -> [a] -> [b]
 mapAdjacent f xs = zipWith f xs $ drop 1 xs
 
+sorted :: Ord a => [a] -> Bool
+sorted = and . mapAdjacent (<=)
+
 update :: Eq a => a -> b -> [(a, b)] -> [(a, b)]
 update k v [] = [(k, v)]
 update k v (x@(k', _) : xs) | k == k' = (k, v) : xs

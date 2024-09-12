@@ -452,6 +452,15 @@ spec = do
             , box $ vector [Number 2, Number 3] ])
         it "returns multiple indices for natural values" $ do
           m P.indices (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 2, Number 3, Number 3])
+      describe "interval index" $ do
+        it "puts values in bins described by an array" $ do
+          d P.indices (vector [Number 3, Number 7, Number 9]) (vector [Number 1, Number 5, Number 8, Number 10]) `shouldReturn` pure (vector [Number 0, Number 1, Number 2, Number 3])
+        it "marks values equal to a bin as to their right" $ do
+          d P.indices (vector [Number 3, Number 7, Number 9]) (scalar $ Number 7) `shouldReturn` pure (scalar $ Number 2)
+        it "marks values in the rightmost bin when two bin definitions are equal" $ do
+          d P.indices (vector [Number 1, Number 3, Number 3, Number 5]) (scalar $ Number 4) `shouldReturn` pure (scalar $ Number 3)
+        it "fails on non-sorted left arguments" $ do
+          e2m <$> d P.indices (vector [Number 9, Number 3]) (scalar $ Number 1) `shouldReturn` Nothing
 
     describe [G.replicate] $ do
       describe "replicate" $ do

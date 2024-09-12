@@ -143,7 +143,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] multisets?
 	* property functions
 		* [x] `⍳` index of
-		* [ ] `⍸` interval index
+		* [x] `⍸` interval index
 		* [x] `∊` element of
 		* [ ] `⍷` find
 		* [ ] `⋷` histogram (inverse of where)
