@@ -11,7 +11,7 @@ import Control.Monad.Except (MonadError)
 import qualified TinyAPL.Complex as Cx
 import TinyAPL.Complex ( Complex((:+)) )
 import Data.Char (ord, chr)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericReplicate, nub, genericIndex, singleton, sortOn, sort, find)
 import Numeric.Natural (Natural)
 import Control.Monad
@@ -833,6 +833,19 @@ indexOf :: MonadError Error m => Array -> Array -> m Array
 indexOf = flip $ searchFunction $ pure .: scalar .: Number .: (:+ 0) .: (\n hs -> case n `genericElemIndex` hs of
   Just x -> x + 1
   Nothing -> genericLength hs + 1)
+
+intervalIndex :: MonadError Error m => Array -> Array -> m Array
+intervalIndex hs' ns =
+  if Prelude.not $ sorted $ majorCells hs' then throwError $ DomainError "Interval index left argument must be sorted"
+  else (searchFunction $ pure .: scalar .: Number .: (:+ 0) .: (\n hs -> do
+    let lowers = Nothing : fmap Just hs
+    let uppers = fmap Just hs :> Nothing
+    let bounds = Prelude.reverse $ zipWith3 (\l u i -> ((l, u), i)) lowers uppers [0..genericLength hs]
+    fromMaybe 0 $ fmap snd $ flip find bounds $ \case
+      ((Just lower, Just upper), _) | lower <= n && n < upper -> True
+      ((Just lower, Nothing), _) | lower <= n -> True
+      ((Nothing, Just upper), _) | n < upper -> True
+      _ -> False)) ns hs'
 
 -- * Operators
 
