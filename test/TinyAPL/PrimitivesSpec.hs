@@ -404,6 +404,9 @@ spec = do
           d P.take (scalar $ Number -2) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [Number 2, Number 3])
         it "takes elements across multiple axes" $ do
           d P.take (vector [Number 1, Number 2]) (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 2]])
+      describe "mix" $ do
+        it "mixes nested arrays" $ do
+          m P.take (vector [box $ vector [Number 1, Number 2], box $ vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]])
 
     describe [G.drop] $ do
       describe "drop" $ do
@@ -413,6 +416,9 @@ spec = do
           d P.drop (scalar $ Number -1) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [Number 1, Number 2])
         it "drops elements across multiple axes" $ do
           d P.drop (vector [Number 1, Number 2]) (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (fromMajorCells [vector [Number 6]])
+      describe "major cells" $ do
+        it "returns major cells of an array" $ do
+          m P.drop (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [box $ vector [Number 1, Number 2], box $ vector [Number 3, Number 4]])
 
     describe [G.left] $ do
       describe "same" $ do
