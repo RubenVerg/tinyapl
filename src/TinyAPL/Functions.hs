@@ -850,6 +850,12 @@ intervalIndex hs' ns =
 laminate :: MonadError Error m => Array -> Array -> m Array
 laminate = catenate `over` promote
 
+majorCells' :: MonadError Error m => Array -> m Array
+majorCells' = pure . vector . fmap box . majorCells
+
+mix :: MonadError Error m => Array -> m Array
+mix = atRank1 first 0
+
 -- * Operators
 
 compose :: MonadError Error m => (b -> m c) -> (a -> m b) -> a -> m c

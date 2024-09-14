@@ -18,7 +18,7 @@ maintainer:         me@rubenverg.com
 -- copyright:
 -- category:
 extra-source-files: CHANGELOG.md
-                  , src
+                  , std/**/*.tinyapl
 
 common warnings
     ghc-options: -W

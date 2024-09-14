@@ -163,8 +163,8 @@ Marked features are supported, unmarked features are planned
 	* array manipulation functions
 		* [x] `↑` take
 		* [x] `↓` drop
-		* [ ] `↑` mix
-		* [ ] `↓` major cells (split is `⊂⍤1`)
+		* [x] `↑` mix
+		* [x] `↓` major cells (split is `⊂⍤1`)
 		* [x] `⊂` enclose
 		* [ ] `⊆` nest
 		* [ ] `⊂` partitioned enclose
