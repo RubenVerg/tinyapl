@@ -847,6 +847,9 @@ intervalIndex hs' ns =
       ((Nothing, Just upper), _) | n < upper -> True
       _ -> False)) ns hs'
 
+laminate :: MonadError Error m => Array -> Array -> m Array
+laminate = catenate `over` promote
+
 -- * Operators
 
 compose :: MonadError Error m => (b -> m c) -> (a -> m b) -> a -> m c
