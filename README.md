@@ -179,7 +179,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `∊` enlist
 		* [x] `⌿` replicate
 		* [x] `,` ravel
-		* [ ] `⍪` ravel items
+		* [ ] `⍪` join
 		* [x] `⍪` catenate
 		* [x] `⍴` reshape
 		* [x] `ϼ` rerank (generalized version of promote/demote: introduce leading length-1 axes or combine leading axes)
