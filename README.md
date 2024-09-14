@@ -189,7 +189,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍉` reorder axes
 		* [x] `∧` promote (introduce leading axis)
 		* [x] `∨` demote (combine two leading axes)
-		* [ ] `,` laminate
+		* [x] `,` laminate
 	* array lookup functions
 		* [x] `⊃` first
 		* [x] `⊇` last

@@ -339,6 +339,9 @@ spec = do
           m P.ravel (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [Number 1, Number 2, Number 3])
           m P.ravel (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 1, Number 2, Number 3, Number 4, Number 5, Number 6])
           m P.ravel (scalar $ Number 1) `shouldReturn` pure (vector [Number 1])
+      describe "laminate" $ do
+        it "joins two arrays on a new axis" $ do
+          d P.ravel (vector [Number 1, Number 2, Number 3]) (vector [Number 4, Number 5, Number 6]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]])
     
     describe [G.reverse] $ do
       describe "reverse" $ do
