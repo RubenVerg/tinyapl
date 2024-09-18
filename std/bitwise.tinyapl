@@ -59,7 +59,7 @@ Cnimply ⇇ Not⍛And
 ⍝⍝ <: converse non-implication
 _Bitwise ⇇ _⦅_{
   d←⎕Exists"⍺" ⋄ m←~d
-⋄ _I ← _{⊏⍶⍶ ⦅⍋⋄=ᑒ⋄⍒⦆⍤⍮ ⍵}
+⋄ _I ← _{(⊏⍶⍶)=⍵}
 ⋄ ⎕Exists "⍶⍶": f←⊏⍶⍶
 ⋄ ⎕Exists"⍺⍺": 3=⎕Type ⍺⍺: f←⍺⍺
 ⋄ ~⎕Exists"f": 2↗"operand should be a function"
@@ -75,4 +75,4 @@ _Bitwise ⇇ _⦅_{
 ⋄ d∧>_I f: ■⍺ Nimply ⍵
 ⋄ d∧<_I f: ■⍺ Cnimply ⍵
 ⋄ 2↗"invalid operand"
-}⋄◠ ⟃replace with ⌓⟄ ⦆
+}⋄⌓ ⦆

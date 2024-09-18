@@ -30,7 +30,7 @@ Circular ↚ {
 }
 
 ⍝⍝ A function that replicates the behavior of the Circular function from Dyalog and most other APLs.
-Circle ⇇ (⎕math→pi∘×)⁖(Circular◠ ⟃ change this to ⌓ once it's implemented ⟄)
+Circle ⇇ (⎕math→pi∘×)⁖(Circular⌓)
 
 ⍝⍝ The primitive ⍵-th root of unity
 RootOfUnity ⇇ ⦅⊗⋄2×⎕math→pi⋄×⋄÷⦆
