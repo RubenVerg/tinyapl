@@ -623,7 +623,7 @@ instance Ord Function where
   TrainFunction {} `compare` DerivedFunctionFunctionArray {} = GT
   TrainFunction {} `compare` DerivedFunctionFunctionFunction {} = GT
   TrainFunction {} `compare` UnwrapArrayFunction {} = GT
-  TrainFunction { trainFunctionTines = a } `compare` TrainFunction { trainFunctionTines = b } = a `compare` b
+  TrainFunction { trainFunctionTines = a } `compare` TrainFunction { trainFunctionTines = b } = b `compare` a
 
 showTine :: Maybe Value -> String
 showTine Nothing = ""
@@ -715,7 +715,7 @@ instance Ord Adverb where
   TrainAdverb {} `compare` DefinedAdverb {} = GT
   TrainAdverb {} `compare` PrimitiveAdverb {} = GT
   TrainAdverb {} `compare` PartialAdverb {} = GT
-  TrainAdverb { trainAdverbTines = a } `compare` TrainAdverb { trainAdverbTines = b } = a `compare` b
+  TrainAdverb { trainAdverbTines = a } `compare` TrainAdverb { trainAdverbTines = b } = b `compare` a
 
 callOnArray :: Adverb -> Array -> St Function
 callOnArray adv x = case adverbOnArray adv of
@@ -776,7 +776,7 @@ instance Ord Conjunction where
   PrimitiveConjunction {} `compare` _ = LT
   TrainConjunction {} `compare` DefinedConjunction {} = GT
   TrainConjunction {} `compare` PrimitiveConjunction {} = GT
-  TrainConjunction { trainConjunctionTines = a } `compare` TrainConjunction { trainConjunctionTines = b } = a `compare` b
+  TrainConjunction { trainConjunctionTines = a } `compare` TrainConjunction { trainConjunctionTines = b } = b `compare` a
 
 callOnArrayAndArray :: Conjunction -> Array -> Array -> St Function
 callOnArrayAndArray conj x y = case conjOnArrayArray conj of
