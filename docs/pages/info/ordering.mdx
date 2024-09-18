@@ -8,9 +8,23 @@ The ordering is as follows:
 
 * of two arrays with different shape, the smallest is the one with the lexicographically smallest shape;
 * of two arrays with the same shape, the elements are compared in ravel order:
-	* numbers are smaller than characters or boxes;
-	* characters are larger than numbers and smaller than boxes;
-	* boxes are larger than numbers and characters;
+	* two values of different types are ordered such that the one that appears first in this list is smaller;
 	* two numbers are compared first by their real part and then their imaginary part;
 	* two characters are compared by Unicode codepoint;
-	* two boxes are compared by comparing their contained arrays, as defined here.
+	* two boxes are compared by comparing their contained arrays, as defined here;
+	* two wraps are compared by function comparison:
+		* two dfns are compared by their *internal id*, which is a number given to each dfn when it is created; note that the order in which the id is given to two dfns is undefined and therefore dfns should only be compared for equality;
+		* two primitive functions are compared by whether they're the same function;
+		* two derived adverbs are compared by first comparing the adverb and then the operand, with array operands going first;
+		* two derived conjunctions are compared by first comparing the conjunction, then the left operand and then the right operand, with array operands going first;
+		* two unwraps of function arrays are compared by the unwrapped array;
+		* two trains are compared by comparing their tines right to left.
+	* two adverb wraps are compared by adverb comparison:
+		* two dadvs are compared by their internal id with the same caveat as above;
+		* two primitive adverbs are compared by whether they're the same adverb;
+		* two adverb trains are compared by comparing their tines right to left.
+	* two conjunctions are compared by conjunction comparison:
+		* two dcons are compared by their internal id with the same caveat as above;
+		* two primitive conjunctions are compared by whether they're the same conjunction;
+		* two conjunction trains are compared by comparing their tines right to left.
+	* two structs are incomparable and results are useless.
