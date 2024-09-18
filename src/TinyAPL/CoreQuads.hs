@@ -36,7 +36,7 @@ ts = Nilad (Just $ do
   let ms = round $ fracPart (fixedToFractional s') * 1000
   pure $ vector [Number $ fromIntegral y, Number $ fromIntegral m, Number $ fromIntegral d, Number $ fromIntegral h, Number $ fromIntegral min, Number $ fromIntegral s, Number $ fromIntegral ms]) Nothing (G.quad : "ts") Nothing
 
-exists = Function (Just $ \y -> do
+exists = PrimitiveFunction (Just $ \y -> do
   var <- asString (DomainError "Exists argument must be a string") y
   v <- gets contextScope >>= readRef >>= scopeLookup True var
   case v of
@@ -49,8 +49,8 @@ exists = Function (Just $ \y -> do
   case scopeShallowLookup False var ns of
     Just _ -> pure $ scalar $ Number 1
     Nothing -> pure $ scalar $ Number 0) (G.quad : "Exists") Nothing
-repr = Function (Just $ \y -> return $ vector $ Character <$> arrayRepr y) Nothing (G.quad : "Repr") Nothing
-delay = Function (Just $ \y -> do
+repr = PrimitiveFunction (Just $ \y -> return $ vector $ Character <$> arrayRepr y) Nothing (G.quad : "Repr") Nothing
+delay = PrimitiveFunction (Just $ \y -> do
   let err = DomainError "Delay argument must be a nonnegative scalar number"
   n <- asScalar err y >>= asNumber err >>= asReal err
   if n < 0 then throwError err else do
@@ -59,7 +59,7 @@ delay = Function (Just $ \y -> do
     end <- realToFrac <$> liftToSt getPOSIXTime
     pure $ scalar $ Number $ (end - start) :+ 0
   ) Nothing (G.quad : "Delay") Nothing
-type_ = Function (Just $ \(Array sh cs) -> return $ Array sh $ (\case
+type_ = PrimitiveFunction (Just $ \(Array sh cs) -> return $ Array sh $ (\case
   Number _ -> Number 0
   Character _ -> Number 1
   Box _ -> Number 2
@@ -71,7 +71,7 @@ type_ = Function (Just $ \(Array sh cs) -> return $ Array sh $ (\case
 core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay, type_ ] [] []
 
 makeImport :: (FilePath -> St String) -> Maybe ([String] -> St String) -> Function
-makeImport read readStd = Function (Just $ \x -> do
+makeImport read readStd = PrimitiveFunction (Just $ \x -> do
   let err = DomainError "Import argument must be a character vector"
   path <- asVector err x >>= mapM (asCharacter err)
   ctx <- getContext

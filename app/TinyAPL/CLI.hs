@@ -25,6 +25,7 @@ cli = do
 
   scope <- newIORef $ Scope [] [] [] [] Nothing
 
+  id <- newIORef 0
   let context = Context {
       contextScope = scope
     , contextQuads = core <> quadsFromReprs [ makeSystemInfo os arch False ] [ makeImport readImportFile Nothing ] [] []
@@ -34,7 +35,8 @@ cli = do
       liftToSt $ hFlush stdout
     , contextErr = \str -> do
       liftToSt $ hPutStr stderr str
-      liftToSt $ hFlush stderr }
+      liftToSt $ hFlush stderr
+    , contextIncrementalId = id }
 
   args <- getArgs
   case args of

@@ -248,7 +248,7 @@ prettyError pos source = let
   line = subtract 1 $ unPos $ sourceLine pos
   column = subtract 1 $ unPos $ sourceColumn pos
   theLine = if length ls <= line then "" else ls !! line
-  in theLine ++ "\n" ++ replicate column ' ' ++ "^\n"
+  in sourceName pos ++ ":" ++ show (unPos $ sourceLine pos) ++ ":" ++ show (unPos $ sourceColumn pos) ++ "\n" ++ theLine ++ "\n" ++ replicate column ' ' ++ "^\n"
 
 prettyParseError :: String -> SourcePos -> ParseError String Void -> String
 prettyParseError source pos err = prettyError pos source ++ parseErrorTextPretty err
