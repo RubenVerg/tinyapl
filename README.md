@@ -228,7 +228,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `◡` on cells (`⍤¯1`)
 		* [x] `◠` on scalars (`⍤0`)
 		* [x] `⍥` at depth
-		* [ ] `⌓` on simple scalars (`⍥0`)
+		* [x] `⌓` on simple scalars (`⍥0`)
 		* [ ] `@` at
 		* [x] `⌸` key
 		* [ ] `⌸` key with vocabulary

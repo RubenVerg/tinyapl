@@ -262,6 +262,7 @@ boxed = 'ᑣ'
 onContents = 'ᑒ'
 table = '⊞'
 ident = '⫤'
+onSimpleScalars = '⌓'
 
 adverbs =
   [ TinyAPL.Glyphs.selfie
@@ -278,7 +279,8 @@ adverbs =
   , TinyAPL.Glyphs.boxed
   , TinyAPL.Glyphs.onContents
   , TinyAPL.Glyphs.table
-  , TinyAPL.Glyphs.ident ]
+  , TinyAPL.Glyphs.ident
+  , TinyAPL.Glyphs.onSimpleScalars ]
 
 -- * Conjunctions
 

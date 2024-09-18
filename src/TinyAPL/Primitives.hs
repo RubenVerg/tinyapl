@@ -226,6 +226,11 @@ ident = Adverb
   , adverbContext = Nothing
   , adverbOnArray = Just $ \n -> pure $ Function (Just $ F.constant1 n) (Just $ F.constant2 n) (makeAdverbRepr (show n) G.ident) Nothing
   , adverbOnFunction = Just $ \f -> pure $ Function (Just $ callMonad f) (Just $ callDyad f) (makeAdverbRepr (show f) G.ident) Nothing }
+onSimpleScalars = Adverb
+  { adverbRepr = [G.onSimpleScalars]
+  , adverbContext = Nothing
+  , adverbOnArray = Just $ \n -> pure $ Function (Just $ F.onSimpleScalars1 (F.constant1 n)) (Just $ F.onSimpleScalars2 (F.constant2 n)) (makeAdverbRepr (show n) G.onSimpleScalars) Nothing
+  , adverbOnFunction = Just $ \f -> pure $ Function (Just $ F.onSimpleScalars1 (callMonad f)) (Just $ F.onSimpleScalars2 (callDyad f)) (makeAdverbRepr (show f) G.onSimpleScalars) Nothing }
 
 adverbs = (\x -> (headPromise $ adverbRepr x, x)) <$>
   [ TinyAPL.Primitives.selfie
@@ -242,7 +247,8 @@ adverbs = (\x -> (headPromise $ adverbRepr x, x)) <$>
   , TinyAPL.Primitives.boxed
   , TinyAPL.Primitives.onContents
   , TinyAPL.Primitives.table
-  , TinyAPL.Primitives.ident ]
+  , TinyAPL.Primitives.ident
+  , TinyAPL.Primitives.onSimpleScalars ]
 
 -- * Primitive conjunctions
 

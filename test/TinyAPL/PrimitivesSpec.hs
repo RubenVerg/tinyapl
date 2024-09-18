@@ -810,6 +810,13 @@ spec = do
         it "replaces scalars of an array with a value" $ do
           aam P.onScalars (scalar $ Number 5) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [vector [Number 5, Number 5], vector [Number 5, Number 5]])
 
+    describe [G.onSimpleScalars] $ do
+      describe "on simple scalars" $ do
+        it "applies a function to simple scalars of arrays" $ do
+          afd P.onSimpleScalars P.pair (vector [box $ vector [Number 1, Number 2], Number 3]) (vector [Number 4, box $ vector [Number 5, Number 6]]) `shouldReturn` pure (vector [box $ vector [box $ vector [Number 1, Number 4], box $ vector [Number 2, Number 4]], box $ vector [box $ vector [Number 3, Number 5], box $ vector [Number 3, Number 6]]])
+        it "replaces simple scalars of an array with a value" $ do
+          aam P.onSimpleScalars (scalar $ Number 5) (vector [box $ vector [Number 1, Number 2], Number 3]) `shouldReturn` pure (vector [box $ vector [Number 5, Number 5], Number 5])
+
     describe [G.boxed] $ do
       describe "boxed" $ do
         it "encloses the result of a function" $ do
