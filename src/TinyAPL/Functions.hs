@@ -470,10 +470,7 @@ enlist' :: MonadError Error m => Array -> m Array
 enlist' y = vector <$> enlist y
 
 depth :: MonadError Error m => Array -> m Natural
-depth (Array [] [Box xs]) = (1+) <$> depth xs
-depth (Array [] _) = pure 0
-depth (Array _ []) = pure 1
-depth (Array _ xs) = (1+) . maximum <$> mapM (depth . fromScalar) xs
+depth arr = pure $ arrayDepth arr
 
 depth' :: MonadError Error m => Array -> m Array
 depth' = fmap (scalar . Number . fromInteger . toInteger) . depth
@@ -814,7 +811,7 @@ encodeBase2 :: MonadError Error m => Array -> m Array
 encodeBase2 = encode' (scalar $ Number 2)
 
 searchFunction :: MonadError Error m => (Array -> [Array] -> m Array) -> Array -> Array -> m Array
-searchFunction f ns hs = let cutRank = if arrayRank hs == 0 then 0 else arrayRank hs - 1
+searchFunction f ns hs = let cutRank = arrayRank hs `naturalSaturatedSub` 1
   in if arrayRank ns < cutRank then throwError $ DomainError "Search function neelde must have rank at least equal to the rank of the major cells of the haystack"
   else do
     let hc = majorCells hs
@@ -1074,6 +1071,33 @@ onScalars1 f = atRank1 f 0
 onScalars2 :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
 onScalars2 f = atRank2 f (0, 0)
 
+atDepth1 :: MonadError Error m => (Array -> m Array) -> Integer -> Array -> m Array
+atDepth1 f depth arr
+  | arrayDepth arr == 0 || (depth >= 0 && toInteger (arrayDepth arr) <= depth) = f arr
+  | depth == -1 = each1 f arr
+  | otherwise = each1 (atDepth1 f $ depth + (if depth < 0 then 1 else 0)) arr
+
+atDepth2 :: MonadError Error m => (Array -> Array -> m Array) -> (Integer, Integer) -> Array -> Array -> m Array
+atDepth2 f (da, db) a b = go f (if da == 0 then likeNegativeInfinity else da, if db == 0 then likeNegativeInfinity else db) a b where
+  go f (da, db) a b = let
+    leftPure = da == 0 || arrayDepth a == 0 || (da >= 0 && toInteger (arrayDepth a) <= da)
+    rightPure = db == 0 || arrayDepth b == 0 || (db >= 0 && toInteger (arrayDepth b) <= db)
+    in case (leftPure, rightPure) of
+      (True, True) -> f a b
+      (True, False) -> atDepth1 (a `f`) db b
+      (False, True) -> atDepth1 (`f` b) da a
+      (False, False) -> each2 (go f (da + (if da < 0 then 1 else 0), db + (if db < 0 then 1 else 0))) a b
+
+atDepth1' :: MonadError Error m => (Array -> m Array) -> Array -> Array -> m Array
+atDepth1' f d y = do
+  (a, _, _) <- parseRank d
+  atDepth1 f a y
+
+atDepth2' :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> Array -> m Array
+atDepth2' f d x y = do
+  (_, b, c) <- parseRank d
+  atDepth2 f (b, c) x y
+
 repeat :: MonadError Error m => (a -> m a) -> Natural -> a -> m a
 repeat _ 0 x = pure x
 repeat f n x = f x >>= TinyAPL.Functions.repeat f (n - 1)
@@ -1134,7 +1158,7 @@ underK :: MonadError Error m => Array -> (Array -> m Array) -> Array -> m Array
 underK arr = under (\_ -> pure arr)
 
 table :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
-table f = atRank2 (atRank2 f (0, 0)) (0, 10000)
+table f = atRank2 (atRank2 f (0, 0)) (0, likePositiveInfinity)
 
 innerProduct :: MonadError Error m => (Array -> m Array) -> (Array -> Array -> m Array) -> Array -> Array -> m Array
-innerProduct f g = atRank2 (atop f (atRank2 (atRank2 g (0, 0)) (-1, -1))) (1, 10000)
+innerProduct f g = atRank2 (atop f (atRank2 (atRank2 g (0, 0)) (-1, -1))) (1, likePositiveInfinity)

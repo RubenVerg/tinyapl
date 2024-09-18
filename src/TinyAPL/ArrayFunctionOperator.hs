@@ -57,6 +57,12 @@ instance NFData Array where
 arrayRank :: Array -> Natural
 arrayRank (Array sh _) = genericLength sh
 
+arrayDepth :: Array -> Natural
+arrayDepth (Array [] [Box xs]) = 1 + arrayDepth xs
+arrayDepth (Array [] _) = 0
+arrayDepth (Array _ []) = 1
+arrayDepth (Array _ xs) = 1 + maximum (arrayDepth . fromScalar <$> xs)
+
 box :: Array -> ScalarValue
 box b@(Array [] [Box _]) = Box b
 box (Array [] [x]) = x
@@ -297,8 +303,17 @@ asReal e x
   | isReal x = pure $ realPart x
   | otherwise = throwError e
 
+-- These need to be somewhat large
+likePositiveInfinity :: Integral num => num
+likePositiveInfinity = fromInteger $ toInteger (maxBound `div` 2 :: Int)
+
+likeNegativeInfinity :: Integral num => num
+likeNegativeInfinity = fromInteger $ toInteger (minBound `div` 2 :: Int)
+
 asInt' :: MonadError Error m => Integral num => Error -> Double -> m num
 asInt' e x
+  | isInfinite x && x > 0 = pure likePositiveInfinity
+  | isInfinite x && x < 0 = pure likeNegativeInfinity
   | isInt x = pure $ fromInteger $ floor x
   | otherwise = throwError e
 
