@@ -8,10 +8,12 @@ import TinyAPL.Complex
 import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
 import qualified TinyAPL.Primitives as P
+import TinyAPL.Util
 
 import Test.Hspec
 import Data.IORef
 import System.IO.Unsafe
+import Data.List (singleton)
 
 spec :: Spec
 spec = do
@@ -24,11 +26,17 @@ spec = do
       d :: Function -> Array -> Array -> IO (Result Array)
       d fn x y = runResult $ fst <$> runSt (callDyad fn x y) context
 
+      aa :: Adverb -> Array -> IO (Result Function)
+      aa adv u = runResult $ fst <$> runSt (callOnArray adv u) context
+
       aam :: Adverb -> Array -> Array -> IO (Result Array)
       aam adv u x = runResult $ fst <$> runSt (callOnArray adv u >>= (`callMonad` x)) context
 
       aad :: Adverb -> Array -> Array -> Array -> IO (Result Array)
       aad adv u x y = runResult $ fst <$> runSt (callOnArray adv u >>= (\d -> callDyad d x y)) context
+
+      af :: Adverb -> Function -> IO (Result Function)
+      af adv f = runResult $ fst <$> runSt (callOnFunction adv f) context
 
       afm :: Adverb -> Function -> Array -> IO (Result Array)
       afm adv f x = runResult $ fst <$> runSt (callOnFunction adv f >>= (`callMonad` x)) context
@@ -36,11 +44,17 @@ spec = do
       afd :: Adverb -> Function -> Array -> Array -> IO (Result Array)
       afd adv f x y = runResult $ fst <$> runSt (callOnFunction adv f >>= (\d -> callDyad d x y)) context
 
+      caa :: Conjunction -> Array -> Array -> IO (Result Function)
+      caa conj u v = runResult $ fst <$> runSt (callOnArrayAndArray conj u v) context
+
       caam :: Conjunction -> Array -> Array -> Array -> IO (Result Array)
       caam conj u v x = runResult $ fst <$> runSt (callOnArrayAndArray conj u v >>= (`callMonad` x)) context
 
       caad :: Conjunction -> Array -> Array -> Array -> Array -> IO (Result Array)
       caad conj u v x y = runResult $ fst <$> runSt (callOnArrayAndArray conj u v >>= (\d -> callDyad d x y)) context
+
+      caf :: Conjunction -> Array -> Function -> IO (Result Function)
+      caf conj u g = runResult $ fst <$> runSt (callOnArrayAndFunction conj u g) context
 
       cafm :: Conjunction -> Array -> Function -> Array -> IO (Result Array)
       cafm conj u g x = runResult $ fst <$> runSt (callOnArrayAndFunction conj u g >>= (`callMonad` x)) context
@@ -48,11 +62,17 @@ spec = do
       cafd :: Conjunction -> Array -> Function -> Array -> Array -> IO (Result Array)
       cafd conj u g x y = runResult $ fst <$> runSt (callOnArrayAndFunction conj u g >>= (\d -> callDyad d x y)) context
 
+      cfa :: Conjunction -> Function -> Array -> IO (Result Function)
+      cfa conj f v = runResult $ fst <$> runSt (callOnFunctionAndArray conj f v) context
+
       cfam :: Conjunction -> Function -> Array -> Array -> IO (Result Array)
       cfam conj f v x = runResult $ fst <$> runSt (callOnFunctionAndArray conj f v >>= (`callMonad` x)) context
 
       cfad :: Conjunction -> Function -> Array -> Array -> Array -> IO (Result Array)
       cfad conj f v x y = runResult $ fst <$> runSt (callOnFunctionAndArray conj f v >>= (\d -> callDyad d x y)) context
+
+      cff :: Conjunction -> Function -> Function -> IO (Result Function)
+      cff conj f g = runResult $ fst <$> runSt (callOnFunctionAndFunction conj f g) context
 
       cffm :: Conjunction -> Function -> Function -> Array -> IO (Result Array)
       cffm conj f g x = runResult $ fst <$> runSt (callOnFunctionAndFunction conj f g >>= (`callMonad` x)) context
@@ -275,12 +295,12 @@ spec = do
         it "compares arrays" $ do
           let l = vector [box $ vector [Number 1, Number 1, Number 1], box $ vector [Number 2, Number 2, Number 2], box $ vector [Number 3, Number 3, Number 3]]
           let r = vector [box $ vector [Number 2, Number 2, Number 2], box $ vector [Number 2, Number 2, Number 2], box $ vector [Number 2, Number 2, Number 2]]
-          Right identical <- runResult $ fst <$> runSt (callOnFunction P.each P.identical) context
-          Right notIdentical <- runResult $ fst <$> runSt (callOnFunction P.each P.notIdentical) context
-          Right precedes <- runResult $ fst <$> runSt (callOnFunction P.each P.precedes) context
-          Right precedesOrIdentical <- runResult $ fst <$> runSt (callOnFunction P.each P.precedesOrIdentical) context
-          Right succeedsOrIdentical <- runResult $ fst <$> runSt (callOnFunction P.each P.succeedsOrIdentical) context
-          Right succeeds <- runResult $ fst <$> runSt (callOnFunction P.each P.succeeds) context
+          Right identical <- af P.each P.identical
+          Right notIdentical <- af P.each P.notIdentical
+          Right precedes <- af P.each P.precedes
+          Right precedesOrIdentical <- af P.each P.precedesOrIdentical
+          Right succeedsOrIdentical <- af P.each P.succeedsOrIdentical
+          Right succeeds <- af P.each P.succeeds
           d identical l r `shouldReturn` pure (vector [Number 0, Number 1, Number 0])
           d notIdentical l r `shouldReturn` pure (vector [Number 1, Number 0, Number 1])
           d precedes l r `shouldReturn` pure (vector [Number 1, Number 0, Number 0])
@@ -805,7 +825,7 @@ spec = do
     describe [G.table] $ do
       describe "table" $ do
         it "computes the outer product of two arrays" $ do
-          Right dr <- runResult $ fst <$> runSt (callOnFunctionAndFunction P.atop P.first P.right) context
+          Right dr <- cff P.atop P.first P.right
           afd P.table P.pair (vector [Number 1, Number 2]) (vector [Number 3, Number 4]) `shouldReturn` pure (fromMajorCells [fromMajorCells [vector [Number 1, Number 3], vector [Number 1, Number 4]], fromMajorCells [vector [Number 2, Number 3], vector [Number 2, Number 4]]])
           afd P.table dr (vector [box $ vector [Number 1, Number 2], box $ vector [Number 3, Number 4]]) (vector [box $ vector [Number 5, Number 6], box $ vector [Number 7, Number 8]]) `shouldReturn`
             pure (fromMajorCells [fromMajorCells [vector [Number 5, Number 6], vector [Number 7, Number 8]], fromMajorCells [vector [Number 5, Number 6], vector [Number 7, Number 8]]])
@@ -854,6 +874,61 @@ spec = do
           cffd P.atop P.times P.minus (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Number -1)
     
     describe [G.over] $ do
+      describe "at depth" $ do
+        it "applies functions to nested elements of specified depth" $ do
+          -- Adapted from https://github.com/abrudz/primitives/blob/main/depthQA.aplf
+
+          let a = vector [box $ vector [Number 1, Number 2], box $ vector [Number 3, Number 4], box $ vector [Number 5, Number 6]]
+          let b = vector [box $ vector [Number 10, Number 20, Number 30], box $ vector [Number 40, Number 50, Number 60]]
+          let c = vector [box $ vector $ Character <$> "abc", box $ vector [box $ vector $ Character <$> "def", box $ vector $ Character <$> "ghi"]]
+
+          do
+            Right factImpl <- (fromRight' <$> af P.reduce P.times) >>= flip (cff P.atop) P.iota
+            Right factA <- m P.factorial a
+            cfam P.over factImpl (scalar $ Number 0) a `shouldReturn` pure factA
+
+          do
+            Right encloseB <- m P.enclose b
+            Right aPlusEncloseB <- d P.plus a encloseB
+            cfad P.over P.plus (vector [Number 1, Number 2]) a b `shouldReturn` pure aPlusEncloseB
+            cfad P.over P.plus (vector [Number 1, Number 3]) a b `shouldReturn` pure aPlusEncloseB
+            cfad P.over P.plus (vector [Number -1, Number 2]) a b `shouldReturn` pure aPlusEncloseB
+
+          do
+            Right reverseEach <- af P.each P.reverse
+            Right reverseEachEach <- af P.each reverseEach
+            Right reverseC <- m P.reverse c
+            Right reverseEachC <- m reverseEach c
+            Right reverseEachEachC <- m reverseEachEach c
+            Right firstC <- m P.first c
+            Right lastC <- m P.last c
+            Right reverseFirstC <- m P.reverse firstC
+            Right reverseEachLastC <- afm P.each P.reverse lastC
+            cfam P.over P.reverse (scalar $ Number -1) c `shouldReturn` pure reverseEachC
+            cfam P.over P.reverse (scalar $ Number -2) c `shouldReturn` pure reverseEachEachC
+            cfam P.over P.reverse (scalar $ Number -3) c `shouldReturn` pure c
+            cfam P.over P.reverse (scalar $ Number 0) c `shouldReturn` pure c
+            cfam P.over P.reverse (scalar $ Number 1) c `shouldReturn` pure (vector [box $ reverseFirstC, box $ reverseEachLastC])
+            cfam P.over P.reverse (scalar $ Number 2) c `shouldReturn` pure reverseEachC
+            cfam P.over P.reverse (scalar $ Number 3) c `shouldReturn` pure reverseC
+
+          do
+            Right catEach <- af P.each P.catenate
+            Right encloseEachC <- afm P.each P.enclose c
+            Right res <- afd P.each catEach b encloseEachC
+            cfad P.over P.catenate (vector [Number 0, Number -1]) b c `shouldReturn` pure res
+            cfad P.over P.catenate (vector [Number 0, Number 2]) b c `shouldReturn` pure res
+
+          do
+            cfam P.over P.element (scalar $ Number -1) c `shouldReturn` pure (vector [box $ vector $ Character <$> "abc", box $ vector $ Character <$> "defghi"])
+            cfam P.over P.element (scalar $ Number -2) c `shouldReturn` pure (vector [box $ vector (box . vector . singleton . Character <$> "abc"), box $ vector [box $ vector $ Character <$> "def", box $ vector $ Character <$> "ghi"]])
+            cfam P.over P.element (scalar $ Number -3) c `shouldReturn` pure (vector [box $ vector (box . vector . singleton . Character <$> "abc"), box $ vector [box $ vector (box . vector . singleton . Character <$> "def"), box $ vector (box . vector . singleton . Character <$> "ghi")]])
+            cfam P.over P.element (scalar $ Number -4) c `shouldReturn` pure (vector [box $ vector (box . vector . singleton . Character <$> "abc"), box $ vector [box $ vector (box . vector . singleton . Character <$> "def"), box $ vector (box . vector . singleton . Character <$> "ghi")]])
+            cfam P.over P.element (scalar $ Number -0) c `shouldReturn` pure (vector [box $ vector (box . vector . singleton . Character <$> "abc"), box $ vector [box $ vector (box . vector . singleton . Character <$> "def"), box $ vector (box . vector . singleton . Character <$> "ghi")]])
+            cfam P.over P.element (scalar $ Number 1) c `shouldReturn` pure c
+            cfam P.over P.element (scalar $ Number 2) c `shouldReturn` pure (vector [box $ vector $ Character <$> "abc", box $ vector $ Character <$> "defghi"])
+            cfam P.over P.element (scalar $ Number 3) c `shouldReturn` pure (vector $ Character <$> "abcdefghi")
+            cfam P.over P.element (scalar $ Number 4) c `shouldReturn` pure (vector $ Character <$> "abcdefghi")
       describe "over" $ do
         it "monadically composes functions with F(Gy)" $ do
           cffm P.over P.times P.minus (scalar $ Number 3) `shouldReturn` pure (scalar $ Number -1)
@@ -925,12 +1000,12 @@ spec = do
     describe [G.repeat] $ do
       describe "repeat" $ do
         it "repeats a function n times" $ do
-          Right inc <- runResult $ fst <$> runSt (callOnFunctionAndArray P.after P.plus (scalar $ Number 1)) context
+          Right inc <- cfa P.after P.plus (scalar $ Number 1)
           cfam P.repeat inc (scalar $ Number 3) (scalar $ Number 5) `shouldReturn` pure (scalar $ Number 8)
           cfad P.repeat P.plus (scalar $ Number 5) (scalar $ Number 2) (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 11)
       describe "until" $ do
         it "applies a function until a condition is met" $ do
-          Right step <- runResult $ fst <$> runSt (callOnFunctionAndFunction P.after P.plus P.divide) context
+          Right step <- cff P.after P.plus P.divide
           cffd P.repeat step P.identical (scalar $ Number 1) (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 1.618033988749897)
 
     describe [G.valences] $ do
@@ -943,21 +1018,21 @@ spec = do
     describe [G.under] $ do
       describe "under" $ do
         it "applies a function under another" $ do
-          Right inc <- runResult $ fst <$> runSt (callOnFunctionAndArray P.after P.plus (scalar $ Number 1)) context
-          Right t3 <- runResult $ fst <$> runSt (callOnArrayAndFunction P.after (scalar $ Number 3) P.take) context
+          Right inc <- cfa P.after P.plus (scalar $ Number 1)
+          Right t3 <- caf P.after (scalar $ Number 3) P.take
           cffm P.under inc t3 (vector [Number 3, Number 2, Number 9, Number 5, Number 6]) `shouldReturn` pure (vector [Number 4, Number 3, Number 10, Number 5, Number 6])
         it "substitutes elements of the argument" $ do
-          Right t3 <- runResult $ fst <$> runSt (callOnArrayAndFunction P.after (scalar $ Number 3) P.take) context
+          Right t3 <- caf P.after (scalar $ Number 3) P.take
           cafm P.under (vector [Number 10, Number 11, Number 12]) t3 (vector [Number 2, Number 4, Number 1, Number 5, Number 3]) `shouldReturn` pure (vector [Number 10, Number 11, Number 12, Number 5, Number 3])
           cafm P.under (scalar $ Number 7) t3 (vector [Number 2, Number 9, Number 3, Number 0, Number 1]) `shouldReturn` pure (vector [Number 7, Number 7, Number 7, Number 0, Number 1])
         it "works with sort up right argument" $ do
-          Right op <- runResult $ fst <$> runSt (callOnFunctionAndFunction P.atop P.iota P.notIdentical >>= callOnFunctionAndFunction P.rightHook P.plus) context
+          Right op <- (fromRight' <$> cff P.atop P.iota P.notIdentical) >>= cff P.rightHook P.plus
           cffm P.under op P.precedesOrIdentical (vector [Number 9, Number 7, Number 1, Number 4, Number 10]) `shouldReturn` pure (vector [Number 13, Number 10, Number 2, Number 6, Number 15])
 
     describe [G.innerProduct] $ do
       describe "inner product" $ do
         it "computes the inner product of two arrays" $ do
-          Right pr <- runResult $ fst <$> runSt (callOnFunction P.reduce P.plus) context
+          Right pr <- af P.reduce P.plus
           cffd P.innerProduct pr P.times (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) (fromMajorCells [vector [Number 5, Number 6], vector [Number 7, Number 8]]) `shouldReturn` pure (fromMajorCells [vector [Number 19, Number 22], vector [Number 43, Number 50]])
           
     describe [G.lev] $ do

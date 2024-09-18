@@ -1,7 +1,6 @@
 module TinyAPL.Primitives where
 
 import TinyAPL.ArrayFunctionOperator
-import TinyAPL.Error
 import qualified TinyAPL.Functions as F
 import qualified TinyAPL.Glyphs as G
 import TinyAPL.Util (headPromise)
@@ -259,7 +258,7 @@ over = Conjunction
   , conjContext = Nothing
   , conjOnArrayArray = Nothing
   , conjOnArrayFunction = Nothing
-  , conjOnFunctionArray = Just $ \_ _ -> throwError $ NYIError "Depth operator not implemented yet"
+  , conjOnFunctionArray = Just $ \f d -> pure $ Function (Just $ F.atDepth1' (callMonad f) d) (Just $ F.atDepth2' (callDyad f) d) (makeConjRepr (show f) G.over (show d)) Nothing
   , conjOnFunctionFunction = Just $ \f g -> pure $ Function (Just $ F.compose (callMonad f) (callMonad g)) (Just $ F.over (callDyad f) (callMonad g)) (makeConjRepr (show f) G.over (show g)) Nothing }
 after = Conjunction
   { conjRepr = [G.after]

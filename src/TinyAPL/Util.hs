@@ -11,6 +11,7 @@ import Data.List (genericLength, genericIndex, unsnoc)
 import Data.Vector.Internal.Check (HasCallStack)
 import qualified Data.List.NonEmpty as NE
 import Data.Fixed
+import Numeric.Natural
 
 infixr 9 .:
 (.:) f g x y = f $ g x y
@@ -233,3 +234,6 @@ fromRight' (Right x) = x
 
 fixedToFractional :: (Fractional b, HasResolution r) => Fixed r -> b
 fixedToFractional f@(MkFixed v) = fromIntegral v / fromIntegral (resolution f)
+
+naturalSaturatedSub :: Natural -> Natural -> Natural
+naturalSaturatedSub x y = if x < y then 0 else x - y
