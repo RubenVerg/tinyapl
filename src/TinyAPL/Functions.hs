@@ -1098,6 +1098,12 @@ atDepth2' f d x y = do
   (_, b, c) <- parseRank d
   atDepth2 f (b, c) x y
 
+onSimpleScalars1 :: MonadError Error m => (Array -> m Array) -> Array -> m Array
+onSimpleScalars1 f = atDepth1 f 0
+
+onSimpleScalars2 :: MonadError Error m => (Array -> Array -> m Array) -> Array -> Array -> m Array
+onSimpleScalars2 f = atDepth2 f (0, 0)
+
 repeat :: MonadError Error m => (a -> m a) -> Natural -> a -> m a
 repeat _ 0 x = pure x
 repeat f n x = f x >>= TinyAPL.Functions.repeat f (n - 1)
