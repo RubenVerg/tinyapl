@@ -93,7 +93,7 @@ lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
     case l of
       Just (VArray arr) -> return arr
       _ -> throwError noLast
-  ) Nothing (quad : "last") Nothing] [Function (Just $ \y -> do
+  ) Nothing (quad : "last") Nothing] [PrimitiveFunction (Just $ \y -> do
     l <- readLast
     case l of
       Just (VFunction f) -> callMonad f y
@@ -103,7 +103,7 @@ lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
     case l of
       Just (VFunction f) -> callDyad f x y
       _ -> throwError noLast
-  ) (quad : "Last") Nothing] [Adverb (Just $ \u -> do
+  ) (quad : "Last") Nothing] [PrimitiveAdverb (Just $ \u -> do
     l <- readLast
     case l of
       Just (VAdverb adv) -> callOnArray adv u
@@ -113,7 +113,7 @@ lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
     case l of
       Just (VAdverb adv) -> callOnFunction adv f
       _ -> throwError noLast
-  ) (quad : "_Last") Nothing] [Conjunction (Just $ \u v -> do
+  ) (quad : "_Last") Nothing] [PrimitiveConjunction (Just $ \u v -> do
     l <- readLast
     case l of
       Just (VConjunction conj) -> callOnArrayAndArray conj u v
@@ -142,7 +142,8 @@ newContext input output error quads = do
   let input' = liftToSt $ fromJSString <$> callInput input
   let output' = liftToSt . callOutput output . toJSString
   let error' = liftToSt . callOutput error . toJSString
-  let qpc = Context emptyScope core input' output' error'
+  id <- newIORef 0
+  let qpc = Context emptyScope core input' output' error' id
   qs <- fromRight' . second fst <$> (runResult $ runSt (mapM (secondM fromJSValSt) $ valToObject quads) qpc )
   nilads <- secondM (\x -> fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) qpc)) `mapM` filter (isArrayName . fst) qs
   functions <- secondM (\x -> fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) qpc)) `mapM` filter (isFunctionName . fst) qs
@@ -157,7 +158,8 @@ newContext input output error quads = do
       quadConjunctions = first (quad :) <$> conjunctions } <> quadsFromReprs [ makeSystemInfo os arch True ] [ makeImport readImportUrl Nothing ] [] []
     , contextIn = input'
     , contextOut = output'
-    , contextErr = error' }])
+    , contextErr = error'
+    , contextIncrementalId = id }])
   modifyIORef lasts (++ [Nothing])
   return l
 
@@ -296,7 +298,8 @@ foreign export javascript "tinyapl_show" showJS :: JSVal -> IO JSString
 showJS :: JSVal -> IO JSString
 showJS val = do
   scope <- newIORef $ Scope [] [] [] [] Nothing
-  r <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt val) (Context scope mempty undefined undefined undefined)) :: IO (Either Error Value)
+  id <- newIORef 0
+  r <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt val) (Context scope mempty undefined undefined undefined id)) :: IO (Either Error Value)
   pure $ toJSString $ case r of
     Left err -> show err
     Right val -> show val
@@ -306,7 +309,8 @@ foreign export javascript "tinyapl_repr" reprJS :: JSVal -> IO JSString
 reprJS :: JSVal -> IO JSString
 reprJS val = do
   scope <- newIORef $ Scope [] [] [] [] Nothing
-  r <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt val) (Context scope mempty undefined undefined undefined))
+  id <- newIORef 0
+  r <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt val) (Context scope mempty undefined undefined undefined id))
   pure $ toJSString $ case r of
     VArray arr -> arrayRepr arr
     o -> show o
