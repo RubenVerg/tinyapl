@@ -348,9 +348,12 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
           _ <- char G.exponent
           (es, ei) <- integer
           return $ f * 10 ** (es * read ei)
+      
+      real :: Parser Double
+      real = choice [string [G.infinity] $> inf, string [G.negative, G.infinity] $> ninf, scientific]
 
       complex :: Parser (Complex Double)
-      complex = liftA2 (:+) scientific (option 0 (char G.imaginary *> scientific))
+      complex = liftA2 (:+) real (option 0 (char G.imaginary *> real))
 
     charVec :: Parser Token
     charVec = withPos $ TokenChar <$> between (char G.charDelimiter) (char G.charDelimiter) (many $ noneOf ['\''])

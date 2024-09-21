@@ -2,12 +2,13 @@
 
 module TinyAPL.ParserSpec where
 
+import TinyAPL.Complex
 import qualified TinyAPL.Glyphs as G
 import TinyAPL.Parser
+import TinyAPL.Util
 
 import Test.Hspec
 
-import TinyAPL.Complex
 import Data.List.NonEmpty ()
 
 spec :: Spec
@@ -29,6 +30,9 @@ spec = do
       tok "2.4⏨¯3" `shouldBe` pure [[TokenNumber 0.0024 emptyPos]]
       tok "3ᴊ2" `shouldBe` pure [[TokenNumber (3 :+ 2) emptyPos]]
       tok "¯2ᴊ1.5⏨2" `shouldBe` pure [[TokenNumber (-2 :+ 150) emptyPos]]
+      tok "∞" `shouldBe` pure [[TokenNumber (inf :+ 0) emptyPos]]
+      tok "¯∞" `shouldBe` pure [[TokenNumber (ninf :+ 0) emptyPos]]
+      tok "0ᴊ∞" `shouldBe` pure [[TokenNumber (0 :+ inf) emptyPos]]
     
     it "parses character vectors" $ do
       tok "'abc'" `shouldBe` pure [[TokenChar "abc" emptyPos]]

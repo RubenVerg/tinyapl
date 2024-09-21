@@ -237,3 +237,9 @@ fixedToFractional f@(MkFixed v) = fromIntegral v / fromIntegral (resolution f)
 
 naturalSaturatedSub :: Natural -> Natural -> Natural
 naturalSaturatedSub x y = if x < y then 0 else x - y
+
+inf :: RealFrac a => a
+inf = 1 / 0
+
+ninf :: RealFrac a => a
+ninf = -1 / 0

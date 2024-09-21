@@ -37,7 +37,7 @@ Marked features are supported, unmarked features are planned
 		* [x] exponent notation `⏨`
 		* [x] complex notation `ᴊ`
 		* [ ] complex phase notation? `∠`
-		* [ ] infinities `∞`
+		* [x] infinities `∞`
 	* [x] character literals `'`
 	* [x] string literals `"`
 		* [x] escapes with `⍘`
