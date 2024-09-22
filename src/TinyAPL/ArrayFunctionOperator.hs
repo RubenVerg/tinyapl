@@ -9,7 +9,7 @@ import TinyAPL.Complex ( magnitude, realPart, Complex(..) )
 import Numeric.Natural
 import Data.List
 import Control.Monad
-import Data.Maybe (mapMaybe, fromJust)
+import Data.Maybe (mapMaybe, fromJust, listToMaybe, fromMaybe)
 import Control.Monad.State
 import Control.Monad.Except (ExceptT, MonadError, runExceptT)
 import Data.List.NonEmpty (NonEmpty, toList)
@@ -183,8 +183,15 @@ instance Eq Array where
   (Array ash as) == (Array bsh bs) = (ash, as) == (bsh, bs)
 
 instance Ord Array where
-  -- Arrays are ordered by shape and then contents
-  (Array ash as) `compare` (Array bsh bs) = (ash `compare` bsh) <> (as `compare` bs)
+  (Array [] [a]) `compare` (Array [] [b]) = a `compare` b
+  (Array [_] []) `compare` (Array [_] []) = EQ
+  (Array [_] []) `compare` (Array [_] _) = LT
+  (Array [_] _) `compare` (Array [_] []) = GT
+  (Array [at] (a:as)) `compare` (Array [bt] (b:bs)) = a `compare` b <> Array [at - 1] as `compare` Array [bt - 1] bs <> at `compare` bt
+  a@(Array ash acs) `compare` b@(Array bsh bcs)
+    | arrayRank a < arrayRank b = (Array (genericReplicate (arrayRank b - arrayRank a) 1 ++ ash) acs) `compare` b <> LT
+    | arrayRank a > arrayRank b = a `compare` (Array (genericReplicate (arrayRank a - arrayRank b) 1 ++ bsh) bcs) <> GT
+    | otherwise = mconcat (zipWith compare (majorCells a) (majorCells b)) <> fromMaybe 1 (listToMaybe ash) `compare` fromMaybe 1 (listToMaybe bsh)
 
 isInt :: Double -> Bool
 isInt = realEqual <*> (fromInteger . round)

@@ -6,8 +6,7 @@ TinyAPL has a total array ordering, which means all arrays can be compared, for 
 
 The ordering is as follows:
 
-* of two arrays with different shape, the smallest is the one with the lexicographically smallest shape;
-* of two arrays with the same shape, the elements are compared in ravel order:
+* two scalars are compared by their scalar value:
 	* two values of different types are ordered such that the one that appears first in this list is smaller;
 	* two numbers are compared first by their real part and then their imaginary part;
 	* two characters are compared by Unicode codepoint;
@@ -28,3 +27,6 @@ The ordering is as follows:
 		* two primitive conjunctions are compared by whether they're the same conjunction;
 		* two conjunction trains are compared by comparing their tines right to left.
 	* two structs are incomparable and results are useless.
+* two vectors are compared by comparing their contents in order; if they have uneven shape only the shared prefix is compared, and then the smaller array is the one with smaller shape;
+* two arrays of different ranks are compared by promoting the one of lesser rank to the greater rank, and then breaking ties by comparing their rank;
+* two arrays of higher rank are compared by comparing their major cells in order; if they have uneven tally only the shared prefix is compared, and then the smaller array is the one with smaller tally;

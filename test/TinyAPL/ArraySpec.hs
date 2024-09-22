@@ -128,10 +128,19 @@ spec = do
       vector [num] == vector [char] `shouldBe` False
     
   describe "Ord Array" $ do
-    it "compares arrays with different shape by their shape" $ do
-      vector [char, char] < vector [num, num, num] `shouldBe` True
-    it "compares arrays with same shape by their contents" $ do
-      vector [num, num] < vector [char, char] `shouldBe` True
+    it "orders arrays" $ do
+      scalar (Character 'a') `compare` scalar (Character 'b') `shouldBe` LT
+      vector (Character <$> "abc") `compare` vector (Character <$> "abc") `shouldBe` EQ
+      vector (Character <$> "ABC") `compare` vector (Character <$> "abc") `shouldBe` LT
+      vector (Character <$> "abc ") `compare` vector (Character <$> "xyz") `shouldBe` LT
+      vector (Character <$> "abc ") `compare` vector (Character <$> "abc") `shouldBe` GT
+      vector (Character <$> "abc\x00") `compare` vector (Character <$> "abc") `shouldBe` GT
+      vector (Character <$> "abc") `compare` scalar (Character 'z') `shouldBe` LT
+      Array [1, 3] (Character <$> "abc") `compare` vector (Character <$> "xyz") `shouldBe` LT
+
+      scalar (Number 3) `compare` vector [Number 3] `shouldBe` LT
+      vector (Character <$> "abc") `compare` Array [1, 3] (Character <$> "abc") `shouldBe` LT
+      scalar (box $ vector $ Character <$> "ab") `compare` Array [1, 1, 1] [box $ vector $ Character <$> "ab"] `shouldBe` LT
   
   describe "isInt" $ do
     it "returns True for integers" $ do
