@@ -16,7 +16,8 @@ Featured on the [Array Cast](https://www.arraycast.com/episodes/episode88-tinyap
 * Part 8: [All About Rank, and a Web Interface](https://blog.rubenverg.com/tinyapl_8_rank_web)
 * Part 9: [More Tacit!](https://blog.rubenverg.com/tinyapl_9_more_tacit)
 * Part 10: [Wraps, Structs, a Standard Library](https://blog.rubenverg.com/tinyapl_10_wraps_structs_stdlib)
-* Part 11: [Bases and Searching](http://blog.rubenverg.com/tinyapl_11_bases_searching)
+* Part 11: [Bases and Searching](https://blog.rubenverg.com/tinyapl_11_bases_searching)
+* Part 12: [At Depth and Ordering](https://blog.rubenverg.com/tinyapl_12_at_depth_ordering)
 
 Documentation is available [here](https://tinyapl.rubenverg.com) and you can run the latest interpreter [here](https://tinyapl.rubenverg.com/run/latest)
 
