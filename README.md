@@ -4,6 +4,8 @@
 
 TinyAPL (read like *tiny apple*) is a tiny APL dialect and interpreter in Haskell. It is being implemented as a series of articles available [here](https://blog.rubenverg.com/?tag=tinyapl).
 
+Featured on the [Array Cast](https://www.arraycast.com/episodes/episode88-tinyapl)!
+
 * Part 1: [Introduction & Arrays](https://blog.rubenverg.com/tinyapl_1_arrays)
 * Part 2: [Functions & Operators](https://blog.rubenverg.com/tinyapl_2_functions_operators)
 * Part 3: [More Primitives](https://blog.rubenverg.com/tinyapl_3_more_primitives)
