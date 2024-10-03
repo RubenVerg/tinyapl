@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module TinyAPL.FFI where
 
 import TinyAPL.ArrayFunctionOperator
@@ -5,11 +7,49 @@ import TinyAPL.Error
 import TinyAPL.Util
 
 import qualified Foreign.LibFFI as FFI
-import System.Posix.DynamicLinker
-import Foreign (FunPtr)
+import Foreign.Ptr
 import Data.Functor
 import Control.Monad
+import Control.Monad.Catch
+#if defined(mingw32_HOST_OS)
+import qualified System.Win32.DLL as Win32
+import qualified System.Win32.Types as Win32
+#else
+import System.Posix.DynamicLinker
+#endif
 
+libcPath :: FilePath
+#if defined(mingw32_HOST_OS)
+libcPath = "msvcrt.dll"
+#elif defined(darwin_HOST_OS)
+libcPath = "libc.dylib"
+#else
+libcPath = ""
+#endif
+
+libraryExtension :: String
+#if defined(mingw32_HOST_OS)
+libraryExtension = "dll"
+#elif defined(darwin_HOST_OS)
+libraryExtension = "dylib"
+#else
+libraryExtension = "so"
+#endif
+
+#if defined(MIN_VERSION_Win32)
+type DynamicLibrary = Win32.HMODULE
+
+loadLibrary :: String -> St DynamicLibrary
+loadLibrary = liftToSt . Win32.loadLibrary
+
+unloadLibrary :: DynamicLibrary -> St ()
+unloadLibrary = liftToSt . Win32.freeLibrary
+
+getFun :: DynamicLibrary -> String -> St (FunPtr a)
+getFun lib name = do
+  addr <- liftToSt $ Win32.getProcAddress lib name
+  pure $ castPtrToFunPtr addr
+#else
 type DynamicLibrary = DL
 
 loadLibrary :: String -> St DynamicLibrary
@@ -20,6 +60,10 @@ unloadLibrary = liftToSt . dlclose
 
 getFun :: DynamicLibrary -> String -> St (FunPtr a)
 getFun = liftToSt .: dlsym
+#endif
+
+withLibrary :: String -> (DynamicLibrary -> St r) -> St r
+withLibrary path f = bracket (loadLibrary path) unloadLibrary f
 
 type Arg = Array -> St [FFI.Arg]
 type RetType = FFI.RetType (St Array)

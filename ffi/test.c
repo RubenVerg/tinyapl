@@ -1,9 +1,15 @@
 #include "stdio.h"
 
-void printHello() {
+#ifdef _WIN32
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
+
+EXPORT void printHello() {
 	printf("Hello from C!\n");
 }
 
-int add(int a, int b) {
+EXPORT int add(int a, int b) {
 	return a + b;
 }

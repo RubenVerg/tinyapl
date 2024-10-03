@@ -7,13 +7,13 @@ import TinyAPL.Util
 
 import Data.IORef
 import Control.Monad
-import Control.Monad.Catch
+import System.FilePath
 
 testPath :: String
-testPath = "./ffi/dist/test.so"
+testPath = "." </> "ffi" </> "dist" </> "test" <.> libraryExtension
 
 main' :: St ()
-main' = bracket (loadLibrary testPath) unloadLibrary $ \lib -> do
+main' = withLibrary testPath $ \lib -> do
   printHello <- getFun lib "printHello"
   add <- getFun lib "add"
   void $ callFFI printHello retVoid []
