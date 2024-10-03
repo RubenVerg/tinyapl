@@ -111,6 +111,18 @@ executable tinyapl-js
         build-depends:ghc-wasm-compat
         ghc-options:  -W -fplugin GHC.Wasm.FFI.Plugin
 
+executable tinyapl-ffi-test
+    import:           warnings
+    main-is:          Main.hs
+    other-modules:    TinyAPL.FFI
+    build-depends:    base ^>=4.20.0.0
+                    , libffi ^>=0.2.1
+                    , unix ^>=2.8.5.1
+                    , exceptions ^>=0.10.7
+                    , tinyapl
+    hs-source-dirs:   ffi
+    default-language: Haskell2010
+
 test-suite tinyapl-tests
     import:           warnings
     default-language: GHC2021
