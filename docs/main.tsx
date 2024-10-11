@@ -53,7 +53,7 @@ async function render(page: JSX.Element, options: Partial<HtmlOptions>) {
 	});
 }
 
-const index = await render(<FullPage pages={pages}><Index body={pages.index} /></FullPage>, {
+const index = () => render(<FullPage pages={pages}><Index body={pages.index} /></FullPage>, {
 	title: 'TinyAPL',
 });
 
@@ -89,7 +89,7 @@ const directories: Record<string, keyof typeof pages> = {
 }
 
 const renderers = {
-	index: (_: unknown) => Promise.resolve(index),
+	index: index,
 	glyphs: glyphPage,
 	info: infoPage,
 	primitives: primitivePage,
@@ -112,7 +112,7 @@ async function handler(req: Request) {
 	const { pathname } = new URL(req.url);
 	
 	if (pathname === '/') {
-		return index;
+		return index();
 	}
 
 	if (pathname === '/data' || pathname === '/data/') {
