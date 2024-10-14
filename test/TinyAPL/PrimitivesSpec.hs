@@ -421,6 +421,7 @@ spec = do
           d P.last (vector [Number 1, Number -1]) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [Number 1, Number 3])
         it "does scatter indexing" $ do
           d P.last (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number -1]]) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number 3]])
+          d P.last (vector [box $ vector [Number 1, Number 1], box $ vector [Number 2, Number 2]]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [Number 1, Number 4])
     
     describe [G.take] $ do
       describe "take" $ do
