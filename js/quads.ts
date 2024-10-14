@@ -350,7 +350,7 @@ export const qFetch = ambivalent(async (u: tinyapl.Arr) => {
 	const view = new DataView(buf);
 	const result = [];
 	switch (mode) {
-		case '1:0':
+		case '1;0':
 			for (let i = 0; i < view.byteLength; i += 1) {
 				const u = view.getUint8(i);
 				for (let bi = 0; bi < 8; bi++) {
@@ -369,37 +369,37 @@ export const qFetch = ambivalent(async (u: tinyapl.Arr) => {
 		case '16;0':
 			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint16(i, true));
 			break;
-		case '-16:0':
+		case '-16;0':
 			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt16(i, true));
 			break;
 		case '0;16':
 			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint16(i, false));
 			break;
-		case '0:-16':
+		case '0;-16':
 			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt16(i, false));
 			break;
 		case '32;0':
 			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint32(i, true));
 			break;
-		case '-32:0':
+		case '-32;0':
 			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt32(i, true));
 			break;
 		case '0;32':
 			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getUint32(i, false));
 			break;
-		case '0:-32':
+		case '0;-32':
 			for (let i = 0; i < view.byteLength; i += 2) result.push(view.getInt32(i, false));
 			break;
-		case '0.32:0':
+		case '0.32;0':
 			for (let i = 0; i < view.byteLength; i += 4) result.push(view.getFloat32(i, true));
 			break;
-		case '0:0.32':
+		case '0;0.32':
 			for (let i = 0; i < view.byteLength; i += 4) result.push(view.getFloat32(i, false));
 			break;
-		case '0.64:0':
+		case '0.64;0':
 			for (let i = 0; i < view.byteLength; i += 8) result.push(view.getFloat64(i, true));
 			break;
-		case '0:0.64':
+		case '0;0.64':
 			for (let i = 0; i < view.byteLength; i += 8) result.push(view.getFloat64(i, false));
 			break;
 	}
