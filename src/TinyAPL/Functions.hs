@@ -300,6 +300,13 @@ imag _ = throwError expectedNumber
 imag' :: MonadError Error m => Array -> m Array
 imag' = scalarMonad imag
 
+arctan :: MonadError Error m => ScalarValue -> ScalarValue -> m ScalarValue
+arctan (Number x) (Number y) = pure $ Number $ Cx.phase (y + x * i) :+ 0
+arctan _ _ = throwError expectedNumber
+
+arctan' :: MonadError Error m => Array -> Array -> m Array
+arctan' = scalarDyad arctan
+
 not :: MonadError Error m => ScalarValue -> m ScalarValue
 not (Number y) = pure $ Number $ 1 - y
 not _ = throwError expectedNumber

@@ -519,6 +519,9 @@ spec = do
       describe "phase" $ do
         it "returns the phase of complex numbers" $ do
           m P.phase (vector [Number 1, Number -1, Number (0 :+ 1), Number (1 :+ 1)]) `shouldReturn` pure (vector [Number 0, Number pi, Number $ pi / 2, Number $ pi / 4])
+      describe "arctangent" $ do
+        it "returns the dyadic arctangent of two complex numbers" $ do
+          d P.phase (vector [Number 1, Number 1, Number 1]) (vector [Number 0, Number 1, Number -1]) `shouldReturn` pure (vector [Number $ pi / 2 :+ 0, Number $ pi / 4 :+ 0, Number $ 3 * pi / 4 :+ 0])
 
     describe [G.real] $ do
       describe "real part" $ do
