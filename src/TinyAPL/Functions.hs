@@ -191,6 +191,12 @@ round _ = throwError expectedNumber
 round' :: MonadError Error m => Array -> m Array
 round' = scalarMonad TinyAPL.Functions.round
 
+roundTo :: MonadError Error m => ScalarValue -> ScalarValue -> m ScalarValue
+roundTo = commute $ leftFork (TinyAPL.Functions.round `atop` divide) times
+
+roundTo' :: MonadError Error m => Array -> Array -> m Array
+roundTo' = scalarDyad roundTo
+
 min :: MonadError Error m => ScalarValue -> ScalarValue -> m ScalarValue
 min x y = pure $ Prelude.min x y
 

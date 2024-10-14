@@ -203,6 +203,9 @@ spec = do
           m P.round (vector [Number 1.5, Number -1.5]) `shouldReturn` pure (vector [Number 2, Number -1])
         it "rounds components of complex numbers" $ do
           m P.round (vector [Number (3 :+ 2.9), Number (1.2 :+ 3.4)]) `shouldReturn` pure (vector [Number (3 :+ 3), Number (1 :+ 3)])
+      describe "round to" $ do
+        it "rounds real numbers to the nearest multiple of other real numbers" $ do
+          d P.round (vector [Number 1, Number 0.5, Number 10]) (scalar $ Number 123.45) `shouldReturn` pure (vector [Number 123, Number 123.5, Number 120])
 
     describe [G.less, G.equal, G.lessEqual, G.greater, G.notEqual, G.greaterEqual] $ do
       describe "comparisons" $ do
