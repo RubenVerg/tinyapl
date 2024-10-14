@@ -344,7 +344,8 @@ export const qFetch = ambivalent(async (u: tinyapl.Arr) => {
 }, async (m: tinyapl.Arr, u: tinyapl.Arr) => {
 	if (u.shape.length > 1) throw { code: tinyapl.errors.rank, message: '⎕Fetch expects character vectors' };
 	const url = await tinyapl.joinString(u.contents as string[]);
-	if (m.shape.length !== 0) throw { code: tinyapl.errors.domain, message: '⎕Fetch left argument must be one of ⟨1⋄¯1⋄0ᴊ1⋄0ᴊ¯1⟩⊞⟨8⋄16⋄32⟩, ⟨1⋄0ᴊ1⟩⊞⟨0.32⋄0.64⟩ or 1' };
+	const typeError = { code: tinyapl.errors.domain, message: '⎕Fetch left argument must be one of ⟨1⋄¯1⋄0ᴊ1⋄0ᴊ¯1⟩⊞⟨8⋄16⋄32⟩, ⟨1⋄0ᴊ1⟩⊞⟨0.32⋄0.64⟩ or 1' };
+	if (m.shape.length !== 0) throw typeError;
 	const mode = (m.contents[0] as tinyapl.Complex).join(';');
 	const buf = await fetch(url).then(res => res.arrayBuffer());
 	const view = new DataView(buf);
@@ -402,6 +403,8 @@ export const qFetch = ambivalent(async (u: tinyapl.Arr) => {
 		case '0;0.64':
 			for (let i = 0; i < view.byteLength; i += 8) result.push(view.getFloat64(i, false));
 			break;
+		default:
+			throw typeError;
 	}
 	return { type: 'array', shape: [result.length], contents: result.map(r => [r, 0]) };
 }, '⎕Fetch');
