@@ -363,7 +363,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
       escape :: Parser Char
       escape = do
         _ <- char G.stringEscape
-        c <- oneOf [G.stringDelimiter, G.stringEscape, 'n', 'r', 't']
+        c <- oneOf $ fst <$> G.escapes
         return $ fromJust $ lookup c G.escapes
 
       nonEscape :: Parser Char
