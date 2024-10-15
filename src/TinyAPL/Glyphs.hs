@@ -53,6 +53,7 @@ syntax =
   , TinyAPL.Glyphs.separator
   , TinyAPL.Glyphs.assign
   , TinyAPL.Glyphs.assignModify
+  , TinyAPL.Glyphs.assignConstant
   , TinyAPL.Glyphs.assignPrivate
   , TinyAPL.Glyphs.guard
   , TinyAPL.Glyphs.exit
@@ -76,7 +77,8 @@ escapes =
   , (stringEscape, stringEscape)
   , ('n', '\n')
   , ('r', '\r')
-  , ('t', '\t') ]
+  , ('t', '\t')
+  , ('0', toEnum 0) ]
 
 -- * Identifiers
 
