@@ -1,11 +1,10 @@
-{-# LANGUAGE FlexibleContexts, LambdaCase, DeriveGeneric, DeriveAnyClass #-}
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE FlexibleContexts, LambdaCase, DeriveGeneric, DeriveAnyClass, InstanceSigs #-}
 module TinyAPL.ArrayFunctionOperator where
 
 import TinyAPL.Error
 import TinyAPL.Util
 import qualified TinyAPL.Glyphs as G
-import TinyAPL.Complex ( magnitude, realPart, Complex(..) )
+import TinyAPL.Complex
 import Numeric.Natural
 import Data.List
 import Control.Monad
@@ -368,6 +367,37 @@ onMajorCells f x = do
   case arrayReshaped (arrayShape x) $ concatMap arrayContents result of
     Nothing -> throwError $ DomainError ""
     Just rs -> return rs
+
+-- * functions that depend on tolerance
+
+-- https://aplwiki.com/wiki/Complex_floor
+complexFloor :: Complex Double -> Complex Double
+complexFloor (r :+ i) = let
+  b = componentFloor $ r :+ i
+  x = fracPart r
+  y = fracPart i
+  in
+    if x + y < 1 then b
+    else if x >= y then b + 1
+    else b + (0 :+ 1)
+
+complexCeiling :: Complex Double -> Complex Double
+complexCeiling = negate . complexFloor . negate
+
+complexRemainder :: Complex Double -> Complex Double -> Complex Double
+complexRemainder w z =
+  if w == 0 then z
+  else if isReal (z / w) && isInt (realPart $ z / w) then 0
+  else z - w * complexFloor (if w `complexEqual` 0 then z else z / w)
+
+complexGCD :: Complex Double -> Complex Double -> Complex Double
+complexGCD a w = if a `complexRemainder` w `complexEqual` 0 then a else (a `complexRemainder` w) `complexGCD` a
+
+complexLCM :: Complex Double -> Complex Double -> Complex Double
+complexLCM x y = if x `complexEqual` 0 && y `complexEqual` 0 then 0 else (x * y) / (x `complexGCD` y)
+
+asAnIntegerIfItIs :: Complex Double -> Complex Double
+asAnIntegerIfItIs y = if isInt (realPart y) && isInt (imagPart y) then fromInteger (floor $ realPart y) :+ fromInteger (floor $ imagPart y) else y
 
 -- * Scalar functions
 
