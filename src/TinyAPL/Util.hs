@@ -111,7 +111,7 @@ countEqual :: (Num n, Eq a) => a -> [a] -> n
 countEqual n h = count (== n) h
 
 generateIndices :: (Enum a, Num a) => [a] -> [[a]]
-generateIndices = foldr (liftA2 (:) . enumFromTo 1) [[]]
+generateIndices = foldr (liftA2 (:) . enumFromTo 0 . subtract 1) [[]]
 
 mapAdjacent :: (a -> a -> b) -> [a] -> [b]
 mapAdjacent f xs = zipWith f xs $ drop 1 xs

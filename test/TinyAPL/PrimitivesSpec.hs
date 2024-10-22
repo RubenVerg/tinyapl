@@ -780,7 +780,7 @@ spec = do
     describe [G.each] $ do
       describe "monad each" $ do
         it "applies a function to each element of an array" $ do
-          afm P.each P.iota (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [box $ vector [Number 1], box $ vector [Number 1, Number 2], box $ vector [Number 1, Number 2, Number 3]])
+          afm P.each P.iota (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [box $ vector [Number 0], box $ vector [Number 0, Number 1], box $ vector [Number 0, Number 1, Number 2]])
       describe "dyad each" $ do
         it "applies a function to each pair of elements of two arrays" $ do
           afd P.each P.intersection (vector [box $ vector [Number 1, Number 2], box $ vector [Number 1, Number 3]]) (vector [box $ vector [Number 1], box $ vector [Number 1, Number 2, Number 3]]) `shouldReturn` pure (vector [box $ vector [Number 1], box $ vector [Number 1, Number 3]])
@@ -803,7 +803,7 @@ spec = do
           e2m <$> afd P.key P.pair (vector []) (vector [Number 1]) `shouldReturn` Nothing
       describe "monad key" $ do
         it "applies a function to each unique element of the argument and the corresponding indices" $ do
-          afm P.key P.pair (vector $ Character <$> "mississippi") `shouldReturn` pure (fromMajorCells [vector [Character 'm', box $ vector [Number 1]], vector [Character 'i', box $ vector [Number 2, Number 5, Number 8, Number 11]], vector [Character 's', box $ vector [Number 3, Number 4, Number 6, Number 7]], vector [Character 'p', box $ vector [Number 9, Number 10]]])
+          afm P.key P.pair (vector $ Character <$> "mississippi") `shouldReturn` pure (fromMajorCells [vector [Character 'm', box $ vector [Number 0]], vector [Character 'i', box $ vector [Number 1, Number 4, Number 7, Number 10]], vector [Character 's', box $ vector [Number 2, Number 3, Number 5, Number 6]], vector [Character 'p', box $ vector [Number 8, Number 9]]])
 
     describe [G.onCells] $ do
       describe "on cells" $ do
@@ -900,7 +900,11 @@ spec = do
           let c = vector [box $ vector $ Character <$> "abc", box $ vector [box $ vector $ Character <$> "def", box $ vector $ Character <$> "ghi"]]
 
           do
-            Right factImpl <- (fromRight' <$> af P.reduce P.times) >>= flip (cff P.atop) P.iota
+            Right factImpl <- do
+              prod <- fromRight' <$> af P.reduce P.times
+              incr <- fromRight' <$> caf P.after 1 P.plus
+              nums <- fromRight' <$> cff P.atop incr P.iota
+              cff P.atop prod nums
             Right factA <- m P.factorial a
             cfam P.over factImpl (scalar $ Number 0) a `shouldReturn` pure factA
 
@@ -1044,7 +1048,7 @@ spec = do
           cafm P.under (scalar $ Number 7) t3 (vector [Number 2, Number 9, Number 3, Number 0, Number 1]) `shouldReturn` pure (vector [Number 7, Number 7, Number 7, Number 0, Number 1])
         it "works with sort up right argument" $ do
           Right op <- (fromRight' <$> cff P.atop P.iota P.notIdentical) >>= cff P.rightHook P.plus
-          cffm P.under op P.precedesOrIdentical (vector [Number 9, Number 7, Number 1, Number 4, Number 10]) `shouldReturn` pure (vector [Number 13, Number 10, Number 2, Number 6, Number 15])
+          cffm P.under op P.precedesOrIdentical (vector [Number 9, Number 7, Number 1, Number 4, Number 10]) `shouldReturn` pure (vector [Number 12, Number 9, Number 1, Number 5, Number 14])
 
     describe [G.innerProduct] $ do
       describe "inner product" $ do
