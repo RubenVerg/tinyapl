@@ -12,7 +12,7 @@ declare const Plotly: typeof import('plotly.js');
 
 const buttons = document.querySelector<HTMLDivElement>('#buttons')!;
 const output = document.querySelector<HTMLPreElement>('#output')!;
-const input = document.querySelector<HTMLInputElement>('#input')!;
+const input = document.querySelector<HTMLTextAreaElement>('#input')!;
 const highlighted = document.querySelector<HTMLPreElement>('#highlighted')!;
 const button = document.querySelector<HTMLButtonElement>('#button')!;
 const infobutton = document.querySelector<HTMLButtonElement>('#infobutton')!;
@@ -97,6 +97,13 @@ async function highlight(code: string, output: HTMLPreElement) {
 	const pairs = zip(await tinyapl.splitString(code), await tinyapl.highlight(code));
 	output.innerHTML = '';
 	for (const [t, c] of pairs) {
+		if (t === '\n') {
+			output.appendChild(document.createElement('br'));
+			// Appending a zero-width non-joiner forces the line break to be rendered
+			// and the highlighted text to expand properly
+			output.appendChild(document.createTextNode('\u200c'));
+			continue;
+		}
 		const span = document.createElement('span');
 		span.className = 'char ' + tinyapl.colorsInv[c];
 		span.style.color = colors[tinyapl.colorsInv[c] as keyof typeof colors];
@@ -267,17 +274,17 @@ async function fancyShow(result: tinyapl.Value, depth: number = 0): Promise<Node
 
 async function runCode(code: string) {
 	let d: HTMLDivElement;
-	
+
 	const endDiv = () => {
-		if (d.textContent!.trim() === '') try { output.removeChild(d); } catch (_) {};
+		if (d.textContent!.trim() === '') try { output.removeChild(d); } catch (_) { };
 		if (d.textContent!.at(-1) === '\n') d.textContent = d.textContent!.slice(0, -1);
 	};
-	
+
 	const newDiv = () => {
 		d = div('quad', '');
 		output.appendChild(d);
 	};
-	
+
 	const createImage = (id: number | undefined, width: number, height: number) => {
 		endDiv();
 		const canvas = document.createElement('canvas');
@@ -295,9 +302,9 @@ async function runCode(code: string) {
 
 	ranCode.push(code);
 	lastIndex = ranCode.length;
-	
+
 	button.disabled = true;
-	const in1 = div('', '');
+	const in1 = div('executed', '');
 	output.appendChild(in1);
 	const pad = span('pad', '');
 	const loader = div('loader', '');
@@ -348,12 +355,12 @@ async function runCode(code: string) {
 	quads.rPlayAudio(async buf => {
 		endDiv();
 		const audio = document.createElement('audio');
-  	audio.controls = true;
+		audio.controls = true;
 		audio.autoplay = true;
-  	const blob = new Blob([buf], { type: 'audio/wav' });
-  	const url = URL.createObjectURL(blob);
-  	audio.src = url;
-  	output.appendChild(audio);
+		const blob = new Blob([buf], { type: 'audio/wav' });
+		const url = URL.createObjectURL(blob);
+		audio.src = url;
+		output.appendChild(audio);
 		newDiv();
 	});
 	const result = await tinyapl.runCode(context, code);
@@ -402,7 +409,7 @@ input.addEventListener('keydown', evt => {
 			keyboardState = 0;
 			evt.preventDefault();
 		}
-	} else if (evt.key === 'Enter') {
+	} else if (evt.key === 'Enter' && !evt.shiftKey) {
 		evt.preventDefault();
 		if (!button.disabled) return run();
 	} else if (evt.key === 'ArrowUp' && evt.shiftKey && !evt.altKey && !evt.ctrlKey && !evt.metaKey) {
@@ -427,6 +434,7 @@ for (const k of document.querySelectorAll<HTMLPreElement>('.hl')) highlight(k.te
 document.querySelector('#loading')!.remove();
 button.disabled = false;
 infobutton.disabled = false;
+highlightInput(); // in case the input is pre-filled
 
 const search = new URLSearchParams(window.location.search);
 for (const line of search.getAll('run')) await runCode(decodeURIComponent(line));
