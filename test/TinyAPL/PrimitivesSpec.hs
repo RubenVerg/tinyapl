@@ -731,6 +731,19 @@ spec = do
       describe "base 2 encode" $ do
         it "encodes a number to base 2" $ do
           m P.encode (scalar $ Number 10) `shouldReturn` pure (vector [Number 1, Number 0, Number 1, Number 0])
+
+    describe [G.increment] $ do
+      describe "increment" $ do
+        it "increments a number" $ do
+          m P.increment (vector [Number 0, Number 3, Number (2 :+ 1)]) `shouldReturn` pure (vector [Number 1, Number 4, Number (3 :+ 1)])
+
+    describe [G.decrement] $ do
+      describe "decrement" $ do
+        it "decrements a number" $ do
+          m P.decrement (vector [Number 0, Number 3, Number (2 :+ 1)]) `shouldReturn` pure (vector [Number -1, Number 2, Number (1 :+ 1)])
+      describe "span" $ do
+        it "returns the span between two numbers" $ do
+          d P.decrement (scalar $ Number 10) (vector [Number 7, Number 12]) `shouldReturn` pure (vector [Number 4, Number -1])
   
   describe "adverbs" $ do
     describe [G.selfie] $ do
