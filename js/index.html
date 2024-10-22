@@ -131,6 +131,14 @@
 			margin-block: 2px;
 		}
 
+		.pad {
+			display: inline-flex;
+			width: 6ch;
+			height: 1ch;
+			justify-content: end;
+			padding-inline-end: 1ch;
+		}
+
 		.plot {
 			display: inline-block;
 		}
@@ -162,15 +170,10 @@
 			display: inline-block;
 			box-sizing: border-box;
 			animation: loader-rotation 1s linear infinite;
-
-			position: absolute;
-			left: 4ch;
-			top: 0.5ch;
 		}
 
 		.executed {
-			padding-left: 6ch;
-			position: relative;
+			display: flex;
 		}
 
 		@keyframes loader-rotation {

@@ -306,8 +306,10 @@ async function runCode(code: string) {
 	button.disabled = true;
 	const in1 = div('executed', '');
 	output.appendChild(in1);
+	const pad = span('pad', '');
 	const loader = div('loader', '');
-	in1.appendChild(loader);
+	pad.appendChild(loader);
+	in1.appendChild(pad);
 	in1.appendChild(selfClickableSpan('code', code));
 	newDiv();
 	io.rInput(async what => { d.innerText += what + '\n'; });
