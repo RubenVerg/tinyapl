@@ -320,6 +320,30 @@ not _ = throwError expectedNumber
 not' :: MonadError Error m => Array -> m Array
 not' = scalarMonad TinyAPL.Functions.not
 
+increment :: MonadError Error m => ScalarValue -> m ScalarValue
+increment (Number y) = pure $ Number $ y + 1
+increment (Character y) = pure $ Character $ chr $ ord y + 1
+increment _ = throwError expectedNumber
+
+increment' :: MonadError Error m => Array -> m Array
+increment' = scalarMonad increment
+
+decrement :: MonadError Error m => ScalarValue -> m ScalarValue
+decrement (Number y) = pure $ Number $ y - 1
+decrement (Character '\0') = pure $ Character '\0'
+decrement (Character y) = pure $ Character $ chr $ ord y - 1
+decrement _ = throwError expectedNumber
+
+decrement' :: MonadError Error m => Array -> m Array
+decrement' = scalarMonad decrement
+
+span :: MonadError Error m => ScalarValue -> ScalarValue -> m ScalarValue
+span (Number x) (Number y) = pure $ Number $ 1 + x - y
+span _ _ = throwError expectedNumber
+
+span' :: MonadError Error m => Array -> Array -> m Array
+span' = scalarDyad TinyAPL.Functions.span
+
 equal :: MonadError Error m => ScalarValue -> ScalarValue -> m Bool
 equal x y = pure $ x == y
 

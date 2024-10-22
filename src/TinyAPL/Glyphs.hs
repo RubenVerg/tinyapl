@@ -177,7 +177,9 @@ factorial = '!'
 raise = '↗'
 decode = '⊥'
 encode = '⊤'
-histogram = '⋷' 
+histogram = '⋷'
+increment = '⧺'
+decrement = 'ⵧ'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -245,7 +247,9 @@ functions =
   , TinyAPL.Glyphs.raise
   , TinyAPL.Glyphs.decode
   , TinyAPL.Glyphs.encode
-  , TinyAPL.Glyphs.histogram ]
+  , TinyAPL.Glyphs.histogram
+  , TinyAPL.Glyphs.increment
+  , TinyAPL.Glyphs.decrement ]
 
 -- * Adverbs
 
