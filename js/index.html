@@ -1,4 +1,5 @@
 <!doctype html>
+
 <head>
 	<meta charset="utf-8">
 	<title>TinyAPL Interpreter</title>
@@ -30,7 +31,7 @@
 			margin-bottom: 5px;
 			z-index: 100000000000;
 		}
-	
+
 		#buttons button {
 			font-family: var(--font-mono);
 		}
@@ -39,23 +40,23 @@
 			width: auto;
 			max-width: 100%;
 		}
-	
+
 		#output {
 			height: 90%;
 			font-family: var(--font-mono);
 		}
-		
+
 		#output * {
 			text-wrap: wrap;
 			overflow-wrap: break-word;
 		}
-		
-		#input, #highlighted {
+
+		#input,
+		#highlighted {
 			width: 97.5%;
 			font-family: var(--font-mono);
 			margin: 2.5px;
 			padding: 2.5px;
-			height: 1.25em;
 			grid-row: 1;
 			grid-column: 1;
 			overflow-x: auto;
@@ -76,12 +77,12 @@
 		#highlighted {
 			z-index: 0;
 		}
-		
+
 		#button {
 			width: auto;
 			font-family: var(--font-mono);
 		}
-		
+
 		#input-wrapper {
 			display: inline-grid;
 			width: 90%;
@@ -101,27 +102,33 @@
 			display: inline-block;
 			margin: 0;
 		}
-		
+
 		.char {
 			display: inline-block;
 			min-width: 1ch;
 		}
-		
+
 		.code {
 			color: grey;
 		}
-		
+
 		.error {
 			background: #ffcccc;
 			color: red;
 		}
-		
+
 		.result {
 			color: black;
 		}
-		
+
 		.quad {
 			color: dimgrey;
+		}
+
+		.image {
+			border: 1px solid black;
+			display: block;
+			margin-block: 2px;
 		}
 
 		.pad {
@@ -130,12 +137,6 @@
 			height: 1ch;
 			justify-content: end;
 			padding-inline-end: 1ch;
-		}
-		
-		.image {
-			border: 1px solid black;
-			display: block;
-			margin-block: 2px;
 		}
 
 		.plot {
@@ -146,11 +147,16 @@
 			vertical-align: top;
 		}
 
-		table.vector, table.vector > tbody > tr, table.vector > tbody > tr > td, table.matrix, table.matrix > tbody > tr, table.matrix > tbody > tr > td {
+		table.vector,
+		table.vector>tbody>tr,
+		table.vector>tbody>tr>td,
+		table.matrix,
+		table.matrix>tbody>tr,
+		table.matrix>tbody>tr>td {
 			border: 2px solid black;
 			border-collapse: collapse;
 		}
-		
+
 		.struct ul {
 			margin-block: 0;
 		}
@@ -164,19 +170,30 @@
 			display: inline-block;
 			box-sizing: border-box;
 			animation: loader-rotation 1s linear infinite;
-    }
+		}
+
+		.executed {
+			display: flex;
+		}
 
 		@keyframes loader-rotation {
 			0% {
 				transform: rotate(0deg);
 			}
+
 			100% {
 				transform: rotate(360deg);
 			}
-    } 
-@keyframes l3 {to{transform: rotate(1turn)}}
+		}
+
+		@keyframes l3 {
+			to {
+				transform: rotate(1turn)
+			}
+		}
 	</style>
 </head>
+
 <body>
 	<h1 id="loading">Loading...</h1>
 	<input id="fancyarrays" type="checkbox" checked>
