@@ -51,8 +51,7 @@
 			overflow-wrap: break-word;
 		}
 
-		#input,
-		#highlighted {
+		#input, #highlighted {
 			width: 97.5%;
 			font-family: var(--font-mono);
 			margin: 2.5px;
@@ -147,12 +146,8 @@
 			vertical-align: top;
 		}
 
-		table.vector,
-		table.vector>tbody>tr,
-		table.vector>tbody>tr>td,
-		table.matrix,
-		table.matrix>tbody>tr,
-		table.matrix>tbody>tr>td {
+		table.vector, table.vector > tbody > tr, table.vector > tbody > tr > td,
+		table.matrix, table.matrix > tbody > tr, table.matrix > tbody > tr > td {
 			border: 2px solid black;
 			border-collapse: collapse;
 		}
@@ -215,7 +210,8 @@
 			To run your code, you can press <kbd>Enter</kbd> or the Run button.
 			To edit code you already ran, click on it.
 			Similarly, you can click on an output to put it into the input bar.
-			You can also scroll through previously ran code with <kbd>Shift</kbd>+<kbd>↑</kbd> and <kbd>Shift</kbd>+<kbd>↓</kbd>
+			You can also scroll through previously ran code with <kbd>Shift</kbd>+<kbd>↑</kbd> and <kbd>Shift</kbd>+<kbd>↓</kbd>.
+			To insert a newline in the code, you can press <kbd>Shift</kbd>+<kbd>Enter</kbd>.
 		</p>
 		<h2>Quads</h2>
 		<p>
@@ -308,7 +304,7 @@
 	<img id="keyboard" src="./kbd.svg" alt="TinyAPL keyboard layout" />
 	<pre id="output"></pre>
 	<div id="input-wrapper">
-		<textarea id="input" spellcheck="false" cols="1"></textarea>
+		<textarea id="input" spellcheck="false" cols="1" rows="1"></textarea>
 		<pre id="highlighted" aria-hidden="true"></pre>
 	</div>
 	<button id="button" type="button" disabled>Run</button>
