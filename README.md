@@ -115,6 +115,9 @@ Marked features are supported, unmarked features are planned
 		* [ ] `∡` atan2
 		* [x] `ℜ` real part
 		* [x] `ℑ` imaginary part
+		* [ ] `⧺` increment
+		* [ ] `ⵧ` decrement
+		* [ ] `ⵧ` span
 		* [x] `⊥` decode
 		* [x] `⊥` base 2 decode
 		* [x] `⊤` encode
