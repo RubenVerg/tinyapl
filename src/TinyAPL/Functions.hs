@@ -549,7 +549,7 @@ last (Array _ []) = throwError $ DomainError "Last on empty array"
 last (Array _ xs) = pure $ fromScalar $ Prelude.last xs
 
 indexGenerator :: MonadError Error m => Natural -> m Array
-indexGenerator i = pure $ vector $ Number . fromInteger . toInteger <$> [1..i]
+indexGenerator i = pure $ vector $ Number . fromInteger . toInteger <$> [0..i - 1]
 
 indexGeneratorN :: MonadError Error m => [Natural] -> m Array
 indexGeneratorN is = pure $ fromJust $ arrayReshaped is $ box . fromJust . arrayReshaped [genericLength is] . fmap (Number . fromInteger . toInteger) <$> generateIndices is
@@ -619,7 +619,7 @@ symmetricDifference' x y = fromMajorCells <$> symmetricDifference (majorCells x)
 roll :: (MonadError Error m, MonadIO m) => Natural -> m Double
 roll y =
   if y == 0 then randomR (0, 1)
-  else fromInteger <$> randomR (1, toInteger y)
+  else fromInteger <$> randomR (0, toInteger y - 1)
 
 roll' :: (MonadError Error m, MonadIO m) => Array -> m Array
 roll' = scalarMonad $ \y -> do
@@ -628,9 +628,9 @@ roll' = scalarMonad $ \y -> do
 
 indexCell :: MonadError Error m => Integer -> Array -> m Array
 indexCell i x
-  | i < 0 = indexCell (genericLength (majorCells x) + i + 1) x
-  | i == 0 || i > genericLength (majorCells x) = throwError $ DomainError "Index out of bounds"
-  | otherwise = pure $ genericIndex (majorCells x) (i - 1)
+  | i < 0 = indexCell (genericLength (majorCells x) + i) x
+  | i > genericLength (majorCells x) = throwError $ DomainError "Index out of bounds"
+  | otherwise = pure $ genericIndex (majorCells x) i
 
 squad :: MonadError Error m => Array -> Array -> m Array
 squad i y = do
@@ -658,13 +658,13 @@ catenate a@(Array ash acs) b@(Array bsh bcs) =
   else throwError $ RankError "Incompatible ranks to Catenate"
 
 gradeUp :: MonadError Error m => Ord a => [a] -> m [Natural]
-gradeUp xs = pure $ map fst $ sortOn snd $ zip [1..genericLength xs] xs
+gradeUp xs = pure $ map fst $ sortOn snd $ zip [0..genericLength xs] xs
 
 gradeUp' :: MonadError Error m => Array -> m Array
 gradeUp' arr = vector . fmap (Number . fromInteger . toInteger) <$> gradeUp (majorCells arr)
 
 gradeDown :: MonadError Error m => Ord a => [a] -> m [Natural]
-gradeDown xs = pure $ map fst $ sortOn snd $ zip [1..genericLength xs] (Down <$> xs)
+gradeDown xs = pure $ map fst $ sortOn snd $ zip [0..genericLength xs] (Down <$> xs)
 
 gradeDown' :: MonadError Error m => Array -> m Array
 gradeDown' arr = vector . fmap (Number . fromInteger . toInteger) <$> gradeDown (majorCells arr)
@@ -822,9 +822,7 @@ count :: MonadError Error m => Array -> Array -> m Array
 count = searchFunction $ pure .: scalar .: Number .: (:+ 0) .: countEqual
 
 indexOf :: MonadError Error m => Array -> Array -> m Array
-indexOf = flip $ searchFunction $ pure .: scalar .: Number .: (:+ 0) .: (\n hs -> case n `genericElemIndex` hs of
-  Just x -> x + 1
-  Nothing -> genericLength hs + 1)
+indexOf = flip $ searchFunction $ pure .: scalar .: Number .: (:+ 0) .: (\n hs -> fromMaybe (genericLength hs) $ n `genericElemIndex` hs)
 
 intervalIndex :: MonadError Error m => Array -> Array -> m Array
 intervalIndex hs' ns =

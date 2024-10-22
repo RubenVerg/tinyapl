@@ -418,10 +418,10 @@ spec = do
           e2m <$> m P.last (vector []) `shouldReturn` Nothing
       describe "from" $ do
         it "indexes major cells of an array" $ do
-          d P.last (vector [Number 1, Number -1]) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [Number 1, Number 3])
+          d P.last (vector [Number 0, Number -1]) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [Number 1, Number 3])
         it "does scatter indexing" $ do
-          d P.last (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number -1]]) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number 3]])
-          d P.last (vector [box $ vector [Number 1, Number 1], box $ vector [Number 2, Number 2]]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [Number 1, Number 4])
+          d P.last (fromMajorCells [vector [Number 0, Number 2], vector [Number 1, Number -1]]) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number 3]])
+          d P.last (vector [box $ vector [Number 0, Number 0], box $ vector [Number 1, Number 1]]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [Number 1, Number 4])
     
     describe [G.take] $ do
       describe "take" $ do
@@ -466,28 +466,28 @@ spec = do
     describe [G.iota] $ do
       describe "index generator" $ do
         it "returns a vector of indices for scalar arguments" $ do
-          m P.iota (scalar $ Number 3) `shouldReturn` pure (vector [Number 1, Number 2, Number 3])
+          m P.iota (scalar $ Number 3) `shouldReturn` pure (vector [Number 0, Number 1, Number 2])
         it "returns a higher-rank array for vector arguments" $ do
           m P.iota (vector [Number 2, Number 3]) `shouldReturn` pure (fromMajorCells
-            [ vector [box $ vector [Number 1, Number 1], box $ vector [Number 1, Number 2], box $ vector [Number 1, Number 3]]
-            , vector [box $ vector [Number 2, Number 1], box $ vector [Number 2, Number 2], box $ vector [Number 2, Number 3]] ])
+            [ vector [box $ vector [Number 0, Number 0], box $ vector [Number 0, Number 1], box $ vector [Number 0, Number 2]]
+            , vector [box $ vector [Number 1, Number 0], box $ vector [Number 1, Number 1], box $ vector [Number 1, Number 2]] ])
       describe "index of" $ do
         it "returns the index of the first occurrence of a cell of an array in the major cells of another" $ do
-          d P.iota (vector $ Character <$> "hello world") (vector $ Character <$> "lw") `shouldReturn` pure (vector [Number 3, Number 7])
+          d P.iota (vector $ Character <$> "hello world") (vector $ Character <$> "lw") `shouldReturn` pure (vector [Number 2, Number 6])
         it "returns one more than the tally when the cell is not found" $ do
-          d P.iota (vector $ Character <$> "hello world") (scalar $ Character 'x') `shouldReturn` pure (scalar $ Number 12)
+          d P.iota (vector $ Character <$> "hello world") (scalar $ Character 'x') `shouldReturn` pure (scalar $ Number 11)
     
     describe [G.indices] $ do
       describe "where" $ do
         it "returns indices of true values in a vector" $ do
-          m P.indices (vector [Number 0, Number 1, Number 0, Number 1]) `shouldReturn` pure (vector [Number 2, Number 4])
+          m P.indices (vector [Number 0, Number 1, Number 0, Number 1]) `shouldReturn` pure (vector [Number 1, Number 3])
         it "returns indices of true values in a higher-rank array" $ do
           m P.indices (fromMajorCells [vector [Number 0, Number 1, Number 0], vector [Number 1, Number 0, Number 1]]) `shouldReturn` pure (vector
-            [ box $ vector [Number 1, Number 2]
-            , box $ vector [Number 2, Number 1]
-            , box $ vector [Number 2, Number 3] ])
+            [ box $ vector [Number 0, Number 1]
+            , box $ vector [Number 1, Number 0]
+            , box $ vector [Number 1, Number 2] ])
         it "returns multiple indices for natural values" $ do
-          m P.indices (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 2, Number 3, Number 3])
+          m P.indices (vector [Number 0, Number 1, Number 2]) `shouldReturn` pure (vector [Number 1, Number 2, Number 2])
       describe "interval index" $ do
         it "puts values in bins described by an array" $ do
           d P.indices (vector [Number 3, Number 7, Number 9]) (vector [Number 1, Number 5, Number 8, Number 10]) `shouldReturn` pure (vector [Number 0, Number 1, Number 2, Number 3])
@@ -584,7 +584,7 @@ spec = do
     describe [G.squad] $ do
       describe "index" $ do
         it "indexes cells of an array" $ do
-          d P.squad (vector [Number 1, box $ vector [Number 1, Number -2]]) (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 1, Number 2])
+          d P.squad (vector [Number 0, box $ vector [Number 0, Number -2]]) (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 1, Number 2])
 
     describe [G.rank] $ do
       describe "rank" $ do
@@ -626,9 +626,9 @@ spec = do
     describe [G.gradeUp] $ do
       describe "grade up" $ do
         it "grades an array ascending" $ do
-          m P.gradeUp (vector [Number 4, Number 2, Number 10]) `shouldReturn` pure (vector [Number 2, Number 1, Number 3])
+          m P.gradeUp (vector [Number 4, Number 2, Number 10]) `shouldReturn` pure (vector [Number 1, Number 0, Number 2])
         it "is stable" $ do
-          m P.gradeUp (vector [Number 1, Number 5, Number 1]) `shouldReturn` pure (vector [Number 1, Number 3, Number 2])
+          m P.gradeUp (vector [Number 1, Number 5, Number 1]) `shouldReturn` pure (vector [Number 0, Number 2, Number 1])
       describe "sort by up" $ do
         it "sorts an array according to the ascending grade of another" $ do
           d P.gradeUp (vector $ Character <$> "hello") (vector [Number 5, Number 9, Number -2, Number 10, Number 3]) `shouldReturn` pure (vector $ Character <$> "lohel")
@@ -638,9 +638,9 @@ spec = do
     describe [G.gradeDown] $ do
       describe "grade down" $ do
         it "grades an array descending" $ do
-          m P.gradeDown (vector [Number 4, Number 2, Number 10]) `shouldReturn` pure (vector [Number 3, Number 1, Number 2])
+          m P.gradeDown (vector [Number 4, Number 2, Number 10]) `shouldReturn` pure (vector [Number 2, Number 0, Number 1])
         it "is stable" $ do
-          m P.gradeDown (vector [Number 1, Number 5, Number 1]) `shouldReturn` pure (vector [Number 2, Number 1, Number 3])
+          m P.gradeDown (vector [Number 1, Number 5, Number 1]) `shouldReturn` pure (vector [Number 1, Number 0, Number 2])
       describe "sort by down" $ do
         it "sorts an array according to the descending grade of another" $ do
           d P.gradeDown (vector $ Character <$> "hello") (vector [Number 5, Number 9, Number -2, Number 10, Number 3]) `shouldReturn` pure (vector $ Character <$> "lehol")
@@ -653,9 +653,9 @@ spec = do
           m P.transpose (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number 4]])
       describe "dyad transpose" $ do
         it "reorders axes of an array" $ do
-          d P.transpose (vector [Number 2, Number 1]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number 4]])
+          d P.transpose (vector [Number 1, Number 0]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number 4]])
         it "extracts diagonals" $ do
-          d P.transpose (vector [Number 1, Number 1]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [Number 1, Number 4])
+          d P.transpose (vector [Number 0, Number 0]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [Number 1, Number 4])
 
     describe [G.matrixInverse] $ do
       describe "matrix inverse" $ do
@@ -780,7 +780,7 @@ spec = do
     describe [G.each] $ do
       describe "monad each" $ do
         it "applies a function to each element of an array" $ do
-          afm P.each P.iota (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [box $ vector [Number 1], box $ vector [Number 1, Number 2], box $ vector [Number 1, Number 2, Number 3]])
+          afm P.each P.iota (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [box $ vector [Number 0], box $ vector [Number 0, Number 1], box $ vector [Number 0, Number 1, Number 2]])
       describe "dyad each" $ do
         it "applies a function to each pair of elements of two arrays" $ do
           afd P.each P.intersection (vector [box $ vector [Number 1, Number 2], box $ vector [Number 1, Number 3]]) (vector [box $ vector [Number 1], box $ vector [Number 1, Number 2, Number 3]]) `shouldReturn` pure (vector [box $ vector [Number 1], box $ vector [Number 1, Number 3]])
@@ -803,7 +803,7 @@ spec = do
           e2m <$> afd P.key P.pair (vector []) (vector [Number 1]) `shouldReturn` Nothing
       describe "monad key" $ do
         it "applies a function to each unique element of the argument and the corresponding indices" $ do
-          afm P.key P.pair (vector $ Character <$> "mississippi") `shouldReturn` pure (fromMajorCells [vector [Character 'm', box $ vector [Number 1]], vector [Character 'i', box $ vector [Number 2, Number 5, Number 8, Number 11]], vector [Character 's', box $ vector [Number 3, Number 4, Number 6, Number 7]], vector [Character 'p', box $ vector [Number 9, Number 10]]])
+          afm P.key P.pair (vector $ Character <$> "mississippi") `shouldReturn` pure (fromMajorCells [vector [Character 'm', box $ vector [Number 0]], vector [Character 'i', box $ vector [Number 1, Number 4, Number 7, Number 10]], vector [Character 's', box $ vector [Number 2, Number 3, Number 5, Number 6]], vector [Character 'p', box $ vector [Number 8, Number 9]]])
 
     describe [G.onCells] $ do
       describe "on cells" $ do
@@ -900,7 +900,11 @@ spec = do
           let c = vector [box $ vector $ Character <$> "abc", box $ vector [box $ vector $ Character <$> "def", box $ vector $ Character <$> "ghi"]]
 
           do
-            Right factImpl <- (fromRight' <$> af P.reduce P.times) >>= flip (cff P.atop) P.iota
+            Right factImpl <- do
+              prod <- fromRight' <$> af P.reduce P.times
+              incr <- fromRight' <$> caf P.after 1 P.plus
+              nums <- fromRight' <$> cff P.atop incr P.iota
+              cff P.atop prod nums
             Right factA <- m P.factorial a
             cfam P.over factImpl (scalar $ Number 0) a `shouldReturn` pure factA
 
@@ -1044,7 +1048,7 @@ spec = do
           cafm P.under (scalar $ Number 7) t3 (vector [Number 2, Number 9, Number 3, Number 0, Number 1]) `shouldReturn` pure (vector [Number 7, Number 7, Number 7, Number 0, Number 1])
         it "works with sort up right argument" $ do
           Right op <- (fromRight' <$> cff P.atop P.iota P.notIdentical) >>= cff P.rightHook P.plus
-          cffm P.under op P.precedesOrIdentical (vector [Number 9, Number 7, Number 1, Number 4, Number 10]) `shouldReturn` pure (vector [Number 13, Number 10, Number 2, Number 6, Number 15])
+          cffm P.under op P.precedesOrIdentical (vector [Number 9, Number 7, Number 1, Number 4, Number 10]) `shouldReturn` pure (vector [Number 12, Number 9, Number 1, Number 5, Number 14])
 
     describe [G.innerProduct] $ do
       describe "inner product" $ do

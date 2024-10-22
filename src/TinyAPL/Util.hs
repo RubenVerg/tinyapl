@@ -111,7 +111,7 @@ countEqual :: (Num n, Eq a) => a -> [a] -> n
 countEqual n h = count (== n) h
 
 generateIndices :: (Enum a, Num a) => [a] -> [[a]]
-generateIndices = foldr (liftA2 (:) . enumFromTo 1) [[]]
+generateIndices = foldr (liftA2 (:) . enumFromTo 0 . subtract 1) [[]]
 
 mapAdjacent :: (a -> a -> b) -> [a] -> [b]
 mapAdjacent f xs = zipWith f xs $ drop 1 xs
@@ -154,29 +154,6 @@ componentFloor (r :+ i) = fromInteger (floor r) :+ fromInteger (floor i)
 
 fracPart :: RealFrac a => a -> a
 fracPart = snd . properFraction . (1 +) . snd . properFraction -- properFraction returns a negative number for negative inputs, 1| doesn't
-
--- https://aplwiki.com/wiki/Complex_floor
-complexFloor :: RealFloat a => Complex a -> Complex a
-complexFloor (r :+ i) = let
-  b = componentFloor $ r :+ i
-  x = fracPart r
-  y = fracPart i
-  in
-    if x + y < 1 then b
-    else if x >= y then b + 1
-    else b + (0 :+ 1)
-
-complexCeiling :: RealFloat a => Complex a -> Complex a
-complexCeiling = negate . complexFloor . negate
-
-complexRemainder :: RealFloat a => Complex a -> Complex a -> Complex a
-complexRemainder w z = z - w * complexFloor (if w == 0 then z else z / w)
-
-complexGCD :: RealFloat a => Complex a -> Complex a -> Complex a
-complexGCD a w = if a `complexRemainder` w == 0 then a else (a `complexRemainder` w) `complexGCD` a
-
-complexLCM :: RealFloat a => Complex a -> Complex a -> Complex a
-complexLCM x y = if x == 0 && y == 0 then 0 else (x * y) / (x `complexGCD` y)
 
 group :: Eq k => [k] -> [a] -> [(k, [a])]
 group [] [] = []
