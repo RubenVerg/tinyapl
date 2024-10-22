@@ -1,0 +1,37 @@
+---
+name: Dialect or Derivative?
+---
+
+> Many features described here are currently just planned.
+
+One question I ask myself a lot is whether TinyAPL is an APL dialect or derivative. While I don't have a definitive answer, I think I lean more on the derivative side. Why didn't I call it CRP or ZOL (*finally, an APL for your shoes*) or $\left(\mathrm A + i\right)\left(\mathrm P + i\right)\left(\mathrm L + i\right)$, or TinyArrayLanguage or something like that? The first reason is historical: when I began the project I had no idea of what it would become, and also I think that I break off from traditional APL in less ways.
+
+I suppose not being "an APL" in the strictest sense makes TinyAPL a complete misnomer, given how many think it's not *tiny* at all either.
+
+None of the differences I list below are enough to make something "not an APL dialect" alone, but I believe the combination of them is.
+
+## New types
+
+TinyAPL has a few new types, scalars and nouns.
+
+Not only does it have the normal characters, numbers and boxes (which are a bit of a hybrid of a flat-model box and a nested-model "enclosure"), but also first-class functions through wraps (which appear in Kap and in BQN in its based-model approach), first-class modifiers (which BQN has but Kap doesn't), structs (*mutable* collections of pairs of identifiers and nouns/functions/modifiers, which are similar, but not identical, to Dyalog's namespaces, and will be more similar with APLAN :fingers_crossed:), potentially symbols (seen in Kap).
+
+The biggest innovation is probably breaking the traditional APL concept of "everything [that's an argument to functions] is an array", slightly modifying it to "everything is a noun", where nouns are either the traditional arrays or associative arrays/dictionaries (name isn't settled yet). Kap has maps, but they're scalars, not "arrays". Uiua has maps, but they act more like normal vectors with an extra tag on each element: `⊏1` (<hl code="1⊇" />) selects the second element of the map, which is just the second in insertion order. In my associative arrays, <hl code="1⊇" /> means "get the key 1". This breaks assumptions that an APL programmer might have in a few ways.
+
+## Context-free parsing
+
+Context-free parsing is not the difference itself, of course, but what it entails is.
+
+The most obvious difference is the naming convention. Just like in BQN, names that refer to arrays always start with a lowercase letter (<hl code="abc" />), names that refer to functions always start with an uppercase letter (<hl code="Abc" />), names that refer to adverbs always start (but not end) with an underscore (<hl code="_Abc" /> but also <hl code="_abc" />), names that refer to a conjunction always start and end with an underscore (<hl code="_Abc_" />). BQN takes this further to an interesting point, where each name can take on all four classes and is "cast" to the type you ask for: `a←3` and then `A 9` "calls" `a`, which when cast to a function becomes a constant function (like if you did `3˙`/<hl code="3⍨" />). TinyAPL doesn't do this.
+
+The next glaring difference is the separation of dfns/dadvs/dconjs. Dfns (anonymous functions) look like <hl code="{⟃code⟄}" />, dadvs (anonymous adverbs) look like <hl code="_{⟃code⟄}" />, dconjs (anonymous conjunctions) look like <hl code="_{⟃code⟄}_" />. This, of course, mirrors the convention for names. Not only that, but in dfns you refer to the arguments as `⍵` (the right argument) and `⍺` (the left argument, if provided); that's fine. But in dmods, there's an issue. There have traditionally been two ways to refer to operands in APL: `⍺⍺`/`⍵⍵` and `⍶`/`⍹`. I would've gone with the latter, I like it more, and it means you can write `⍺⍺` instead of `⍺ ⍺` if you somehow need to refer to the left argument twice in a row. But there's an issue. Remember how names always have a set class? Well, operands can be either functions or arrays. So there need to be two names for each operand. I went with `⍺⍺`/`⍵⍵` for array operands and `⍶⍶`/`⍹⍹` for function operands. Yeah, I don't like it either. BQN solves the dfn/dmod distinction by looking inside the code of the block and seeing if it refers to `𝔽` and `𝔾`, its operand names. I don't really like this solution, so I went with specifying it outside.
+
+Other choices that I did under the name of context-free parsing, which did make parsing somewhat simpler but were mostly stylstic, belong to the concept of one meaning per glyph. In Dyalog, `.` is both the decimal separator and namespace member acces; I use `.` for the former and `→` for the latter. In most APLs, `E` is both a valid identifier and the exponent notation symbol; for the latter I chose `⏨`. Same applies to `J` for complex numbers, where I went with `ᴊ`.
+
+## Trains
+
+The other difference that's quite obvious for someone coming from, say, Dyalog, is trains.
+
+The context-free parsing part is just that, because I allow modifier trains, you specify the type of a train just like for names. (see, there's a pattern!)
+
+But the obvious part is not that, it's that trains aren't invisible. That is, in Dyalog you write "union without intersection" (aka <primitive key="symmetric_difference" />) as `∪~∩`, in TinyAPL it's <hl code="⦅∪⋄~⋄∩⦆" />. Quite different. This does allow for a much larger set of possible tines of trains, and easier chains of atops, as documented [in the train documentation page](./trains).
