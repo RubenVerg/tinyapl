@@ -18,7 +18,7 @@ import Control.Concurrent
 import Data.List
 import Data.List.Split (splitOn)
 
-io = Nilad (Just $ pure $ scalar $ Number 1) Nothing (G.quad : "io") Nothing
+io = Nilad (Just $ pure $ scalar $ Number 0) Nothing (G.quad : "io") Nothing
 ct = Nilad (Just $ pure $ scalar $ Number $ comparisonTolerance :+ 0) Nothing (G.quad : "ct") Nothing
 u = Nilad (Just $ pure $ vector $ Character <$> ['A'..'Z']) Nothing (G.quad : "u") Nothing
 l = Nilad (Just $ pure $ vector $ Character <$> ['a'..'z']) Nothing (G.quad : "l") Nothing
