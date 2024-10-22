@@ -86,6 +86,13 @@ async function highlight(code, output) {
     const pairs = zip(await tinyapl.splitString(code), await tinyapl.highlight(code));
     output.innerHTML = '';
     for (const [t, c] of pairs) {
+        if (t === '\n') {
+            output.appendChild(document.createElement('br'));
+            // Appending a zero-width non-joiner forces the line break to be rendered
+            // and the highlighted text to expand properly
+            output.appendChild(document.createTextNode('\u200c'));
+            continue;
+        }
         const span = document.createElement('span');
         span.className = 'char ' + tinyapl.colorsInv[c];
         span.style.color = colors[tinyapl.colorsInv[c]];
@@ -287,12 +294,10 @@ async function runCode(code) {
     ranCode.push(code);
     lastIndex = ranCode.length;
     button.disabled = true;
-    const in1 = div('', '');
+    const in1 = div('executed', '');
     output.appendChild(in1);
-    const pad = span('pad', '');
     const loader = div('loader', '');
-    pad.appendChild(loader);
-    in1.appendChild(pad);
+    in1.appendChild(loader);
     in1.appendChild(selfClickableSpan('code', code));
     newDiv();
     io.rInput(async (what) => { d.innerText += what + '\n'; });
@@ -397,7 +402,7 @@ input.addEventListener('keydown', evt => {
             evt.preventDefault();
         }
     }
-    else if (evt.key === 'Enter') {
+    else if (evt.key === 'Enter' && !evt.shiftKey) {
         evt.preventDefault();
         if (!button.disabled)
             return run();
@@ -422,6 +427,7 @@ for (const k of document.querySelectorAll('.hl'))
 document.querySelector('#loading').remove();
 button.disabled = false;
 infobutton.disabled = false;
+highlightInput(); // in case the input is pre-filled
 const search = new URLSearchParams(window.location.search);
 for (const line of search.getAll('run'))
     await runCode(decodeURIComponent(line));
