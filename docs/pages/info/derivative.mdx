@@ -4,7 +4,7 @@ name: Dialect or Derivative?
 
 > Many features described here are currently just planned.
 
-One question I ask myself a lot is whether TinyAPL is an APL dialect or derivative. While I don't have a definitive answer, I think I lean more on the derivative side. Why didn't I call it CRP or ZOL (*finally, an APL for your shoes*) or $\left(\mathrm A + i\right)\left(\mathrm P + i\right)\left(\mathrm L + i\right)$, or TinyArrayLanguage or something like that? The first reason is historical: when I began the project I had no idea of what it would become, and also I think that I break off from traditional APL in less ways.
+One question I ask myself a lot is whether TinyAPL is an APL dialect or derivative. While I don't have a definitive answer, I think I lean more on the derivative side. Why didn't I call it CRP or ZOL (*finally, an APL for your shoes*) or $\left(\mathrm A + i\right)\left(\mathrm P + i\right)\left(\mathrm L + 2i\right)$, or HAP, or TinyArrayLanguage, or something like that? The first reason is historical: when I began the project I had no idea of what it would become, and also I think that I break off from traditional APL in less ways.
 
 I suppose not being "an APL" in the strictest sense makes TinyAPL a complete misnomer, given how many think it's not *tiny* at all either.
 
@@ -35,3 +35,24 @@ The other difference that's quite obvious for someone coming from, say, Dyalog, 
 The context-free parsing part is just that, because I allow modifier trains, you specify the type of a train just like for names. (see, there's a pattern!)
 
 But the obvious part is not that, it's that trains aren't invisible. That is, in Dyalog you write "union without intersection" (aka <primitive key="symmetric_difference" />) as `∪~∩`, in TinyAPL it's <hl code="⦅∪⋄~⋄∩⦆" />. Quite different. This does allow for a much larger set of possible tines of trains, and easier chains of atops, as documented [in the train documentation page](./trains).
+
+## Literal arrays
+
+From the first APLs, the way to write vectors of numbers has always been juxtaposition: `1 2 3`. This was  later changed to support any expression: `("hello")(9+17*2)`. There are two issues with this system. The first is that the binding strength of stranding is unclear: some dialects bind it tighter than function application and some looser. The second is that you can't write two values next to each other, even if they're meant to be used in different contexts: in Dyalog `⊖⍤¯1 2↑y` parses as `⊖⍤(¯1 2)↑y`, not as `(⊖⍤¯1)2↑y`. This is very annoying, especially if you use a lot of Rank like you do with a leading-axis oriented language like TinyAPL. BQN solves this problem by making stranding explicit, using the tie character <hl code="‿" />. TinyAPL takes this feature exactly.
+
+So, the way to write a (non-singleton) vector in traditional APL is to put the elements next to each other, with as many parentheses as needed. How about creating a matrix, or a 3D tensor? Historically, there's never been a way. More recently, [APLAN](https://aplwiki.com/wiki/Array_notation) was invented. It introduces an alternative syntax for vectors `(elem1♢elem2)` as well as a syntax for "high rank" arrays, which builds them up from major cells: `[cell1⋄cell2]`. Single-element vectors and high rank arrays are also possible by writing `(elem⋄)` and `[cell⋄]`. There's also a syntax for namespaces: `(name1:val1⋄name2:val2)`. BQN slightly changes array notation by using `⟨` and `⟩` instead of `(` and `)` for vectors, which means you don't need trailing `⋄`s for one-element vectors and one-cell arrays: `⟨elem⟩` and `[cell]`. BQN's namespace notation is a special case of block syntax, when you write a `⇐` for assignment: `{ name1⇐val1 ⋄ name2⇐val2 }`. TinyAPL uses BQN's syntax for arrays but changes namespace notation to its struct notation: <hl code="⦃ name1←val1 ⋄ name2←val2 ⦄" />.
+
+## Bracket indexing
+
+A feature that, as far as I can tell, appears in most APL dialects and implementations, no matter how old, is bracket indexing: `arr[ind1;ind2]`, which extracts the `ind1`-row, `ind2`-column item from `arr`, which has to be a matrix. The main issue with this is again binding. Should `⊖x[2 3;]` bind as `⊖(x[2 3;])`, or `(⊖x)[2 3;]`? More recent developments in APL introduced the <primitive key="index" /> function, and then later <primitive key="from" />, which solves some usability issues with Index. I chose to only support the last two, dropping bracket indexing entirely.
+
+## Leading-axis
+
+Just like BQN, TinyAPL drops last-axis primitives entirely. There is no *reverse last*, there is just *reverse (first) on vectors*, <hl code="⊖⍤1" />. It also removes [function axis](https://aplwiki.com/wiki/Function_axis), an outdated way to specify what axes a function should apply to, which is ad-hoc and not extendable.
+
+## Extra arguments
+
+Some languages extend the concept of function axis to dfns, using the identifier `χ`. While this is interesting, I already decided I'd drop function axis, so I came up with something slightly different: extra arguments. I've described them multiple times as *function axis meets [Variant](https://aplwiki.com/wiki/Variant) meets Python kwargs*. They look like this: <hl code='⍳⦋"origin":0⦌' />. Instead of passing any array, like Variant, which often ends up being key-value pairs anyways through nested vectors, you pass a dictionary. You can write <hl code='⍳⦋⟨"origin":0⟩⦌' />, but there's a shorthand for that. You can access them in dfns via `ɛ` and dmods via `ɛɛ`. Because they're dictionaries, all primitives already work with them. They're designed to be lax, so if you want to write a dfn that allows for both origin setting and comparision setting you can write <hl code="{... ⍳⦋ɛ⦌ ... =⦋ɛ⦌ ...}" />, and then specify any combination of extra args when calling. The short syntax also allows for always using a certain setting in a scope, even if it requires some care from the programmer: <hl code='s←⟨"origin":1⟩' /> and then <hl code="⍳⦋s⦌" />. I like this more than the scoped configuration special variables `⎕io` et cetera.
+
+
+
