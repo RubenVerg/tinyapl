@@ -256,7 +256,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍤` atop
 		* [x] `⍥` over
 		* [x] `⸚` mirror (`_{(⍵ ⍹⍹ ⍺)⍶⍶(⍺ ⍹⍹ ⍵)}_`)
-		* [ ] `«`/`»` fork
+		* [x] `«`/`»` fork
 		* [x] `⇾` left fork (`_{(⍺ ⍶⍶ ⍵) ⍹⍹ ⍵}_`)
 		* [x] `⇽` right fork (`_{⍺ ⍶⍶ (⍺ ⍹⍹ ⍵)}_`)
 		* [x] `⫤` ident (adverb returning the operand)

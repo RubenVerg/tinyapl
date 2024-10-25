@@ -3,6 +3,7 @@ module TinyAPL.Primitives where
 import TinyAPL.ArrayFunctionOperator
 import qualified TinyAPL.Functions as F
 import qualified TinyAPL.Glyphs as G
+import TinyAPL.Error
 import TinyAPL.Util (headPromise)
 
 -- * Primitive arrays
@@ -363,6 +364,32 @@ dex = PrimitiveConjunction
   , conjOnArrayFunction = Just $ \x g -> pure $ DerivedFunctionArrayFunction (Just $ callMonad g) (Just $ callDyad g) Nothing dex x g
   , conjOnFunctionArray = Just $ \f y -> pure $ DerivedFunctionFunctionArray (Just $ F.constant1 y) (Just $ F.constant2 y) Nothing dex f y
   , conjOnFunctionFunction = Just $ \f g -> pure $ DerivedFunctionFunctionFunction (Just $ callMonad g) (Just $ callDyad g) Nothing dex f g }
+forkA = PrimitiveConjunction
+  { conjRepr = [G.forkA]
+  , conjContext = Nothing
+  , conjOnArrayArray = Just $ \x y -> pure $ DerivedFunctionArrayArray (Just $ \_ -> message) (Just $ \_ _ -> message) Nothing forkA x y
+  , conjOnArrayFunction = Just $ \x g -> pure $ DerivedFunctionArrayFunction (Just $ \_ -> message) (Just $ \_ _ -> message) Nothing forkA x g
+  , conjOnFunctionArray = Just $ \f y -> pure $ DerivedFunctionFunctionArray (Just $ \_ -> message) (Just $ \_ _ -> message) Nothing forkA f y
+  , conjOnFunctionFunction = Just $ \f g -> pure $ DerivedFunctionFunctionFunction (Just $ \_ -> message) (Just $ \_ _ -> message) Nothing forkA f g }
+  where message = throwError $ DomainError $ [G.forkA] ++ " must be used in conjunction with " ++ [G.forkB]
+forkB = PrimitiveConjunction
+  { conjRepr = [G.forkB]
+  , conjContext = Nothing
+  , conjOnArrayArray = Nothing
+  , conjOnArrayFunction = Nothing
+  , conjOnFunctionArray = Just $ \left z -> case left of
+    DerivedFunctionArrayArray _ _ _ op x y | op == forkA -> pure $ DerivedFunctionFunctionArray (Just $ F.fork1 (F.constant1 x) (F.constant2 y) (F.constant1 z)) (Just $ F.fork2 (F.constant2 x) (F.constant2 y) (F.constant2 z)) Nothing forkB left z
+    DerivedFunctionArrayFunction _ _ _ op x g | op == forkA -> pure $ DerivedFunctionFunctionArray (Just $ F.fork1 (F.constant1 x) (callDyad g) (F.constant1 z)) (Just $ F.fork2 (F.constant2 x) (callDyad g) (F.constant2 z)) Nothing forkB left z
+    DerivedFunctionFunctionArray _ _ _ op f y | op == forkA -> pure $ DerivedFunctionFunctionArray (Just $ F.fork1 (callMonad f) (F.constant2 y) (F.constant1 z)) (Just $ F.fork2 (callDyad f) (F.constant2 y) (F.constant2 z)) Nothing forkB left z
+    DerivedFunctionFunctionFunction _ _ _ op f g | op == forkA -> pure $ DerivedFunctionFunctionArray (Just $ F.fork1 (callMonad f) (callDyad g) (F.constant1 z)) (Just $ F.fork2 (callDyad f) (callDyad g) (F.constant2 z)) Nothing forkB left z
+    _ -> message
+  , conjOnFunctionFunction = Just $ \left h -> case left of
+    DerivedFunctionArrayArray _ _ _ op x y | op == forkA -> pure $ DerivedFunctionFunctionFunction (Just $ F.fork1 (F.constant1 x) (F.constant2 y) (callMonad h)) (Just $ F.fork2 (F.constant2 x) (F.constant2 y) (callDyad h)) Nothing forkB left h
+    DerivedFunctionArrayFunction _ _ _ op x g | op == forkA -> pure $ DerivedFunctionFunctionFunction (Just $ F.fork1 (F.constant1 x) (callDyad g) (callMonad h)) (Just $ F.fork2 (F.constant2 x) (callDyad g) (callDyad h)) Nothing forkB left h
+    DerivedFunctionFunctionArray _ _ _ op f y | op == forkA -> pure $ DerivedFunctionFunctionFunction (Just $ F.fork1 (callMonad f) (F.constant2 y) (callMonad h)) (Just $ F.fork2 (callDyad f) (F.constant2 y) (callDyad h)) Nothing forkB left h
+    DerivedFunctionFunctionFunction _ _ _ op f g | op == forkA -> pure $ DerivedFunctionFunctionFunction (Just $ F.fork1 (callMonad f) (callDyad g) (callMonad h)) (Just $ F.fork2 (callDyad f) (callDyad g) (callDyad h)) Nothing forkB left h
+    _ -> message }
+  where message = throwError $ DomainError $ [G.forkA] ++ " must be used in conjunction with " ++ [G.forkB]
 
 conjunctions = (\x -> (headPromise $ conjRepr x, x)) <$>
   [ TinyAPL.Primitives.atop
@@ -379,4 +406,6 @@ conjunctions = (\x -> (headPromise $ conjRepr x, x)) <$>
   , TinyAPL.Primitives.under
   , TinyAPL.Primitives.innerProduct
   , TinyAPL.Primitives.lev
-  , TinyAPL.Primitives.dex ]
+  , TinyAPL.Primitives.dex
+  , TinyAPL.Primitives.forkA
+  , TinyAPL.Primitives.forkB ]
