@@ -82,6 +82,7 @@ encode = PrimitiveFunction (Just F.encodeBase2) (Just F.encode') [G.encode] Noth
 histogram = PrimitiveFunction Nothing (Just F.count) [G.histogram] Nothing
 increment = PrimitiveFunction (Just F.increment') Nothing [G.increment] Nothing
 decrement = PrimitiveFunction (Just F.decrement') (Just F.span') [G.decrement] Nothing
+range = PrimitiveFunction (Just F.oneRange) (Just F.range) [G.range] Nothing
 
 functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -151,7 +152,8 @@ functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.encode
   , TinyAPL.Primitives.histogram
   , TinyAPL.Primitives.increment
-  , TinyAPL.Primitives.decrement ]
+  , TinyAPL.Primitives.decrement
+  , TinyAPL.Primitives.range ]
 
 -- * Primitive adverbs
 

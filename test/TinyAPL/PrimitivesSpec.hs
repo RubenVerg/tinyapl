@@ -471,6 +471,8 @@ spec = do
           m P.iota (vector [Number 2, Number 3]) `shouldReturn` pure (fromMajorCells
             [ vector [box $ vector [Number 0, Number 0], box $ vector [Number 0, Number 1], box $ vector [Number 0, Number 2]]
             , vector [box $ vector [Number 1, Number 0], box $ vector [Number 1, Number 1], box $ vector [Number 1, Number 2]] ])
+        it "returns an empty vector on zero" $ do
+          m P.iota (scalar $ Number 0) `shouldReturn` pure (vector [])
       describe "index of" $ do
         it "returns the index of the first occurrence of a cell of an array in the major cells of another" $ do
           d P.iota (vector $ Character <$> "hello world") (vector $ Character <$> "lw") `shouldReturn` pure (vector [Number 2, Number 6])
@@ -744,6 +746,23 @@ spec = do
       describe "span" $ do
         it "returns the span between two numbers" $ do
           d P.decrement (scalar $ Number 10) (vector [Number 7, Number 12]) `shouldReturn` pure (vector [Number 4, Number -1])
+
+    describe [G.range] $ do
+      describe "one range" $ do
+        it "makes a range starting at 1 and ending at the number" $ do
+          m P.range (scalar $ Number 4) `shouldReturn` pure (vector [Number 1, Number 2, Number 3, Number 4])
+          m P.range (vector [Number 3, Number 2]) `shouldReturn` pure (fromMajorCells
+            [ vector [box $ vector [Number 1, Number 1], box $ vector [Number 1, Number 2]]
+            , vector [box $ vector [Number 2, Number 1], box $ vector [Number 2, Number 2]]
+            , vector [box $ vector [Number 3, Number 1], box $ vector [Number 3, Number 2]] ])
+      
+      describe "range" $ do
+        it "makes a range between two numbers" $ do
+          d P.range (scalar $ Number 2) (scalar $ Number 4) `shouldReturn` pure (vector [Number 2, Number 3, Number 4])
+          d P.range (vector [Number 2, Number 3]) (vector [Number 4, Number 5]) `shouldReturn` pure (fromMajorCells
+            [ vector [box $ vector [Number 2, Number 3], box $ vector [Number 2, Number 4], box $ vector [Number 2, Number 5]]
+            , vector [box $ vector [Number 3, Number 3], box $ vector [Number 3, Number 4], box $ vector [Number 3, Number 5]]
+            , vector [box $ vector [Number 4, Number 3], box $ vector [Number 4, Number 4], box $ vector [Number 4, Number 5]] ])
   
   describe "adverbs" $ do
     describe [G.selfie] $ do

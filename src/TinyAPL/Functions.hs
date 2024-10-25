@@ -573,6 +573,7 @@ last (Array _ []) = throwError $ DomainError "Last on empty array"
 last (Array _ xs) = pure $ fromScalar $ Prelude.last xs
 
 indexGenerator :: MonadError Error m => Natural -> m Array
+indexGenerator 0 = pure $ vector []
 indexGenerator i = pure $ vector $ Number . fromInteger . toInteger <$> [0..i - 1]
 
 indexGeneratorN :: MonadError Error m => [Natural] -> m Array
@@ -584,6 +585,12 @@ indexGenerator' arr = do
   is <- asVector err arr >>= mapM (asNumber err >=> asNat err)
   if isScalar arr then indexGenerator $ headPromise is
   else indexGeneratorN is
+
+range :: MonadError Error m => Array -> Array -> m Array
+range = commute $ (indexGenerator' `atop` span') `leftFork` eachLeft add'
+
+oneRange :: MonadError Error m => Array -> m Array
+oneRange = range $ scalar $ Number 1
 
 replicate :: MonadError Error m => [Natural] -> [a] -> m [a]
 replicate [] [] = pure []
