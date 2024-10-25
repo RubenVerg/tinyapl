@@ -110,8 +110,10 @@ count p (x:xs) | p x       = 1 + count p xs
 countEqual :: (Num n, Eq a) => a -> [a] -> n
 countEqual n h = count (== n) h
 
-generateIndices :: (Enum a, Num a) => [a] -> [[a]]
-generateIndices = foldr (liftA2 (:) . enumFromTo 0 . subtract 1) [[]]
+generateIndices :: (Enum a, Num a, Eq a) => [a] -> [[a]]
+generateIndices = foldr (liftA2 (:) . (\case
+  0 -> []
+  n -> [0..n-1])) [[]]
 
 mapAdjacent :: (a -> a -> b) -> [a] -> [b]
 mapAdjacent f xs = zipWith f xs $ drop 1 xs

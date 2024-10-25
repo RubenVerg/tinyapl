@@ -163,7 +163,8 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍳` index generator
 		* [x] `?` roll
 		* [ ] `?` deal
-		* [ ] `…` range
+		* [x] `…` range
+		* [x] `…` one range
 		* [x] `⍮` pair
 		* [x] `⍮` half pair
 	* array manipulation functions

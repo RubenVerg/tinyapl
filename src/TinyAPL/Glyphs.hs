@@ -180,6 +180,7 @@ encode = '⊤'
 histogram = '⋷'
 increment = '⧺'
 decrement = 'ⵧ'
+range = '…'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -249,7 +250,8 @@ functions =
   , TinyAPL.Glyphs.encode
   , TinyAPL.Glyphs.histogram
   , TinyAPL.Glyphs.increment
-  , TinyAPL.Glyphs.decrement ]
+  , TinyAPL.Glyphs.decrement
+  , TinyAPL.Glyphs.range ]
 
 -- * Adverbs
 
