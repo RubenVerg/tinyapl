@@ -307,6 +307,8 @@ under = '⍢'
 innerProduct = '∙'
 lev = '⫣'
 dex = '⊩'
+forkA = '«'
+forkB = '»'
 
 conjunctions =
   [ TinyAPL.Glyphs.atop
@@ -323,4 +325,6 @@ conjunctions =
   , TinyAPL.Glyphs.under
   , TinyAPL.Glyphs.innerProduct
   , TinyAPL.Glyphs.lev
-  , TinyAPL.Glyphs.dex ]
+  , TinyAPL.Glyphs.dex
+  , TinyAPL.Glyphs.forkA
+  , TinyAPL.Glyphs.forkB ]
