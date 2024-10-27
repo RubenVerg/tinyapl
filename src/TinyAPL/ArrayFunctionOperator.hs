@@ -412,11 +412,11 @@ scalarDyad :: MonadError Error m =>
   (ScalarValue -> ScalarValue -> m ScalarValue)
       -> Array ->       Array -> m Array
 scalarDyad f a@(Array ash as) b@(Array bsh bs)
-  | isScalar a && isScalar b = let ([a'], [b']) = (as, bs) in scalar <$> f' a' b'
-  | isScalar a = let [a'] = as in Array bsh <$> mapM (a' `f'`) bs
-  | isScalar b = let [b'] = bs in Array ash <$> mapM (`f'` b') as
-  | ash == bsh =
-    Array (arrayShape a) <$> zipWithM f' (arrayContents a) (arrayContents b)
+  | null ash && null bsh = let ([a'], [b']) = (as, bs) in scalar <$> f' a' b'
+  | null ash = let [a'] = as in Array bsh <$> mapM (a' `f'`) bs
+  | null bsh = let [b'] = bs in Array ash <$> mapM (`f'` b') as
+  | ash == bsh = Array (arrayShape a) <$> zipWithM f' (arrayContents a) (arrayContents b)
+  | ash `isPrefixOf` bsh || bsh `isPrefixOf` ash = fromMajorCells <$> zipWithM (scalarDyad f) (majorCells a) (majorCells b)
   | length ash /= length bsh = throwError $ RankError "Mismatched left and right argument ranks"
   | otherwise = throwError $ LengthError "Mismatched left and right argument shapes"
   where
