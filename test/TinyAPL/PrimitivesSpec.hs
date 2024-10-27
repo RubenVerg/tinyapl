@@ -605,6 +605,12 @@ spec = do
           d P.rank (scalar $ Number 0) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (scalar $ Number 1)
 
     describe [G.catenate] $ do
+      describe "join" $ do
+        it "joins a boxed vector into a flat one" $ do
+          m P.catenate (vector [box $ vector $ Character <$> "ab", box $ vector $ Character <$> "cdef"]) `shouldReturn` pure (vector $ Character <$> "abcdef")
+        it "returns an empty vector for an empty vector" $ do
+          m P.catenate (vector []) `shouldReturn` pure (vector [])
+
       describe "catenate" $ do
         it "pairs scalars" $ do
           d P.catenate (scalar $ Number 1) (scalar $ Number 2) `shouldReturn` pure (vector [Number 1, Number 2])
