@@ -679,7 +679,9 @@ from = (first `before` squad) `atRank2` (0, likePositiveInfinity)
 
 catenate :: MonadError Error m => Array -> Array -> m Array
 catenate a@(Array ash acs) b@(Array bsh bcs) =
-  if arrayRank a == arrayRank b then
+  if null acs && Prelude.not (null bcs) then pure b
+  else if null bcs && Prelude.not (null acs) then pure a
+  else if arrayRank a == arrayRank b then
     if (isScalar a && isScalar b) || (tailMaybe ash == tailMaybe bsh) then pure $ fromMajorCells $ majorCells a ++ majorCells b
     else throwError $ LengthError "Incompatible shapes to Catenate"
   else if isScalar a then catenate (fromJust $ arrayReshaped (1 : tailPromise bsh) acs) b
@@ -687,6 +689,12 @@ catenate a@(Array ash acs) b@(Array bsh bcs) =
   else if arrayRank a == arrayRank b + 1 then promote b >>= (a `catenate`)
   else if arrayRank a + 1 == arrayRank b then promote a >>= (`catenate` b)
   else throwError $ RankError "Incompatible ranks to Catenate"
+
+join :: MonadError Error m => [Array] -> m Array
+join = fold (catenate `after` first) (vector [])
+
+join' :: MonadError Error m => Array -> m Array
+join' = TinyAPL.Functions.join . majorCells
 
 gradeUp :: MonadError Error m => Ord a => [a] -> m [Natural]
 gradeUp xs = pure $ map fst $ sortOn snd $ zip [0..genericLength xs] xs
