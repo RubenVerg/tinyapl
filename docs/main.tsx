@@ -73,11 +73,11 @@ const glyphPage = (glyph: Glyph) => render(<FullPage pages={pages}><GlyphPage gl
 	title: `${glyph.glyph} ${glyph.name} - TinyAPL`,
 });
 
-const runInterpreter = await render(<RunInterpreter pages={pages} interpreters={interpreters} />, {
+const runInterpreter = () => render(<RunInterpreter pages={pages} interpreters={interpreters} />, {
 	title: 'Run Interpreter - TinyAPL',
 });
 
-const data = await render(<FullPage pages={pages}><Data pages={pages} /></FullPage>, {
+const data = () => render(<FullPage pages={pages}><Data pages={pages} /></FullPage>, {
 	title: 'Data - TinyAPL',
 });
 
@@ -116,11 +116,11 @@ async function handler(req: Request) {
 	}
 
 	if (pathname === '/data' || pathname === '/data/') {
-		return data;
+		return await data();
 	}
 
 	if (pathname === '/run' || pathname === '/run/') {
-		return runInterpreter;
+		return await runInterpreter();
 	}
 
 	if (pathname.startsWith('/run')) {
