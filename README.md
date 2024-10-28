@@ -287,7 +287,7 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⎕HTTP` http requests
 		* [ ] `⎕CSV` convert from/to CSV
 		* [ ] `⎕JSON` convert from/to JSON
-		* [ ] `⎕Unicode` convert between unicode representations
+		* [x] `⎕Unicode` convert between unicode representations
 		* [x] `⎕Exists` does a variable exist?
 		* [ ] `⎕Partition` convert Partition representation to Group representation (so that Partition is `⎕Partition⍛⊆`)
 		* [x] `⎕Repr` convert an array to a representation that can be read with Execute
