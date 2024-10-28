@@ -381,7 +381,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
     dictionaryNotation :: Parser Token
     dictionaryNotation = withPos $ choice
       [ try $ between (char $ fst G.vector) (char $ snd G.vector) (lexeme $ char G.guard) $> TokenDictionary []
-      , try $ between (char $ fst G.vector) (char $ snd G.vector) (TokenDictionary <$> sepBy (liftA2 (,) (bits `commitOn` (lexeme $ char G.guard)) bits) separator ) ]
+      , try $ between (char $ fst G.vector) (char $ snd G.vector) (TokenDictionary <$> sepBy1 (liftA2 (,) (bits `commitOn` (lexeme $ char G.guard)) bits) separator ) ]
 
     primArray :: Parser Token
     primArray = withPos $ TokenPrimArray <$> oneOf G.arrays

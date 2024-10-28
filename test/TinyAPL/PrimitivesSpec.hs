@@ -23,64 +23,64 @@ context = Context scope core undefined undefined undefined idRef
 
 spec :: Spec
 spec = do
-  let m :: Function -> Array -> IO (Result Array)
+  let m :: Function -> Noun -> IO (Result Noun)
       m fn y = runResult $ fst <$> runSt (callMonad fn y) context
 
-      d :: Function -> Array -> Array -> IO (Result Array)
+      d :: Function -> Noun -> Noun -> IO (Result Noun)
       d fn x y = runResult $ fst <$> runSt (callDyad fn x y) context
 
-      aa :: Adverb -> Array -> IO (Result Function)
-      aa adv u = runResult $ fst <$> runSt (callOnArray adv u) context
+      aa :: Adverb -> Noun -> IO (Result Function)
+      aa adv u = runResult $ fst <$> runSt (callOnNoun adv u) context
 
-      aam :: Adverb -> Array -> Array -> IO (Result Array)
-      aam adv u x = runResult $ fst <$> runSt (callOnArray adv u >>= (`callMonad` x)) context
+      aam :: Adverb -> Noun -> Noun -> IO (Result Noun)
+      aam adv u x = runResult $ fst <$> runSt (callOnNoun adv u >>= (`callMonad` x)) context
 
-      aad :: Adverb -> Array -> Array -> Array -> IO (Result Array)
-      aad adv u x y = runResult $ fst <$> runSt (callOnArray adv u >>= (\d -> callDyad d x y)) context
+      aad :: Adverb -> Noun -> Noun -> Noun -> IO (Result Noun)
+      aad adv u x y = runResult $ fst <$> runSt (callOnNoun adv u >>= (\d -> callDyad d x y)) context
 
       af :: Adverb -> Function -> IO (Result Function)
       af adv f = runResult $ fst <$> runSt (callOnFunction adv f) context
 
-      afm :: Adverb -> Function -> Array -> IO (Result Array)
+      afm :: Adverb -> Function -> Noun -> IO (Result Noun)
       afm adv f x = runResult $ fst <$> runSt (callOnFunction adv f >>= (`callMonad` x)) context
 
-      afd :: Adverb -> Function -> Array -> Array -> IO (Result Array)
+      afd :: Adverb -> Function -> Noun -> Noun -> IO (Result Noun)
       afd adv f x y = runResult $ fst <$> runSt (callOnFunction adv f >>= (\d -> callDyad d x y)) context
 
-      caa :: Conjunction -> Array -> Array -> IO (Result Function)
-      caa conj u v = runResult $ fst <$> runSt (callOnArrayAndArray conj u v) context
+      caa :: Conjunction -> Noun -> Noun -> IO (Result Function)
+      caa conj u v = runResult $ fst <$> runSt (callOnNounAndNoun conj u v) context
 
-      caam :: Conjunction -> Array -> Array -> Array -> IO (Result Array)
-      caam conj u v x = runResult $ fst <$> runSt (callOnArrayAndArray conj u v >>= (`callMonad` x)) context
+      caam :: Conjunction -> Noun -> Noun -> Noun -> IO (Result Noun)
+      caam conj u v x = runResult $ fst <$> runSt (callOnNounAndNoun conj u v >>= (`callMonad` x)) context
 
-      caad :: Conjunction -> Array -> Array -> Array -> Array -> IO (Result Array)
-      caad conj u v x y = runResult $ fst <$> runSt (callOnArrayAndArray conj u v >>= (\d -> callDyad d x y)) context
+      caad :: Conjunction -> Noun -> Noun -> Noun -> Noun -> IO (Result Noun)
+      caad conj u v x y = runResult $ fst <$> runSt (callOnNounAndNoun conj u v >>= (\d -> callDyad d x y)) context
 
-      caf :: Conjunction -> Array -> Function -> IO (Result Function)
-      caf conj u g = runResult $ fst <$> runSt (callOnArrayAndFunction conj u g) context
+      caf :: Conjunction -> Noun -> Function -> IO (Result Function)
+      caf conj u g = runResult $ fst <$> runSt (callOnNounAndFunction conj u g) context
 
-      cafm :: Conjunction -> Array -> Function -> Array -> IO (Result Array)
-      cafm conj u g x = runResult $ fst <$> runSt (callOnArrayAndFunction conj u g >>= (`callMonad` x)) context
+      cafm :: Conjunction -> Noun -> Function -> Noun -> IO (Result Noun)
+      cafm conj u g x = runResult $ fst <$> runSt (callOnNounAndFunction conj u g >>= (`callMonad` x)) context
 
-      cafd :: Conjunction -> Array -> Function -> Array -> Array -> IO (Result Array)
-      cafd conj u g x y = runResult $ fst <$> runSt (callOnArrayAndFunction conj u g >>= (\d -> callDyad d x y)) context
+      cafd :: Conjunction -> Noun -> Function -> Noun -> Noun -> IO (Result Noun)
+      cafd conj u g x y = runResult $ fst <$> runSt (callOnNounAndFunction conj u g >>= (\d -> callDyad d x y)) context
 
-      cfa :: Conjunction -> Function -> Array -> IO (Result Function)
-      cfa conj f v = runResult $ fst <$> runSt (callOnFunctionAndArray conj f v) context
+      cfa :: Conjunction -> Function -> Noun -> IO (Result Function)
+      cfa conj f v = runResult $ fst <$> runSt (callOnFunctionAndNoun conj f v) context
 
-      cfam :: Conjunction -> Function -> Array -> Array -> IO (Result Array)
-      cfam conj f v x = runResult $ fst <$> runSt (callOnFunctionAndArray conj f v >>= (`callMonad` x)) context
+      cfam :: Conjunction -> Function -> Noun -> Noun -> IO (Result Noun)
+      cfam conj f v x = runResult $ fst <$> runSt (callOnFunctionAndNoun conj f v >>= (`callMonad` x)) context
 
-      cfad :: Conjunction -> Function -> Array -> Array -> Array -> IO (Result Array)
-      cfad conj f v x y = runResult $ fst <$> runSt (callOnFunctionAndArray conj f v >>= (\d -> callDyad d x y)) context
+      cfad :: Conjunction -> Function -> Noun -> Noun -> Noun -> IO (Result Noun)
+      cfad conj f v x y = runResult $ fst <$> runSt (callOnFunctionAndNoun conj f v >>= (\d -> callDyad d x y)) context
 
       cff :: Conjunction -> Function -> Function -> IO (Result Function)
       cff conj f g = runResult $ fst <$> runSt (callOnFunctionAndFunction conj f g) context
 
-      cffm :: Conjunction -> Function -> Function -> Array -> IO (Result Array)
+      cffm :: Conjunction -> Function -> Function -> Noun -> IO (Result Noun)
       cffm conj f g x = runResult $ fst <$> runSt (callOnFunctionAndFunction conj f g >>= (`callMonad` x)) context
 
-      cffd :: Conjunction -> Function -> Function -> Array -> Array -> IO (Result Array)
+      cffd :: Conjunction -> Function -> Function -> Noun -> Noun -> IO (Result Noun)
       cffd conj f g x y = runResult $ fst <$> runSt (callOnFunctionAndFunction conj f g >>= (\d -> callDyad d x y)) context
 
       e2m :: Either e a -> Maybe a
@@ -123,6 +123,9 @@ spec = do
           m P.times (vector [Number 3, Number 0, Number -5]) `shouldReturn` pure (vector [Number 1, Number 0, Number -1])
         it "returns the direction of complex numbers" $ do
           m P.times (vector [Number (0 :+ 2), Number (1 :+ 1)]) `shouldReturn` pure (vector [Number (0 :+ 1), Number (sqrt 0.5 :+ sqrt 0.5)])
+      describe "case" $ do
+        it "returns the case of characters" $ do
+          m P.times (vector $ Character <$> "a.A") `shouldReturn` pure (vector [Number -1, Number 0, Number 1])
       describe "multiply" $ do
         it "multiplies complex numbers" $ do
           d P.times (scalar $ Number (2 :+ 1)) (vector [Number 2, Number -1, Number (3 :+ -1)]) `shouldReturn` pure (vector [Number (4 :+ 2), Number (-2 :+ -1), Number (7 :+ 1)])
@@ -177,6 +180,9 @@ spec = do
           m P.floor (vector [Number 1, Number 1.25, Number -1.75]) `shouldReturn` pure (vector [Number 1, Number 1, Number -2])
         it "floors complex numbers" $ do
           m P.floor (vector [Number (0.25 :+ 0.25), Number (0.75 :+ 0.25), Number (0.25 :+ 0.75)]) `shouldReturn` pure (vector [Number 0, Number 1, Number (0 :+ 1)])
+      describe "lowercase" $ do
+        it "lowercases characters" $ do
+          m P.floor (vector $ Character <$> "Ab.") `shouldReturn` pure (vector $ Character <$> "ab.")
       describe "min" $ do
         it "returns the minimum of real numbers" $ do
           d P.floor (vector [Number 3, Number -1]) (vector [Number 2, Number 5]) `shouldReturn` pure (vector [Number 2, Number -1])
@@ -189,6 +195,9 @@ spec = do
           m P.ceil (vector [Number 1, Number 1.25, Number -1.75]) `shouldReturn` pure (vector [Number 1, Number 2, Number -1])
         it "ceils complex numbers" $ do
           m P.ceil (vector [Number (0.25 :+ 0.25), Number (0.75 :+ 0.25), Number (0.75 :+ 0.75)]) `shouldReturn` pure (vector [Number (0 :+ 1), Number 1, Number (1 :+ 1)])
+      describe "uppercase" $ do
+        it "uppercases characters" $ do
+          m P.ceil (vector $ Character <$> "Ab.") `shouldReturn` pure (vector $ Character <$> "AB.")
       describe "max" $ do
         it "returns the maximum of real numbers" $ do
           d P.ceil (vector [Number 3, Number -1]) (vector [Number 2, Number 5]) `shouldReturn` pure (vector [Number 3, Number 5])
@@ -515,6 +524,9 @@ spec = do
           m P.abs (vector [Number 1, Number -2, Number 0]) `shouldReturn` pure (vector [Number 1, Number 2, Number 0])
         it "returns the magnitude of complex numbers" $ do
           m P.abs (vector [Number (1 :+ 1), Number (3 :+ -4)]) `shouldReturn` pure (vector [Number $ sqrt 2, Number 5])
+      describe "case fold" $ do
+        it "case folds characters" $ do
+          m P.abs (vector $ Character <$> "a.Aσς") `shouldReturn` pure (vector $ Character <$> "a.aσσ")
       describe "residue" $ do
         it "returns the residue of division" $ do
           d P.abs (vector [Number 2, Number 2, Number 0.5]) (vector [Number 4, Number -5, Number 3.2]) `shouldReturn` pure (vector [Number 0, Number 1, Number 0.2])

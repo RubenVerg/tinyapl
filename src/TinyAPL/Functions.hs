@@ -10,7 +10,7 @@ import TinyAPL.Util
 import Control.Monad.Except (MonadError)
 import qualified TinyAPL.Complex as Cx
 import TinyAPL.Complex ( Complex((:+)) )
-import Data.Char (ord, chr)
+import Data.Char
 import Data.Maybe (fromJust, fromMaybe)
 import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericReplicate, nub, genericIndex, sortOn, sort, find)
 import Numeric.Natural (Natural)
@@ -69,6 +69,7 @@ sub' = scalarDyad sub
 
 sign :: MonadError Error m => ScalarValue -> m ScalarValue
 sign (Number y) = pure $ Number $ signum y
+sign (Character y) = pure $ Number $ if isUpperCase y then 1 else if isLowerCase y then -1 else 0
 sign _ = throwError expectedNumber
 
 sign' :: MonadError Error m => Noun -> m Noun
@@ -172,6 +173,7 @@ matrixDivide' = atRank2 (\x y -> do
 
 floor :: MonadError Error m => ScalarValue -> m ScalarValue
 floor (Number y) = pure $ Number $ complexFloor y
+floor (Character y) = pure $ Character $ toLower y
 floor _ = throwError expectedNumber
 
 floor' :: MonadError Error m => Noun -> m Noun
@@ -179,6 +181,7 @@ floor' = scalarMonad TinyAPL.Functions.floor
 
 ceil :: MonadError Error m => ScalarValue -> m ScalarValue
 ceil (Number y) = pure $ Number $ complexCeiling y
+ceil (Character y) = pure $ Character $ toUpper y
 ceil _ = throwError expectedNumber
 
 ceil' :: MonadError Error m => Noun -> m Noun
@@ -273,6 +276,7 @@ polar' = scalarDyad polar
 
 abs :: MonadError Error m => ScalarValue -> m ScalarValue
 abs (Number y) = pure $ Number $ Prelude.abs y
+abs (Character y) = pure $ Character $ toLower $ toUpper y
 abs _ = throwError expectedNumber
 
 abs' :: MonadError Error m => Noun -> m Noun
