@@ -142,10 +142,10 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍱` nor
 		* [x] `~` not
 	* character functions
-		* [ ] `⌊` lowercase
-		* [ ] `⌈` uppercase
-		* [ ] `|` case fold
-		* [ ] `×` case
+		* [x] `⌊` lowercase
+		* [x] `⌈` uppercase
+		* [x] `|` case fold
+		* [x] `×` case
 	* set functions
 		* [x] `∪` unique
 		* [x] `∪` union
