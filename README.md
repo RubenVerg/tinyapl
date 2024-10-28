@@ -72,8 +72,9 @@ Marked features are supported, unmarked features are planned
 	* [ ] multiple statements in an expression `(`/`⋄`/`)`
 	* [x] ternary expressions `⍰`/`⍠`
 * primitives
-	* arrays
-		* [x] `⍬`
+	* nouns
+		* [x] `⍬` empty vector
+		* [x] `∻` empty dictionary
 	* number functions
 		* [x] `+` conjugate
 		* [x] `+` add
@@ -173,7 +174,14 @@ Marked features are supported, unmarked features are planned
 		* [x] `…` one range
 		* [x] `⍮` pair
 		* [x] `⍮` half pair
-	* array manipulation functions
+	* dictionary functions
+		* [ ] `‥` from keys and values
+		* [ ] `߹` key-value pair
+		* [ ] `‥` from inverted table
+		* [ ] `߹` from pairs
+		* [ ] `⍉` inverted table
+		* [ ] `↓` key-value pairs
+	* manipulation functions
 		* [x] `↑` take
 		* [x] `↓` drop
 		* [x] `↑` mix
@@ -203,7 +211,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `∧` promote (introduce leading axis)
 		* [x] `∨` demote (combine two leading axes)
 		* [x] `,` laminate
-	* array lookup functions
+	* lookup functions
 		* [x] `⊃` first
 		* [x] `⊇` last
 		* [x] `⊇` from
@@ -270,7 +278,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⊩` dex (conjunction returning the right operand)
 * system names (quad names)
 	* [x] support for system names in parsing and interpreting
-	* system arrays (nilads, i guess)
+	* system nilads
 		* [x] `⎕u` (constant) the uppercase alphabet
 		* [x] `⎕l` (constant) the lowercase alphabet
 		* [x] `⎕d` (constant) the digits
