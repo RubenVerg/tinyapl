@@ -192,7 +192,7 @@ instance IsJS ScalarValue where
     "string" -> Character $ fromJSVal v
     "object" ->
       if jsIsArray v then Number $ fromJSVal v
-      else if fromJSVal (jsLookup v $ toJSString "type") == "array" then Box $ fromJSVal v
+      else if fromJSVal (jsLookup v $ toJSString "type") `elem` ["array", "dictionary"] then Box $ fromJSVal v
       else error "fromJSVal ScalarValue: wrong or unsupported type"
     _ -> error "fromJSVal ScalarValue: wrong type"
   toJSVal (Number x) = toJSVal x
@@ -206,7 +206,7 @@ instance IsJSSt ScalarValue where
     "string" -> pure $ Character $ fromJSVal v
     "object" ->
       if jsIsArray v then pure $ Number $ fromJSVal v
-      else if fromJSVal (jsLookup v $ toJSString "type") == "array" then Box <$> fromJSValSt v
+      else if fromJSVal (jsLookup v $ toJSString "type") `elem` ["array", "dictionary"] then Box <$> fromJSValSt v
       else if fromJSVal (jsLookup v $ toJSString "type") == "function" then Wrap <$> fromJSValSt v
       else if fromJSVal (jsLookup v $ toJSString "type") == "adverb" then AdverbWrap <$> fromJSValSt v
       else if fromJSVal (jsLookup v $ toJSString "type") == "conjunction" then ConjunctionWrap <$> fromJSValSt v
@@ -229,26 +229,36 @@ instance IsJSSt ScalarValue where
 
 foreign import javascript unsafe "return $1[$2];" jsLookup :: JSVal -> JSString -> JSVal
 
-instance IsJS Array where
+instance IsJS Noun where
   fromJSVal v
     | fromJSVal (jsLookup v $ toJSString "type") == "array" = let
       shape = arrayToList $ fromJSVal $ jsLookup v $ toJSString "shape"
       contents = arrayToList $ fromJSVal $ jsLookup v $ toJSString "contents"
       in Array shape contents
-    | otherwise = error "fromJSVal Array: not an array"
+    | fromJSVal (jsLookup v $ toJSString "type") == "dictionary" = let
+      entries = arrayToList $ fromJSVal $ jsLookup v $ toJSString "entries"
+      in dictionary entries
+    | otherwise = error "fromJSVal Noun: not a noun"
   toJSVal (Array shape contents) = objectToVal [("type", toJSVal $ toJSString "array"), ("shape", toJSVal shape), ("contents", toJSVal contents)]
+  toJSVal (Dictionary ks vs) = objectToVal [("type", toJSVal $ toJSString "dictionary"), ("entries", toJSVal $ listToArray $ zip ks vs)]
 
-instance IsJSSt Array where
+instance IsJSSt Noun where
   fromJSValSt v
     | fromJSVal (jsLookup v $ toJSString "type") == "array" = do
       let shape = arrayToList $ fromJSVal $ jsLookup v $ toJSString "shape"
       contents <- arrayToListSt $ fromJSVal $ jsLookup v $ toJSString "contents"
       pure $ Array shape contents
-    | otherwise = throwError $ DomainError "fromJSValSt Array: not an array"
+    | fromJSVal (jsLookup v $ toJSString "type") == "dictionary" = do
+      entries <- arrayToListSt $ fromJSVal $ jsLookup v $ toJSString "entries"
+      pure $ dictionary entries
+    | otherwise = throwError $ DomainError "fromJSValSt Noun: not a noun"
   toJSValSt (Array shape contents) = do
     let shape' = toJSVal shape
     contents' <- toJSValSt contents
     pure $ objectToVal [("type", toJSVal $ toJSString "array"), ("shape", shape'), ("contents", contents')]
+  toJSValSt (Dictionary ks vs) = do
+    es <- listToArraySt $ zip ks vs
+    pure $ objectToVal [("type", toJSVal $ toJSString "dictionary"), ("entries", toJSVal $ es)]
 
 instance IsJS Error where
   fromJSVal v = let
@@ -321,7 +331,7 @@ instance IsJSSt Adverb where
       pure $ DefinedAdverb {
         adverbRepr = repr,
         adverbContext = Nothing,
-        adverbOnArray = if jsIsUndefined onArray then Nothing else Just $ (\x -> do
+        adverbOnNoun = if jsIsUndefined onArray then Nothing else Just $ (\x -> do
           x' <- toJSValSt x
           res <- liftToSt (jsCall1 onArray x') >>= fromJSValSt
           liftEither res),
@@ -335,7 +345,7 @@ instance IsJSSt Adverb where
     ctx <- getContext
     onArray <- liftToSt $ jsWrap1 $ \x -> do
       x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
-      r <- second fst <$> (runResult $ runSt (callOnArray a x') ctx)
+      r <- second fst <$> (runResult $ runSt (callOnNoun a x') ctx)
       fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
     onFunction <- liftToSt $ jsWrap1 $ \x -> do
       x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
@@ -355,17 +365,17 @@ instance IsJSSt Conjunction where
       pure $ DefinedConjunction {
         conjRepr = repr,
         conjContext = Nothing,
-        conjOnArrayArray = if jsIsUndefined onArrayArray then Nothing else Just $ (\x y -> do
+        conjOnNounNoun = if jsIsUndefined onArrayArray then Nothing else Just $ (\x y -> do
           x' <- toJSValSt x
           y' <- toJSValSt y
           res <- liftToSt (jsCall2 onArrayArray x' y') >>= fromJSValSt
           liftEither res),
-        conjOnArrayFunction = if jsIsUndefined onArrayFunction then Nothing else Just $ (\x y -> do
+        conjOnNounFunction = if jsIsUndefined onArrayFunction then Nothing else Just $ (\x y -> do
           x' <- toJSValSt x
           y' <- toJSValSt y
           res <- liftToSt (jsCall2 onArrayFunction x' y') >>= fromJSValSt
           liftEither res),
-        conjOnFunctionArray = if jsIsUndefined onFunctionArray then Nothing else Just $ (\x y -> do
+        conjOnFunctionNoun = if jsIsUndefined onFunctionArray then Nothing else Just $ (\x y -> do
           x' <- toJSValSt x
           y' <- toJSValSt y
           res <- liftToSt (jsCall2 onFunctionArray x' y') >>= fromJSValSt
@@ -382,17 +392,17 @@ instance IsJSSt Conjunction where
     onArrayArray <- liftToSt $ jsWrap2 $ \x y -> do
       x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
       y' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt y) ctx)
-      r <- second fst <$> (runResult $ runSt (callOnArrayAndArray c x' y') ctx)
+      r <- second fst <$> (runResult $ runSt (callOnNounAndNoun c x' y') ctx)
       fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
     onArrayFunction <- liftToSt $ jsWrap2 $ \x y -> do
       x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
       y' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt y) ctx)
-      r <- second fst <$> (runResult $ runSt (callOnArrayAndFunction c x' y') ctx)
+      r <- second fst <$> (runResult $ runSt (callOnNounAndFunction c x' y') ctx)
       fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
     onFunctionArray <- liftToSt $ jsWrap2 $ \x y -> do
       x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
       y' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt y) ctx)
-      r <- second fst <$> (runResult $ runSt (callOnFunctionAndArray c x' y') ctx)
+      r <- second fst <$> (runResult $ runSt (callOnFunctionAndNoun c x' y') ctx)
       fromRight' . second fst <$> (runResult $ runSt (toJSValSt r) ctx)
     onFunctionFunction <- liftToSt $ jsWrap2 $ \x y -> do
       x' <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt x) ctx)
@@ -403,12 +413,12 @@ instance IsJSSt Conjunction where
 
 instance IsJSSt Value where
   fromJSValSt v
-    | fromJSVal (jsLookup v $ toJSString "type") == "array" = VArray <$> fromJSValSt v
+    | fromJSVal (jsLookup v $ toJSString "type") `elem` ["array", "dictionary"] = VNoun <$> fromJSValSt v
     | fromJSVal (jsLookup v $ toJSString "type") == "function" = VFunction <$> fromJSValSt v
     | fromJSVal (jsLookup v $ toJSString "type") == "adverb" = VAdverb <$> fromJSValSt v
     | fromJSVal (jsLookup v $ toJSString "type") == "conjunction" = VConjunction <$> fromJSValSt v
     | otherwise = throwError $ DomainError "fromJSValSt Value: unknown type"
-  toJSValSt (VArray arr) = toJSValSt arr
+  toJSValSt (VNoun arr) = toJSValSt arr
   toJSValSt (VFunction f) = toJSValSt f
   toJSValSt (VAdverb adv) = toJSValSt adv
   toJSValSt (VConjunction conj) = toJSValSt conj

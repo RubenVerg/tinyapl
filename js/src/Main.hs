@@ -91,7 +91,7 @@ lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
   quadsFromReprs [Nilad (Just $ do
     l <- readLast
     case l of
-      Just (VArray arr) -> return arr
+      Just (VNoun arr) -> return arr
       _ -> throwError noLast
   ) Nothing (quad : "last") Nothing] [PrimitiveFunction (Just $ \y -> do
     l <- readLast
@@ -106,7 +106,7 @@ lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
   ) (quad : "Last") Nothing] [PrimitiveAdverb (Just $ \u -> do
     l <- readLast
     case l of
-      Just (VAdverb adv) -> callOnArray adv u
+      Just (VAdverb adv) -> callOnNoun adv u
       _ -> throwError noLast
   ) (Just $ \f -> do
     l <- readLast
@@ -116,17 +116,17 @@ lastQuads l = let readLast = (!! l) <$> (liftToSt $ readIORef lasts) in
   ) (quad : "_Last") Nothing] [PrimitiveConjunction (Just $ \u v -> do
     l <- readLast
     case l of
-      Just (VConjunction conj) -> callOnArrayAndArray conj u v
+      Just (VConjunction conj) -> callOnNounAndNoun conj u v
       _ -> throwError noLast
   ) (Just $ \u g -> do
     l <- readLast
     case l of
-      Just (VConjunction conj) -> callOnArrayAndFunction conj u g
+      Just (VConjunction conj) -> callOnNounAndFunction conj u g
       _ -> throwError noLast
   ) (Just $ \f v -> do
     l <- readLast
     case l of
-      Just (VConjunction conj) -> callOnFunctionAndArray conj f v
+      Just (VConjunction conj) -> callOnFunctionAndNoun conj f v
       _ -> throwError noLast
   ) (Just $ \f g -> do
     l <- readLast
@@ -189,7 +189,7 @@ getGlobals :: Int -> IO [String]
 getGlobals contextId = do
   context <- (!! contextId) <$> readIORef contexts
   scope <- readIORef $ contextScope context
-  return $ (fst <$> scopeArrays scope) ++ (fst <$> scopeFunctions scope) ++ (fst <$> scopeAdverbs scope) ++ (fst <$> scopeConjunctions scope)
+  return $ (fst <$> scopeNouns scope) ++ (fst <$> scopeFunctions scope) ++ (fst <$> scopeAdverbs scope) ++ (fst <$> scopeConjunctions scope)
 
 foreign export javascript "tinyapl_getGlobals" getGlobalsJS :: Int -> IO JSArray
 
@@ -312,7 +312,7 @@ reprJS val = do
   id <- newIORef 0
   r <- fromRight' . second fst <$> (runResult $ runSt (fromJSValSt val) (Context scope mempty undefined undefined undefined id))
   pure $ toJSString $ case r of
-    VArray arr -> arrayRepr arr
+    VNoun arr -> arrayRepr arr
     o -> show o
 
 varArrow :: VariableType -> Char

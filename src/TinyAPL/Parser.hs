@@ -14,7 +14,6 @@ import Data.Functor (($>), void)
 import Data.Maybe (fromJust, fromMaybe, mapMaybe)
 import Data.List (elemIndex, intercalate, singleton)
 import Control.Applicative (liftA3, (<**>))
-import Data.Function (on)
 import Data.Bifunctor
 import Control.Monad ((>=>))
 import Data.Void (Void)
@@ -86,6 +85,7 @@ data Token
   | TokenExit (NonEmpty Token) SourcePos
   | TokenVector [NonEmpty Token] SourcePos
   | TokenHighRank [NonEmpty Token] SourcePos
+  | TokenDictionary [(NonEmpty Token, NonEmpty Token)] SourcePos
   | TokenTrain [[Token]] SourcePos
   | TokenAdverbTrain [[Token]] SourcePos
   | TokenConjunctionTrain [[Token]] SourcePos
@@ -132,6 +132,7 @@ instance Eq Token where
   (TokenGuard xc xe _) == (TokenGuard yc ye _) = xc == yc && xe == ye
   (TokenExit x _) == (TokenExit y _) = x == y
   (TokenVector x _) == (TokenVector y _) = x == y
+  (TokenDictionary x _) == (TokenDictionary y _) = x == y
   (TokenHighRank x _) == (TokenHighRank y _) = x == y
   (TokenTrain x _) == (TokenTrain y _) = x == y
   (TokenAdverbTrain x _) == (TokenAdverbTrain y _) = x == y
@@ -181,6 +182,7 @@ instance Show Token where
   show (TokenExit xs _) = "(exit " ++ [G.exit, ' '] ++ unwords (NE.toList $ show <$> xs) ++ ")"
   show (TokenVector xs _) = "(vector " ++ [fst G.vector, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . NE.toList . fmap show <$> xs) ++ [snd G.vector] ++ ")"
   show (TokenHighRank xs _) = "(high rank " ++ [fst G.highRank, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . NE.toList . fmap show <$> xs) ++ [snd G.highRank] ++ ")"
+  show (TokenDictionary xs _) = "(dictionary " ++ [fst G.vector, ' '] ++ intercalate [' ', G.separator, ' '] ((\(k, v) -> show k ++ [G.guard] ++ show v) <$> xs) ++ [snd G.vector] ++ ")"
   show (TokenTrain xs _) = "(train " ++ [fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train] ++ ")" where
   show (TokenAdverbTrain xs _) = "(adverb train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train] ++ ")" where
   show (TokenConjunctionTrain xs _) = "(conjunction train " ++ [G.underscore, fst G.train, ' '] ++ intercalate [' ', G.separator, ' '] (unwords . fmap show <$> xs) ++ [snd G.train, G.underscore] ++ ")" where
@@ -228,6 +230,7 @@ tokenPos (TokenGuard _ _ pos) = pos
 tokenPos (TokenExit _ pos) = pos
 tokenPos (TokenVector _ pos) = pos
 tokenPos (TokenHighRank _ pos) = pos
+tokenPos (TokenDictionary _ pos) = pos
 tokenPos (TokenTrain _ pos) = pos
 tokenPos (TokenAdverbTrain _ pos) = pos
 tokenPos (TokenConjunctionTrain _ pos) = pos
@@ -323,7 +326,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
       pure $ tie (first :| rest) pos, pure first]
 
   array' :: Parser Token
-  array' = number <|> charVec <|> str <|> try (withPos $ TokenArrayName <$> arrayName) <|> vectorNotation <|> highRankNotation <|> primArray <|> wrap <|> struct where
+  array' = number <|> charVec <|> str <|> try (withPos $ TokenArrayName <$> arrayName) <|> dictionaryNotation <|> vectorNotation <|> highRankNotation <|> primArray <|> wrap <|> struct where
     number :: Parser Token
     number = withPos $ TokenNumber <$> complex where
       sign :: Parser Double
@@ -374,6 +377,11 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
 
     highRankNotation :: Parser Token
     highRankNotation = withPos $ between (char $ fst G.highRank) (char $ snd G.highRank) (TokenHighRank <$> sepBy bits separator)
+
+    dictionaryNotation :: Parser Token
+    dictionaryNotation = withPos $ choice
+      [ try $ between (char $ fst G.vector) (char $ snd G.vector) (lexeme $ char G.guard) $> TokenDictionary []
+      , try $ between (char $ fst G.vector) (char $ snd G.vector) (TokenDictionary <$> sepBy (liftA2 (,) (bits `commitOn` (lexeme $ char G.guard)) bits) separator ) ]
 
     primArray :: Parser Token
     primArray = withPos $ TokenPrimArray <$> oneOf G.arrays
@@ -560,6 +568,7 @@ data Tree
   | ExitBranch { exitBranchResult :: Tree }
   | VectorBranch { vectorBranchEntries :: [Tree] }
   | HighRankBranch { highRankBranchEntries :: [Tree] }
+  | DictionaryBranch { dictionaryBranchEntries :: [(Tree, Tree)] }
   | TrainBranch { trainBranchCategory :: Category, trainBranchStatements :: [Maybe Tree] }
   | WrapBranch { wrapBranchValue :: Tree }
   | UnwrapBranch { unwrapBranchCategory :: Category, unwrapBranchValue :: Tree }
@@ -588,6 +597,7 @@ instance Show Tree where
       (ExitBranch res)                   -> (indent ++ "■") : go (i + 1) res
       (VectorBranch es)                  -> (indent ++ "⟨⟩") : concatMap (go (i + 1)) es
       (HighRankBranch es)                -> (indent ++ "[]") : concatMap (go (i + 1)) es
+      (DictionaryBranch es)              -> (indent ++ "⟨:⟩") : concatMap (\(k, v) -> go (i + 1) k ++ go (i + 1) v) es
       (TrainBranch c ts)                 -> (indent ++ (if c == CatFunction then "" else "_") ++ "⦅" ++ (if c == CatConjunction then "_" else "") ++ "⦆") : concatMap (maybe [""] (go (i + 1))) ts
       (WrapBranch fn)                    -> (indent ++ "⊏") : go (i + 1) fn
       (UnwrapBranch c fn)                -> (indent ++ (if c == CatFunction then "" else "_") ++ "⊐" ++ (if c == CatConjunction then "_" else "")) : go (i + 1) fn
@@ -611,6 +621,7 @@ treeCategory (GuardBranch _ t)                 = treeCategory t
 treeCategory (ExitBranch _)                    = CatArray
 treeCategory (VectorBranch _)                  = CatArray
 treeCategory (HighRankBranch _)                = CatArray
+treeCategory (DictionaryBranch _)              = CatArray
 treeCategory (TrainBranch c _)                 = c
 treeCategory (WrapBranch _)                    = CatArray
 treeCategory (UnwrapBranch c _)                = c
@@ -709,6 +720,9 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   highRank es _ = HighRankBranch <$> mapM (\x -> categorizeAndBind x >>=
     requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head x) source $ "Invalid array entry of type " ++ show c ++ ", array required")) es
 
+  dictionary :: [(NonEmpty Token, NonEmpty Token)] -> SourcePos -> Result Tree
+  dictionary es _ = DictionaryBranch <$> mapM (\(k, v) -> liftA2 (,) (categorizeAndBind k) (categorizeAndBind v)) es
+
   train :: Category -> [[Token]] -> SourcePos -> Result Tree
   train cat es _ = TrainBranch cat <$> (mapM (\e -> case NE.nonEmpty e of
     Nothing -> return Nothing
@@ -760,6 +774,7 @@ categorize name source = tokenize name source >>= mapM (\xs -> case NE.nonEmpty 
   tokenToTree (TokenExit result _)                          = ExitBranch <$> (categorizeAndBind result >>= requireOfCategory CatArray (\c -> makeSyntaxError (tokenPos $ NE.head result) source $ "Invalid exit statement of type " ++ show c ++ ", array required"))
   tokenToTree (TokenVector es pos)                          = vector es pos
   tokenToTree (TokenHighRank es pos)                        = highRank es pos
+  tokenToTree (TokenDictionary es pos)                      = dictionary es pos
   tokenToTree (TokenTrain fs pos)                           = train CatFunction fs pos
   tokenToTree (TokenAdverbTrain fs pos)                     = train CatAdverb fs pos
   tokenToTree (TokenConjunctionTrain fs pos)                = train CatConjunction fs pos

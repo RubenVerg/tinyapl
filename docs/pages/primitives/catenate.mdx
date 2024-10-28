@@ -4,6 +4,8 @@ pattern: 'r←x⍪y'
 name: Catenate
 ---
 
+If `x` and `y` are arrays:
+
 `x` and `y`, after extension, must have the same trailing axes (that is, the only difference in shape is the first element). Extension is as follows:
 
 * if `x` and `y` have the same rank, no operation is performed
@@ -12,3 +14,5 @@ name: Catenate
 * if both arguments are scalar, they are reshaped to 1-element vectors.
 
 After extension, `r` is the major cells of `x` followed by the major cells of `y`.
+
+If `x` and `y` are dictionaries, `r` is the dictionary containing all entries from `x` and `y`, right-biased.

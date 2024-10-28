@@ -16,6 +16,9 @@ import Numeric.Natural
 infixr 9 .:
 (.:) f g x y = f $ g x y
 
+on :: (b -> b -> c) -> (a -> b) -> a -> a -> c
+on f g x y = f (g x) (g y)
+
 snoc :: [a] -> a -> [a]
 snoc [] x = [x]
 snoc (x:xs) y = x : snoc xs y
