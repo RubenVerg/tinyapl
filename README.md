@@ -141,6 +141,11 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍲` nand
 		* [x] `⍱` nor
 		* [x] `~` not
+	* character functions
+		* [ ] `⌊` lowercase
+		* [ ] `⌈` uppercase
+		* [ ] `|` case fold
+		* [ ] `×` case
 	* set functions
 		* [x] `∪` unique
 		* [x] `∪` union
@@ -284,7 +289,6 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⎕JSON` convert from/to JSON
 		* [ ] `⎕Unicode` convert between unicode representations
 		* [x] `⎕Exists` does a variable exist?
-		* [ ] `⎕C`/`⎕Case` case fold/uppercase/lowercase
 		* [ ] `⎕Partition` convert Partition representation to Group representation (so that Partition is `⎕Partition⍛⊆`)
 		* [x] `⎕Repr` convert an array to a representation that can be read with Execute
 		* [ ] `⎕Assert` assertions
