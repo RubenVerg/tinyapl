@@ -4,6 +4,7 @@ module TinyAPL.CoreQuads where
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.Complex
 import TinyAPL.CoreQuads.Math
+import TinyAPL.CoreQuads.Unicode
 import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
 import TinyAPL.Interpreter
@@ -68,7 +69,7 @@ type_ = PrimitiveFunction (Just $ \(Array sh cs) -> return $ Array sh $ (\case
   ConjunctionWrap _ -> Number 5
   Struct _ -> Number 6) <$> cs) Nothing (G.quad : "Type") Nothing
 
-core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay, type_ ] [] []
+core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay, type_, unicode ] [] []
 
 makeImport :: (FilePath -> St String) -> Maybe ([String] -> St String) -> Function
 makeImport read readStd = PrimitiveFunction (Just $ \x -> do
