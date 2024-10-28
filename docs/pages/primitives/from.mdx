@@ -4,8 +4,6 @@ pattern: 'r←x⊇y'
 name: From
 ---
 
-`x` must be a either a simple array of integers or a array of nested simple arrays of integers.
+If `y` is an array, `x` must be a either a simple array of integers or a array of nested simple arrays of integers; if `x` is simple, `r` is the major cells of `y` selected by the indices `x` (negative indices select from the end); if `x` is nested, `r` is an array with the same shape as `x` where each entry is the element indexed by the corresponding entry of `x` in `y`.
 
-If `x` is simple, `r` is the major cells of `y` selected by the indices `x` (negative indices select from the end).
-
-If `x` is nested, `r` is an array with the same shape as `x` where each entry is the element indexed by the corresponding entry of `x` in `y`.
+If `y` is a dictionary, each element of `x` is used as a key for <primitive key="index" />.

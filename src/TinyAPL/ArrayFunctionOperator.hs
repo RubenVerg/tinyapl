@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, LambdaCase, DeriveGeneric, DeriveAnyClass, InstanceSigs #-}
+{-# LANGUAGE FlexibleContexts, LambdaCase, DeriveGeneric, DeriveAnyClass, InstanceSigs, TupleSections #-}
 module TinyAPL.ArrayFunctionOperator where
 
 import TinyAPL.Error
@@ -30,57 +30,66 @@ import GHC.Generics
 data ScalarValue
   = Number (Complex Double)
   | Character Char
-  | Box Array
+  | Box Noun
   | Wrap Function
   | AdverbWrap Adverb
   | ConjunctionWrap Conjunction
   | Struct Context
   deriving (Generic, NFData)
 
-data Array = Array
-  { arrayShape :: [Natural]
-  , arrayContents :: [ScalarValue] }
+data Noun
+  = Array
+    { arrayShape :: [Natural]
+    , arrayContents :: [ScalarValue] }
+  | Dictionary
+    { dictKeys :: [ScalarValue]
+    , dictValues :: [ScalarValue] }
   deriving (Generic, NFData)
 
 -- * Array helper functions
 
-arrayRank :: Array -> Natural
+arrayRank :: Noun -> Natural
 arrayRank (Array sh _) = genericLength sh
+arrayRank (Dictionary _ _) = 1
 
-arrayDepth :: Array -> Natural
+arrayDepth :: Noun -> Natural
 arrayDepth (Array [] [Box xs]) = 1 + arrayDepth xs
 arrayDepth (Array [] _) = 0
 arrayDepth (Array _ []) = 1
 arrayDepth (Array _ xs) = 1 + maximum (arrayDepth . fromScalar <$> xs)
+arrayDepth (Dictionary _ vs) = 1 + maximum (arrayDepth . fromScalar <$> vs)
 
-box :: Array -> ScalarValue
+box :: Noun -> ScalarValue
 box b@(Array [] [Box _]) = Box b
 box (Array [] [x]) = x
 box arr = Box arr
 
-fromScalar :: ScalarValue -> Array
+fromScalar :: ScalarValue -> Noun
 fromScalar (Box arr) = arr
 fromScalar sc        = scalar sc
 
-toScalar :: Array -> ScalarValue
+toScalar :: Noun -> ScalarValue
 toScalar (Array [] [x]) = x
 toScalar arr            = box arr
 
-scalar :: ScalarValue -> Array
+scalar :: ScalarValue -> Noun
 scalar x = Array [] [x]
 
-vector :: [ScalarValue] -> Array
+vector :: [ScalarValue] -> Noun
 vector xs = Array [genericLength xs] xs
 
-matrix :: M.Matrix ScalarValue -> Array
+matrix :: M.Matrix ScalarValue -> Noun
 matrix mat = Array [toEnum $ M.nrows mat, toEnum $ M.ncols mat] $ M.toList mat
 
-arrayOf :: [Natural] -> [ScalarValue] -> Maybe Array
+dictionary :: [(ScalarValue, ScalarValue)] -> Noun
+dictionary xs = uncurry Dictionary $ unzip $ nubBy ((==) `on` fst) xs
+
+arrayOf :: [Natural] -> [ScalarValue] -> Maybe Noun
 arrayOf sh cs
   | product sh == genericLength cs = Just $ Array sh cs
   | otherwise = Nothing
 
-arrayReshaped :: [Natural] -> [ScalarValue] -> Maybe Array
+arrayReshaped :: [Natural] -> [ScalarValue] -> Maybe Noun
 arrayReshaped sh cs =
   if null cs then
     if 0 `elem` sh
@@ -88,16 +97,17 @@ arrayReshaped sh cs =
     else Nothing
   else Just $ Array sh $ genericTake (product sh) $ cycle cs
 
-arrayReshapedNE :: [Natural] -> NonEmpty ScalarValue -> Array
+arrayReshapedNE :: [Natural] -> NonEmpty ScalarValue -> Noun
 arrayReshapedNE sh cs = fromJust $ arrayReshaped sh $ toList cs
 
-majorCells :: Array -> [Array]
+majorCells :: Noun -> [Noun]
 majorCells a@(Array [] _) = [a]
 majorCells (Array (_:sh) cs) = mapMaybe (arrayOf sh) $ chunk (product sh) cs where
   chunk _ [] = []
   chunk l xs = genericTake l xs : chunk l (genericDrop l xs)
+majorCells (Dictionary ks vs) = zipWith (\a b -> vector [a, b]) ks vs
 
-fromMajorCells :: [Array] -> Array
+fromMajorCells :: [Noun] -> Noun
 fromMajorCells [] = Array [0] []
 fromMajorCells (c:cs) = let
   impl = fromJust $ arrayReshaped (1 + genericLength cs : arrayShape c) $ concatMap arrayContents $ c : cs
@@ -177,11 +187,13 @@ instance Ord ScalarValue where
   (Struct _) `compare` (ConjunctionWrap _) = GT
   (Struct _) `compare` (Struct _) = LT
 
-instance Eq Array where
+instance Eq Noun where
   -- Two arrays are equal iff both their shapes and their ravels are equal.
   (Array ash as) == (Array bsh bs) = (ash, as) == (bsh, bs)
+  (Dictionary aks avs) == (Dictionary bks bvs) = sortOn fst (zip aks avs) == sortOn fst (zip bks bvs)
+  _ == _ = False
 
-instance Ord Array where
+instance Ord Noun where
   (Array [] [a]) `compare` (Array [] [b]) = a `compare` b
   (Array [_] []) `compare` (Array [_] []) = EQ
   (Array [_] []) `compare` (Array [_] _) = LT
@@ -191,6 +203,9 @@ instance Ord Array where
     | arrayRank a < arrayRank b = (Array (genericReplicate (arrayRank b - arrayRank a) 1 ++ ash) acs) `compare` b <> LT
     | arrayRank a > arrayRank b = a `compare` (Array (genericReplicate (arrayRank a - arrayRank b) 1 ++ bsh) bcs) <> GT
     | otherwise = mconcat (zipWith compare (majorCells a) (majorCells b)) <> fromMaybe 1 (listToMaybe ash) `compare` fromMaybe 1 (listToMaybe bsh)
+  (Dictionary aks avs) `compare` (Dictionary bks bvs) = sortOn fst (zip aks avs) `compare` sortOn fst (zip bks bvs)
+  (Array _ _) `compare` (Dictionary _ _) = LT
+  (Dictionary _ _) `compare` (Array _ _) = GT
 
 isInt :: Double -> Bool
 isInt = realEqual <*> (fromInteger . round)
@@ -218,7 +233,9 @@ showElement (AdverbWrap adv) = show adv
 showElement (ConjunctionWrap conj) = show conj
 showElement x = show x
 
-instance Show Array where
+instance Show Noun where
+  show (Dictionary [] _)                  = [fst G.vector, G.guard, snd G.vector]
+  show (Dictionary ks vs)                 = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (zipWith (\k v -> showElement k ++ [G.guard, ' '] ++ showElement v) ks vs) ++ [snd G.vector]
   show (Array [] [s])                     = show s
   show (Array [_] xs)
     | not (null xs) && all isCharacter xs = xs >>= show
@@ -244,7 +261,9 @@ scalarRepr (Struct _) = [fst G.struct] ++ "..." ++ [snd G.struct]
 stringRepr :: [Char] -> String
 stringRepr str = [G.stringDelimiter] ++ concatMap (fst . charRepr) str ++ [G.stringDelimiter]
 
-arrayRepr :: Array -> String
+arrayRepr :: Noun -> String
+arrayRepr (Dictionary [] _)                  = [fst G.vector, G.guard, snd G.vector]
+arrayRepr (Dictionary ks vs)                 = [fst G.vector] ++ intercalate [' ', G.separator, ' '] (zipWith (\k v -> arrayRepr (fromScalar k) ++ [G.guard, ' '] ++ arrayRepr (fromScalar v)) ks vs) ++ [snd G.vector]
 arrayRepr (Array [] [s]) = scalarRepr s
 arrayRepr (Array [_] xs)
   | not (null xs) && all isCharacter xs = stringRepr $ asCharacter' <$> xs
@@ -328,45 +347,47 @@ asNat' e x
 asNat :: MonadError Error m => Error -> Complex Double -> m Natural
 asNat e = asNat' e <=< asInt e
 
-asString :: MonadError Error m => Error -> Array -> m String
+asString :: MonadError Error m => Error -> Noun -> m String
 asString err = asVector err >=> mapM (asCharacter err)
 
-asStrings :: MonadError Error m => Error -> Array -> m [String]
+asStrings :: MonadError Error m => Error -> Noun -> m [String]
 asStrings _ (Array [] [Character x]) = pure [[x]]
 asStrings _ (Array [_] vec) | all isCharacter vec = pure [asCharacter' <$> vec]
 asStrings err (Array [_] vec) = mapM (asString err . fromScalar) vec
 asStrings err _ = throwError err
 
-isScalar :: Array -> Bool
+isScalar :: Noun -> Bool
 isScalar (Array [] _) = True
 isScalar _ = False
 
-asScalar :: MonadError Error m => Error -> Array -> m ScalarValue
+asScalar :: MonadError Error m => Error -> Noun -> m ScalarValue
 asScalar _ (Array _ [x]) = pure x
 asScalar e _ = throwError e
 
-isEmpty :: Array -> Bool
+isEmpty :: Noun -> Bool
 isEmpty (Array sh _) = 0 `elem` sh
+isEmpty (Dictionary ks _) = null ks
 
-asVector :: MonadError Error m => Error -> Array -> m [ScalarValue]
+asVector :: MonadError Error m => Error -> Noun -> m [ScalarValue]
 asVector _ (Array [] scalar) = pure scalar
 asVector _ (Array [_] vec)   = pure vec
 asVector e _                 = throwError e
 
-asMatrix :: MonadError Error m => Error -> Array -> m (M.Matrix ScalarValue)
+asMatrix :: MonadError Error m => Error -> Noun -> m (M.Matrix ScalarValue)
 asMatrix _ (Array [] scalar)        = pure $ M.fromList 1 1 scalar
 asMatrix _ (Array [cols] vec)       = pure $ M.fromList 1 (fromEnum cols) vec
 asMatrix _ (Array [rows, cols] mat) = pure $ M.fromList (fromEnum rows) (fromEnum cols) mat
 asMatrix e _                        = throwError e
 
 onMajorCells :: MonadError Error m =>
-  ([Array] -> m [Array])
-  -> Array -> m Array
-onMajorCells f x = do
+  ([Noun] -> m [Noun])
+  -> Noun -> m Noun
+onMajorCells f x@(Array _ _) = do
   result <- f $ majorCells x
   case arrayReshaped (arrayShape x) $ concatMap arrayContents result of
     Nothing -> throwError $ DomainError ""
     Just rs -> return rs
+onMajorCells _ (Dictionary _ _) = throwError $ DomainError "Dictionary not allowed here"
 
 -- * functions that depend on tolerance
 
@@ -401,16 +422,25 @@ asAnIntegerIfItIs y = if isInt (realPart y) && isInt (imagPart y) then fromInteg
 
 -- * Scalar functions
 
+boxyMonad :: MonadError Error m => (ScalarValue -> m ScalarValue) -> ScalarValue -> m ScalarValue
+boxyMonad f (Box xs) = Box <$> scalarMonad f xs
+boxyMonad f x = f x
+
 scalarMonad :: MonadError Error m =>
   (ScalarValue -> m ScalarValue)
-      -> Array -> m Array
-scalarMonad f (Array sh cs) = Array sh <$> mapM f' cs where
-  f' (Box xs) = Box <$> scalarMonad f xs
-  f' x = f x
+       -> Noun -> m Noun
+scalarMonad f (Array sh cs) = Array sh <$> mapM (boxyMonad f) cs
+scalarMonad f (Dictionary ks vs) = Dictionary ks <$> mapM (boxyMonad f) vs
+
+boxyDyad :: MonadError Error m => (ScalarValue -> ScalarValue -> m ScalarValue) -> ScalarValue -> ScalarValue -> m ScalarValue
+boxyDyad f (Box as) (Box bs) = Box <$> scalarDyad f as bs
+boxyDyad f (Box as) b = Box <$> scalarDyad f as (scalar b)
+boxyDyad f a (Box bs) = Box <$> scalarDyad f (scalar a) bs
+boxyDyad f a b = f a b
 
 scalarDyad :: MonadError Error m =>
   (ScalarValue -> ScalarValue -> m ScalarValue)
-      -> Array ->       Array -> m Array
+       -> Noun ->        Noun -> m Noun
 scalarDyad f a@(Array ash as) b@(Array bsh bs)
   | null ash && null bsh = let ([a'], [b']) = (as, bs) in scalar <$> f' a' b'
   | null ash = let [a'] = as in Array bsh <$> mapM (a' `f'`) bs
@@ -420,10 +450,16 @@ scalarDyad f a@(Array ash as) b@(Array bsh bs)
   | length ash /= length bsh = throwError $ RankError "Mismatched left and right argument ranks"
   | otherwise = throwError $ LengthError "Mismatched left and right argument shapes"
   where
-    f' (Box as) (Box bs) = Box <$> scalarDyad f as bs
-    f' (Box as) b = Box <$> scalarDyad f as (scalar b)
-    f' a (Box bs) = Box <$> scalarDyad f (scalar a) bs
-    f' a b = f a b
+    f' = boxyDyad f
+scalarDyad f (Dictionary aks avs) (Dictionary bks bvs)
+  = dictionary <$> mapM (\k ->
+      if k `elem` aks && k `elem` bks then (k, ) <$> boxyDyad f (fromJust $ lookup k $ zip aks avs) (fromJust $ lookup k $ zip bks bvs)
+      else if k `elem` aks then pure (k, fromJust $ lookup k $ zip aks avs)
+      else if k `elem` bks then pure (k, fromJust $ lookup k $ zip bks bvs)
+      else throwError $ DomainError "???") (nub $ aks ++ bks)
+scalarDyad f (Dictionary aks avs) (Array [] [b]) = Dictionary aks <$> mapM (\a' -> boxyDyad f a' b) avs
+scalarDyad f (Array [] [a]) (Dictionary bks bvs) = Dictionary bks <$> mapM (\b' -> boxyDyad f a b') bvs
+scalarDyad _ _ _ = throwError $ DomainError "Cannot combine dictionary and non-scalar array"
 
 -- * Instances for arrays
 
@@ -457,7 +493,7 @@ dyadBB2B f = scalarDyad f' where
 
 dyadBB2B' f = dyadBB2B $ pure .: f
 
-instance Num Array where
+instance Num Noun where
   (+) = unerror .: dyadNN2N' (+)
   (-) = unerror .: dyadNN2N' (-)
   (*) = unerror .: dyadNN2N' (*)
@@ -465,7 +501,7 @@ instance Num Array where
   signum = unerror . monadN2N' signum
   fromInteger = scalar . Number . fromInteger
 
-instance Fractional Array where
+instance Fractional Noun where
   recip = unerror . monadN2N (\case
     0 -> throwError $ DomainError "Divide by zero"
     x -> pure $ recip x)
@@ -475,7 +511,7 @@ instance Fractional Array where
     x y -> pure $ x / y)
   fromRational = scalar . Number . fromRational
 
-instance Floating Array where
+instance Floating Noun where
   pi = scalar $ Number pi
   exp = unerror . monadN2N' exp
   log = unerror . monadN2N (\case
@@ -498,70 +534,70 @@ instance Floating Array where
 
 data Function
   = DefinedFunction
-    { functionMonad :: Maybe (Array -> St Array)
-    , functionDyad  :: Maybe (Array -> Array -> St Array)
+    { functionMonad :: Maybe (Noun -> St Noun)
+    , functionDyad  :: Maybe (Noun -> Noun -> St Noun)
     , functionRepr  :: String
     , functionContext :: Maybe Context
     , definedFunctionId :: Integer }
   | PrimitiveFunction
-    { functionMonad :: Maybe (Array -> St Array)
-    , functionDyad  :: Maybe (Array -> Array -> St Array)
+    { functionMonad :: Maybe (Noun -> St Noun)
+    , functionDyad  :: Maybe (Noun -> Noun -> St Noun)
     , functionRepr  :: String
     , functionContext :: Maybe Context }
   | PartialFunction
-    { functionMonad :: Maybe (Array -> St Array)
-    , functionDyad  :: Maybe (Array -> Array -> St Array)
+    { functionMonad :: Maybe (Noun -> St Noun)
+    , functionDyad  :: Maybe (Noun -> Noun -> St Noun)
     , functionContext :: Maybe Context
     , partialFunctionFunction :: Function
-    , partialFunctionLeft :: Array }
-  | DerivedFunctionArray
-    { functionMonad :: Maybe (Array -> St Array)
-    , functionDyad  :: Maybe (Array -> Array -> St Array)
+    , partialFunctionLeft :: Noun }
+  | DerivedFunctionNoun
+    { functionMonad :: Maybe (Noun -> St Noun)
+    , functionDyad  :: Maybe (Noun -> Noun -> St Noun)
     , functionContext :: Maybe Context
     , derivedFunctionAdverb :: Adverb
-    , derivedFunctionArrayLeft :: Array }
+    , derivedFunctionNounLeft :: Noun }
   | DerivedFunctionFunction
-    { functionMonad :: Maybe (Array -> St Array)
-    , functionDyad  :: Maybe (Array -> Array -> St Array)
+    { functionMonad :: Maybe (Noun -> St Noun)
+    , functionDyad  :: Maybe (Noun -> Noun -> St Noun)
     , functionContext :: Maybe Context
     , derivedFunctionAdverb :: Adverb
     , derivedFunctionFunctionLeft :: Function }
-  | DerivedFunctionArrayArray
-    { functionMonad :: Maybe (Array -> St Array)
-    , functionDyad  :: Maybe (Array -> Array -> St Array)
+  | DerivedFunctionNounNoun
+    { functionMonad :: Maybe (Noun -> St Noun)
+    , functionDyad  :: Maybe (Noun -> Noun -> St Noun)
     , functionContext :: Maybe Context
     , derivedFunctionConjunction :: Conjunction
-    , derivedFunctionArrayLeft :: Array
-    , derivedFunctionArrayRight :: Array }
-  | DerivedFunctionArrayFunction
-    { functionMonad :: Maybe (Array -> St Array)
-    , functionDyad  :: Maybe (Array -> Array -> St Array)
+    , derivedFunctionNounLeft :: Noun
+    , derivedFunctionNounRight :: Noun }
+  | DerivedFunctionNounFunction
+    { functionMonad :: Maybe (Noun -> St Noun)
+    , functionDyad  :: Maybe (Noun -> Noun -> St Noun)
     , functionContext :: Maybe Context
     , derivedFunctionConjunction :: Conjunction
-    , derivedFunctionArrayLeft :: Array
+    , derivedFunctionNounLeft :: Noun
     , derivedFunctionFunctionRight :: Function }
-  | DerivedFunctionFunctionArray
-    { functionMonad :: Maybe (Array -> St Array)
-    , functionDyad  :: Maybe (Array -> Array -> St Array)
+  | DerivedFunctionFunctionNoun
+    { functionMonad :: Maybe (Noun -> St Noun)
+    , functionDyad  :: Maybe (Noun -> Noun -> St Noun)
     , functionContext :: Maybe Context
     , derivedFunctionConjunction :: Conjunction
     , derivedFunctionFunctionLeft :: Function
-    , derivedFunctionArrayRight :: Array }
+    , derivedFunctionNounRight :: Noun }
   | DerivedFunctionFunctionFunction
-    { functionMonad :: Maybe (Array -> St Array)
-    , functionDyad  :: Maybe (Array -> Array -> St Array)
+    { functionMonad :: Maybe (Noun -> St Noun)
+    , functionDyad  :: Maybe (Noun -> Noun -> St Noun)
     , functionContext :: Maybe Context
     , derivedFunctionConjunction :: Conjunction
     , derivedFunctionFunctionLeft :: Function
     , derivedFunctionFunctionRight :: Function }
   | UnwrapArrayFunction
-    { functionMonad :: Maybe (Array -> St Array)
-    , functionDyad  :: Maybe (Array -> Array -> St Array)
+    { functionMonad :: Maybe (Noun -> St Noun)
+    , functionDyad  :: Maybe (Noun -> Noun -> St Noun)
     , functionContext :: Maybe Context
-    , unwrapFunctionArray :: Array }
+    , unwrapFunctionArray :: Noun }
   | TrainFunction
-    { functionMonad :: Maybe (Array -> St Array)
-    , functionDyad  :: Maybe (Array -> Array -> St Array)
+    { functionMonad :: Maybe (Noun -> St Noun)
+    , functionDyad  :: Maybe (Noun -> Noun -> St Noun)
     , functionContext :: Maybe Context
     , trainFunctionTines :: [Maybe Value] }
   deriving (Generic, NFData)
@@ -570,11 +606,11 @@ instance Eq Function where
   DefinedFunction { definedFunctionId = a } == DefinedFunction { definedFunctionId = b } = a == b
   PrimitiveFunction { functionRepr = a } == PrimitiveFunction { functionRepr = b } = a == b
   PartialFunction { partialFunctionFunction = af, partialFunctionLeft = al } == PartialFunction { partialFunctionFunction = bf, partialFunctionLeft = bl } = af == bf && al == bl
-  DerivedFunctionArray { derivedFunctionAdverb = aadv, derivedFunctionArrayLeft = aa } == DerivedFunctionArray { derivedFunctionAdverb = badv, derivedFunctionArrayLeft = ba } = aadv == badv && aa == ba
+  DerivedFunctionNoun { derivedFunctionAdverb = aadv, derivedFunctionNounLeft = aa } == DerivedFunctionNoun { derivedFunctionAdverb = badv, derivedFunctionNounLeft = ba } = aadv == badv && aa == ba
   DerivedFunctionFunction { derivedFunctionAdverb = aadv, derivedFunctionFunctionLeft = aa } == DerivedFunctionFunction { derivedFunctionAdverb = badv, derivedFunctionFunctionLeft = ba } = aadv == badv && aa == ba
-  DerivedFunctionArrayArray { derivedFunctionConjunction = aconj, derivedFunctionArrayLeft = aa, derivedFunctionArrayRight = ab } == DerivedFunctionArrayArray { derivedFunctionConjunction = bconj, derivedFunctionArrayLeft = ba, derivedFunctionArrayRight = bb } = aconj == bconj && aa == ba && ab == bb
-  DerivedFunctionArrayFunction { derivedFunctionConjunction = aconj, derivedFunctionArrayLeft = aa, derivedFunctionFunctionRight = ab } == DerivedFunctionArrayFunction { derivedFunctionConjunction = bconj, derivedFunctionArrayLeft = ba, derivedFunctionFunctionRight = bb } = aconj == bconj && aa == ba && ab == bb
-  DerivedFunctionFunctionArray { derivedFunctionConjunction = aconj, derivedFunctionFunctionLeft = aa, derivedFunctionArrayRight = ab } == DerivedFunctionFunctionArray { derivedFunctionConjunction = bconj, derivedFunctionFunctionLeft = ba, derivedFunctionArrayRight = bb } = aconj == bconj && aa == ba && ab == bb
+  DerivedFunctionNounNoun { derivedFunctionConjunction = aconj, derivedFunctionNounLeft = aa, derivedFunctionNounRight = ab } == DerivedFunctionNounNoun { derivedFunctionConjunction = bconj, derivedFunctionNounLeft = ba, derivedFunctionNounRight = bb } = aconj == bconj && aa == ba && ab == bb
+  DerivedFunctionNounFunction { derivedFunctionConjunction = aconj, derivedFunctionNounLeft = aa, derivedFunctionFunctionRight = ab } == DerivedFunctionNounFunction { derivedFunctionConjunction = bconj, derivedFunctionNounLeft = ba, derivedFunctionFunctionRight = bb } = aconj == bconj && aa == ba && ab == bb
+  DerivedFunctionFunctionNoun { derivedFunctionConjunction = aconj, derivedFunctionFunctionLeft = aa, derivedFunctionNounRight = ab } == DerivedFunctionFunctionNoun { derivedFunctionConjunction = bconj, derivedFunctionFunctionLeft = ba, derivedFunctionNounRight = bb } = aconj == bconj && aa == ba && ab == bb
   DerivedFunctionFunctionFunction { derivedFunctionConjunction = aconj, derivedFunctionFunctionLeft = aa, derivedFunctionFunctionRight = ab } == DerivedFunctionFunctionFunction { derivedFunctionConjunction = bconj, derivedFunctionFunctionLeft = ba, derivedFunctionFunctionRight = bb } = aconj == bconj && aa == ba && ab == bb
   UnwrapArrayFunction { unwrapFunctionArray = a } == UnwrapArrayFunction { unwrapFunctionArray = b } = a == b
   TrainFunction { trainFunctionTines = a } == TrainFunction { trainFunctionTines = b } = a == b
@@ -590,74 +626,74 @@ instance Ord Function where
   PartialFunction {} `compare` PrimitiveFunction {} = GT
   PartialFunction { partialFunctionLeft = a } `compare` PartialFunction { partialFunctionLeft = b } = a `compare` b
   PartialFunction {} `compare` _ = LT
-  DerivedFunctionArray {} `compare` DefinedFunction {} = GT
-  DerivedFunctionArray {} `compare` PrimitiveFunction {} = GT
-  DerivedFunctionArray {} `compare` PartialFunction {} = GT
-  DerivedFunctionArray { derivedFunctionAdverb = aadv, derivedFunctionArrayLeft = aa } `compare` DerivedFunctionArray { derivedFunctionAdverb = badv, derivedFunctionArrayLeft = ba } = aadv `compare` badv <> aa `compare` ba
-  DerivedFunctionArray {} `compare` _ = LT
+  DerivedFunctionNoun {} `compare` DefinedFunction {} = GT
+  DerivedFunctionNoun {} `compare` PrimitiveFunction {} = GT
+  DerivedFunctionNoun {} `compare` PartialFunction {} = GT
+  DerivedFunctionNoun { derivedFunctionAdverb = aadv, derivedFunctionNounLeft = aa } `compare` DerivedFunctionNoun { derivedFunctionAdverb = badv, derivedFunctionNounLeft = ba } = aadv `compare` badv <> aa `compare` ba
+  DerivedFunctionNoun {} `compare` _ = LT
   DerivedFunctionFunction {} `compare` DefinedFunction {} = GT
   DerivedFunctionFunction {} `compare` PrimitiveFunction {} = GT
   DerivedFunctionFunction {} `compare` PartialFunction {} = GT
-  DerivedFunctionFunction {} `compare` DerivedFunctionArray {} = GT
+  DerivedFunctionFunction {} `compare` DerivedFunctionNoun {} = GT
   DerivedFunctionFunction { derivedFunctionAdverb = aadv, derivedFunctionFunctionLeft = aa } `compare` DerivedFunctionFunction { derivedFunctionAdverb = badv, derivedFunctionFunctionLeft = ba } = aadv `compare` badv <> aa `compare` ba
   DerivedFunctionFunction {} `compare` _ = LT
-  DerivedFunctionArrayArray {} `compare` DefinedFunction {} = GT
-  DerivedFunctionArrayArray {} `compare` PrimitiveFunction {} = GT
-  DerivedFunctionArrayArray {} `compare` PartialFunction {} = GT
-  DerivedFunctionArrayArray {} `compare` DerivedFunctionArray {} = GT
-  DerivedFunctionArrayArray {} `compare` DerivedFunctionFunction {} = GT
-  DerivedFunctionArrayArray { derivedFunctionConjunction = aconj, derivedFunctionArrayLeft = aa, derivedFunctionArrayRight = ab }
-    `compare` DerivedFunctionArrayArray { derivedFunctionConjunction = bconj, derivedFunctionArrayLeft = ba, derivedFunctionArrayRight = bb } = aconj `compare` bconj <> aa `compare` ba <> ab `compare` bb
-  DerivedFunctionArrayArray {} `compare` _ = LT
-  DerivedFunctionArrayFunction {} `compare` DefinedFunction {} = GT
-  DerivedFunctionArrayFunction {} `compare` PrimitiveFunction {} = GT
-  DerivedFunctionArrayFunction {} `compare` PartialFunction {} = GT
-  DerivedFunctionArrayFunction {} `compare` DerivedFunctionArray {} = GT
-  DerivedFunctionArrayFunction {} `compare` DerivedFunctionFunction {} = GT
-  DerivedFunctionArrayFunction {} `compare` DerivedFunctionArrayArray {} = GT
-  DerivedFunctionArrayFunction { derivedFunctionConjunction = aconj, derivedFunctionArrayLeft = aa, derivedFunctionFunctionRight = ab }
-    `compare` DerivedFunctionArrayFunction { derivedFunctionConjunction = bconj, derivedFunctionArrayLeft = ba, derivedFunctionFunctionRight = bb } = aconj `compare` bconj <> aa `compare` ba <> ab `compare` bb
-  DerivedFunctionArrayFunction {} `compare` _ = LT
-  DerivedFunctionFunctionArray {} `compare` DefinedFunction {} = GT
-  DerivedFunctionFunctionArray {} `compare` PrimitiveFunction {} = GT
-  DerivedFunctionFunctionArray {} `compare` PartialFunction {} = GT
-  DerivedFunctionFunctionArray {} `compare` DerivedFunctionArray {} = GT
-  DerivedFunctionFunctionArray {} `compare` DerivedFunctionFunction {} = GT
-  DerivedFunctionFunctionArray {} `compare` DerivedFunctionArrayArray {} = GT
-  DerivedFunctionFunctionArray {} `compare` DerivedFunctionArrayFunction {} = GT
-  DerivedFunctionFunctionArray { derivedFunctionConjunction = aconj, derivedFunctionFunctionLeft = aa, derivedFunctionArrayRight = ab }
-    `compare` DerivedFunctionFunctionArray { derivedFunctionConjunction = bconj, derivedFunctionFunctionLeft = ba, derivedFunctionArrayRight = bb } = aconj `compare` bconj <> aa `compare` ba <> ab `compare` bb
-  DerivedFunctionFunctionArray {} `compare` _ = LT
+  DerivedFunctionNounNoun {} `compare` DefinedFunction {} = GT
+  DerivedFunctionNounNoun {} `compare` PrimitiveFunction {} = GT
+  DerivedFunctionNounNoun {} `compare` PartialFunction {} = GT
+  DerivedFunctionNounNoun {} `compare` DerivedFunctionNoun {} = GT
+  DerivedFunctionNounNoun {} `compare` DerivedFunctionFunction {} = GT
+  DerivedFunctionNounNoun { derivedFunctionConjunction = aconj, derivedFunctionNounLeft = aa, derivedFunctionNounRight = ab }
+    `compare` DerivedFunctionNounNoun { derivedFunctionConjunction = bconj, derivedFunctionNounLeft = ba, derivedFunctionNounRight = bb } = aconj `compare` bconj <> aa `compare` ba <> ab `compare` bb
+  DerivedFunctionNounNoun {} `compare` _ = LT
+  DerivedFunctionNounFunction {} `compare` DefinedFunction {} = GT
+  DerivedFunctionNounFunction {} `compare` PrimitiveFunction {} = GT
+  DerivedFunctionNounFunction {} `compare` PartialFunction {} = GT
+  DerivedFunctionNounFunction {} `compare` DerivedFunctionNoun {} = GT
+  DerivedFunctionNounFunction {} `compare` DerivedFunctionFunction {} = GT
+  DerivedFunctionNounFunction {} `compare` DerivedFunctionNounNoun {} = GT
+  DerivedFunctionNounFunction { derivedFunctionConjunction = aconj, derivedFunctionNounLeft = aa, derivedFunctionFunctionRight = ab }
+    `compare` DerivedFunctionNounFunction { derivedFunctionConjunction = bconj, derivedFunctionNounLeft = ba, derivedFunctionFunctionRight = bb } = aconj `compare` bconj <> aa `compare` ba <> ab `compare` bb
+  DerivedFunctionNounFunction {} `compare` _ = LT
+  DerivedFunctionFunctionNoun {} `compare` DefinedFunction {} = GT
+  DerivedFunctionFunctionNoun {} `compare` PrimitiveFunction {} = GT
+  DerivedFunctionFunctionNoun {} `compare` PartialFunction {} = GT
+  DerivedFunctionFunctionNoun {} `compare` DerivedFunctionNoun {} = GT
+  DerivedFunctionFunctionNoun {} `compare` DerivedFunctionFunction {} = GT
+  DerivedFunctionFunctionNoun {} `compare` DerivedFunctionNounNoun {} = GT
+  DerivedFunctionFunctionNoun {} `compare` DerivedFunctionNounFunction {} = GT
+  DerivedFunctionFunctionNoun { derivedFunctionConjunction = aconj, derivedFunctionFunctionLeft = aa, derivedFunctionNounRight = ab }
+    `compare` DerivedFunctionFunctionNoun { derivedFunctionConjunction = bconj, derivedFunctionFunctionLeft = ba, derivedFunctionNounRight = bb } = aconj `compare` bconj <> aa `compare` ba <> ab `compare` bb
+  DerivedFunctionFunctionNoun {} `compare` _ = LT
   DerivedFunctionFunctionFunction {} `compare` DefinedFunction {} = GT
   DerivedFunctionFunctionFunction {} `compare` PrimitiveFunction {} = GT
   DerivedFunctionFunctionFunction {} `compare` PartialFunction {} = GT
-  DerivedFunctionFunctionFunction {} `compare` DerivedFunctionArray {} = GT
+  DerivedFunctionFunctionFunction {} `compare` DerivedFunctionNoun {} = GT
   DerivedFunctionFunctionFunction {} `compare` DerivedFunctionFunction {} = GT
-  DerivedFunctionFunctionFunction {} `compare` DerivedFunctionArrayArray {} = GT
-  DerivedFunctionFunctionFunction {} `compare` DerivedFunctionArrayFunction {} = GT
-  DerivedFunctionFunctionFunction {} `compare` DerivedFunctionFunctionArray {} = GT
+  DerivedFunctionFunctionFunction {} `compare` DerivedFunctionNounNoun {} = GT
+  DerivedFunctionFunctionFunction {} `compare` DerivedFunctionNounFunction {} = GT
+  DerivedFunctionFunctionFunction {} `compare` DerivedFunctionFunctionNoun {} = GT
   DerivedFunctionFunctionFunction { derivedFunctionConjunction = aconj, derivedFunctionFunctionLeft = aa, derivedFunctionFunctionRight = ab }
     `compare` DerivedFunctionFunctionFunction { derivedFunctionConjunction = bconj, derivedFunctionFunctionLeft = ba, derivedFunctionFunctionRight = bb } = aconj `compare` bconj <> aa `compare` ba <> ab `compare` bb
   DerivedFunctionFunctionFunction {} `compare` _ = LT
   UnwrapArrayFunction {} `compare` DefinedFunction {} = GT
   UnwrapArrayFunction {} `compare` PrimitiveFunction {} = GT
   UnwrapArrayFunction {} `compare` PartialFunction {} = GT
-  UnwrapArrayFunction {} `compare` DerivedFunctionArray {} = GT
+  UnwrapArrayFunction {} `compare` DerivedFunctionNoun {} = GT
   UnwrapArrayFunction {} `compare` DerivedFunctionFunction {} = GT
-  UnwrapArrayFunction {} `compare` DerivedFunctionArrayArray {} = GT
-  UnwrapArrayFunction {} `compare` DerivedFunctionArrayFunction {} = GT
-  UnwrapArrayFunction {} `compare` DerivedFunctionFunctionArray {} = GT
+  UnwrapArrayFunction {} `compare` DerivedFunctionNounNoun {} = GT
+  UnwrapArrayFunction {} `compare` DerivedFunctionNounFunction {} = GT
+  UnwrapArrayFunction {} `compare` DerivedFunctionFunctionNoun {} = GT
   UnwrapArrayFunction {} `compare` DerivedFunctionFunctionFunction {} = GT
   UnwrapArrayFunction { unwrapFunctionArray = a } `compare` UnwrapArrayFunction { unwrapFunctionArray = b } = a `compare` b
   UnwrapArrayFunction {} `compare` _ = LT
   TrainFunction {} `compare` DefinedFunction {} = GT
   TrainFunction {} `compare` PrimitiveFunction {} = GT
   TrainFunction {} `compare` PartialFunction {} = GT
-  TrainFunction {} `compare` DerivedFunctionArray {} = GT
+  TrainFunction {} `compare` DerivedFunctionNoun {} = GT
   TrainFunction {} `compare` DerivedFunctionFunction {} = GT
-  TrainFunction {} `compare` DerivedFunctionArrayArray {} = GT
-  TrainFunction {} `compare` DerivedFunctionArrayFunction {} = GT
-  TrainFunction {} `compare` DerivedFunctionFunctionArray {} = GT
+  TrainFunction {} `compare` DerivedFunctionNounNoun {} = GT
+  TrainFunction {} `compare` DerivedFunctionNounFunction {} = GT
+  TrainFunction {} `compare` DerivedFunctionFunctionNoun {} = GT
   TrainFunction {} `compare` DerivedFunctionFunctionFunction {} = GT
   TrainFunction {} `compare` UnwrapArrayFunction {} = GT
   TrainFunction { trainFunctionTines = a } `compare` TrainFunction { trainFunctionTines = b } = b `compare` a
@@ -670,11 +706,11 @@ instance Show Function where
   show (DefinedFunction { functionRepr = repr }) = repr
   show (PrimitiveFunction { functionRepr = repr }) = repr
   show (PartialFunction { partialFunctionFunction = fn, partialFunctionLeft = n }) = [fst G.parens] ++ show n ++ [snd G.parens] ++ show fn
-  show (DerivedFunctionArray { derivedFunctionAdverb = adv, derivedFunctionArrayLeft = n }) = [fst G.parens] ++ show n ++ [snd G.parens] ++ show adv
+  show (DerivedFunctionNoun { derivedFunctionAdverb = adv, derivedFunctionNounLeft = n }) = [fst G.parens] ++ show n ++ [snd G.parens] ++ show adv
   show (DerivedFunctionFunction { derivedFunctionAdverb = adv, derivedFunctionFunctionLeft = u }) = [fst G.parens] ++ show u ++ [snd G.parens] ++ show adv
-  show (DerivedFunctionArrayArray { derivedFunctionConjunction = conj, derivedFunctionArrayLeft = n, derivedFunctionArrayRight = m }) = [fst G.parens] ++ show n ++ [snd G.parens] ++ show conj ++ [fst G.parens] ++ show m ++ [snd G.parens]
-  show (DerivedFunctionArrayFunction { derivedFunctionConjunction = conj, derivedFunctionArrayLeft = n, derivedFunctionFunctionRight = v }) = [fst G.parens] ++ show n ++ [snd G.parens] ++ show conj ++ [fst G.parens] ++ show v ++ [snd G.parens]
-  show (DerivedFunctionFunctionArray { derivedFunctionConjunction = conj, derivedFunctionFunctionLeft = u, derivedFunctionArrayRight = m }) = [fst G.parens] ++ show u ++ [snd G.parens] ++ show conj ++ [fst G.parens] ++ show m ++ [snd G.parens]
+  show (DerivedFunctionNounNoun { derivedFunctionConjunction = conj, derivedFunctionNounLeft = n, derivedFunctionNounRight = m }) = [fst G.parens] ++ show n ++ [snd G.parens] ++ show conj ++ [fst G.parens] ++ show m ++ [snd G.parens]
+  show (DerivedFunctionNounFunction { derivedFunctionConjunction = conj, derivedFunctionNounLeft = n, derivedFunctionFunctionRight = v }) = [fst G.parens] ++ show n ++ [snd G.parens] ++ show conj ++ [fst G.parens] ++ show v ++ [snd G.parens]
+  show (DerivedFunctionFunctionNoun { derivedFunctionConjunction = conj, derivedFunctionFunctionLeft = u, derivedFunctionNounRight = m }) = [fst G.parens] ++ show u ++ [snd G.parens] ++ show conj ++ [fst G.parens] ++ show m ++ [snd G.parens]
   show (DerivedFunctionFunctionFunction { derivedFunctionConjunction = conj, derivedFunctionFunctionLeft = u, derivedFunctionFunctionRight = v }) = [fst G.parens] ++ show u ++ [snd G.parens] ++ show conj ++ [fst G.parens] ++ show v ++ [snd G.parens]
   show (UnwrapArrayFunction { unwrapFunctionArray = arr }) = [G.unwrap, fst G.parens] ++ show arr ++ [snd G.parens]
   show (TrainFunction { trainFunctionTines = tines }) = [fst G.train] ++ intercalate [' ', G.separator, ' '] (showTine <$> tines) ++ [snd G.train]
@@ -682,7 +718,7 @@ instance Show Function where
 noMonad :: String -> Error
 noMonad str = DomainError $ "Function " ++ str ++ " cannot be called monadically"
 
-callMonad :: Function -> Array -> St Array
+callMonad :: Function -> Noun -> St Noun
 callMonad f x = case functionMonad f of
   Just m -> case functionContext f of
     Just ctx -> runWithContext ctx $ m x
@@ -692,7 +728,7 @@ callMonad f x = case functionMonad f of
 noDyad :: String -> Error
 noDyad str = DomainError $ "Function " ++ str ++ " cannot be called dyadically"
 
-callDyad :: Function -> Array -> Array -> St Array
+callDyad :: Function -> Noun -> Noun -> St Noun
 callDyad f a b = case functionDyad f of
   Just d -> case functionContext f of
     Just ctx -> runWithContext ctx $ d a b
@@ -703,24 +739,24 @@ callDyad f a b = case functionDyad f of
 
 data Adverb
   = DefinedAdverb
-    { adverbOnArray            :: Maybe (Array    -> St Function)
+    { adverbOnNoun             :: Maybe (Noun    -> St Function)
     , adverbOnFunction         :: Maybe (Function -> St Function)
     , adverbRepr               :: String
     , adverbContext            :: Maybe Context
     , definedAdverbId          :: Integer }
   | PrimitiveAdverb
-    { adverbOnArray            :: Maybe (Array    -> St Function)
+    { adverbOnNoun             :: Maybe (Noun     -> St Function)
     , adverbOnFunction         :: Maybe (Function -> St Function)
     , adverbRepr               :: String
     , adverbContext            :: Maybe Context }
   | PartialAdverb
-    { adverbOnArray            :: Maybe (Array    -> St Function)
+    { adverbOnNoun             :: Maybe (Noun     -> St Function)
     , adverbOnFunction         :: Maybe (Function -> St Function)
     , adverbContext            :: Maybe Context
     , partialAdverbConjunction :: Conjunction
     , partialAdverbRight       :: Value }
   | TrainAdverb
-    { adverbOnArray            :: Maybe (Array    -> St Function)
+    { adverbOnNoun             :: Maybe (Noun     -> St Function)
     , adverbOnFunction         :: Maybe (Function -> St Function)
     , adverbContext            :: Maybe Context
     , trainAdverbTines         :: [Maybe Value] }
@@ -754,8 +790,8 @@ instance Ord Adverb where
   TrainAdverb {} `compare` PartialAdverb {} = GT
   TrainAdverb { trainAdverbTines = a } `compare` TrainAdverb { trainAdverbTines = b } = b `compare` a
 
-callOnArray :: Adverb -> Array -> St Function
-callOnArray adv x = case adverbOnArray adv of
+callOnNoun :: Adverb -> Noun -> St Function
+callOnNoun adv x = case adverbOnNoun adv of
   Just f -> case adverbContext adv of
     Just ctx -> runWithContext ctx $ f x
     Nothing -> f x
@@ -770,24 +806,24 @@ callOnFunction adv x = case adverbOnFunction adv of
 
 data Conjunction
   = DefinedConjunction
-    { conjOnArrayArray       :: Maybe (Array    -> Array    -> St Function)
-    , conjOnArrayFunction    :: Maybe (Array    -> Function -> St Function)
-    , conjOnFunctionArray    :: Maybe (Function -> Array    -> St Function)
+    { conjOnNounNoun         :: Maybe (Noun     -> Noun     -> St Function)
+    , conjOnNounFunction     :: Maybe (Noun     -> Function -> St Function)
+    , conjOnFunctionNoun     :: Maybe (Function -> Noun     -> St Function)
     , conjOnFunctionFunction :: Maybe (Function -> Function -> St Function)
     , conjRepr               :: String
     , conjContext            :: Maybe Context
     , definedConjunctionId   :: Integer }
   | PrimitiveConjunction
-    { conjOnArrayArray       :: Maybe (Array    -> Array    -> St Function)
-    , conjOnArrayFunction    :: Maybe (Array    -> Function -> St Function)
-    , conjOnFunctionArray    :: Maybe (Function -> Array    -> St Function)
+    { conjOnNounNoun         :: Maybe (Noun     -> Noun     -> St Function)
+    , conjOnNounFunction     :: Maybe (Noun     -> Function -> St Function)
+    , conjOnFunctionNoun     :: Maybe (Function -> Noun     -> St Function)
     , conjOnFunctionFunction :: Maybe (Function -> Function -> St Function)
     , conjRepr               :: String
     , conjContext            :: Maybe Context }
   | TrainConjunction
-    { conjOnArrayArray       :: Maybe (Array    -> Array    -> St Function)
-    , conjOnArrayFunction    :: Maybe (Array    -> Function -> St Function)
-    , conjOnFunctionArray    :: Maybe (Function -> Array    -> St Function)
+    { conjOnNounNoun         :: Maybe (Noun     -> Noun     -> St Function)
+    , conjOnNounFunction     :: Maybe (Noun     -> Function -> St Function)
+    , conjOnFunctionNoun     :: Maybe (Function -> Noun     -> St Function)
     , conjOnFunctionFunction :: Maybe (Function -> Function -> St Function)
     , conjContext            :: Maybe Context
     , trainConjunctionTines  :: [Maybe Value] }
@@ -815,22 +851,22 @@ instance Ord Conjunction where
   TrainConjunction {} `compare` PrimitiveConjunction {} = GT
   TrainConjunction { trainConjunctionTines = a } `compare` TrainConjunction { trainConjunctionTines = b } = b `compare` a
 
-callOnArrayAndArray :: Conjunction -> Array -> Array -> St Function
-callOnArrayAndArray conj x y = case conjOnArrayArray conj of
+callOnNounAndNoun :: Conjunction -> Noun -> Noun -> St Function
+callOnNounAndNoun conj x y = case conjOnNounNoun conj of
   Just f -> case conjContext conj of
     Just ctx -> runWithContext ctx $ f x y
     Nothing -> f x y
-  Nothing -> throwError $ DomainError $ "Operator " ++ show conj ++ " cannot be applied to two arrays."
+  Nothing -> throwError $ DomainError $ "Operator " ++ show conj ++ " cannot be applied to two nouns."
 
-callOnArrayAndFunction :: Conjunction -> Array -> Function -> St Function
-callOnArrayAndFunction conj x y = case conjOnArrayFunction conj of
+callOnNounAndFunction :: Conjunction -> Noun -> Function -> St Function
+callOnNounAndFunction conj x y = case conjOnNounFunction conj of
   Just f -> case conjContext conj of
     Just ctx -> runWithContext ctx $ f x y
     Nothing -> f x y
   Nothing -> throwError $ DomainError $ "Operator " ++ show conj ++ " cannot be applied to an array and a function."
 
-callOnFunctionAndArray :: Conjunction -> Function -> Array -> St Function
-callOnFunctionAndArray conj x y = case conjOnFunctionArray conj of
+callOnFunctionAndNoun :: Conjunction -> Function -> Noun -> St Function
+callOnFunctionAndNoun conj x y = case conjOnFunctionNoun conj of
   Just f -> case conjContext conj of
     Just ctx -> runWithContext ctx $ f x y
     Nothing -> f x y
@@ -846,20 +882,20 @@ callOnFunctionAndFunction conj x y = case conjOnFunctionFunction conj of
 -- * Quads
 
 data Nilad = Nilad
-  { niladGet :: Maybe (St Array)
-  , niladSet :: Maybe (Array -> St ())
+  { niladGet :: Maybe (St Noun)
+  , niladSet :: Maybe (Noun -> St ())
   , niladRepr :: String
   , niladContext :: Maybe Context }
 
 instance NFData Nilad where
   rnf (Nilad g s r c) = rwhnf g `seq` rwhnf s `seq` rnf r `seq` rnf c `seq` ()
 
-getNilad :: Nilad -> St Array
+getNilad :: Nilad -> St Noun
 getNilad (Nilad (Just g) _ _ (Just ctx)) = runWithContext ctx g
 getNilad (Nilad (Just g) _ _ Nothing) = g
 getNilad g@(Nilad Nothing _ _ _) = throwError $ DomainError $ "Nilad " ++ show g ++ " cannot be get"
 
-setNilad :: Nilad -> Array -> St ()
+setNilad :: Nilad -> Noun -> St ()
 setNilad (Nilad _ (Just s) _ (Just ctx)) x = runWithContext ctx $ s x
 setNilad (Nilad _ (Just s) _ Nothing) x = s x
 setNilad s@(Nilad _ Nothing _ _) _ = throwError $ DomainError $ "Nilad " ++ show s ++ " cannot be set"
@@ -892,7 +928,7 @@ data VariableType
   deriving (Show, Eq, Generic, NFData)
 
 data Scope = Scope
-  { scopeArrays :: [(String, (VariableType, Array))]
+  { scopeNouns :: [(String, (VariableType, Noun))]
   , scopeFunctions :: [(String, (VariableType, Function))]
   , scopeAdverbs :: [(String, (VariableType, Adverb))]
   , scopeConjunctions :: [(String, (VariableType, Conjunction))]
@@ -907,8 +943,8 @@ instance Show Scope where
 specialNames :: [String]
 specialNames = [[G.alpha], [G.omega], [G.alpha, G.alpha], [G.omega, G.omega], [G.alphaBar, G.alphaBar], [G.omegaBar, G.omegaBar], [G.del], [G.underscore, G.del], [G.underscore, G.del, G.underscore]]
 
-scopeShallowLookupArray :: Bool -> String -> Scope -> Maybe Array
-scopeShallowLookupArray private name sc = case lookup name (scopeArrays sc) of
+scopeShallowLookupNoun :: Bool -> String -> Scope -> Maybe Noun
+scopeShallowLookupNoun private name sc = case lookup name (scopeNouns sc) of
   Nothing -> Nothing
   Just (VariableNormal, x) -> Just x
   Just (VariableConstant, x) -> Just x
@@ -939,12 +975,12 @@ scopeShallowLookupConjunction private name sc = case lookup name (scopeConjuncti
   Just (VariablePrivate, x) | private -> Just x
   Just (VariablePrivate, _) -> Nothing
 
-scopeLookupArray :: Bool ->  String -> Scope -> St (Maybe Array)
-scopeLookupArray private name sc = case scopeShallowLookupArray private name sc of
+scopeLookupNoun :: Bool ->  String -> Scope -> St (Maybe Noun)
+scopeLookupNoun private name sc = case scopeShallowLookupNoun private name sc of
   Just x -> pure $ Just x
   Nothing -> if name `elem` specialNames then pure Nothing else case scopeParent sc of
     Nothing -> pure Nothing
-    Just p -> (liftToSt $ IORef.readIORef p) >>= scopeLookupArray private name
+    Just p -> (liftToSt $ IORef.readIORef p) >>= scopeLookupNoun private name
 
 scopeLookupFunction :: Bool -> String -> Scope -> St (Maybe Function)
 scopeLookupFunction private name sc = case scopeShallowLookupFunction private name sc of
@@ -967,11 +1003,11 @@ scopeLookupConjunction private name sc = case scopeShallowLookupConjunction priv
     Nothing -> pure $ Nothing
     Just p -> (liftToSt $ IORef.readIORef p) >>= scopeLookupConjunction private name
 
-scopeUpdateArray :: Bool ->  String -> VariableType -> Array -> Scope -> St Scope
-scopeUpdateArray private name ty val sc = case lookup name (scopeArrays sc) of
-  Nothing -> pure $ sc{ scopeArrays = update name (ty, val) (scopeArrays sc) }
-  Just (VariableNormal, _) -> pure $ sc{ scopeArrays = update name (VariableNormal, val) (scopeArrays sc) }
-  Just (VariablePrivate, _) | private -> pure $ sc{ scopeArrays = update name (VariablePrivate, val) (scopeArrays sc) }
+scopeUpdateNoun :: Bool ->  String -> VariableType -> Noun -> Scope -> St Scope
+scopeUpdateNoun private name ty val sc = case lookup name (scopeNouns sc) of
+  Nothing -> pure $ sc{ scopeNouns = update name (ty, val) (scopeNouns sc) }
+  Just (VariableNormal, _) -> pure $ sc{ scopeNouns = update name (VariableNormal, val) (scopeNouns sc) }
+  Just (VariablePrivate, _) | private -> pure $ sc{ scopeNouns = update name (VariablePrivate, val) (scopeNouns sc) }
   Just (VariablePrivate, _) -> throwError $ DomainError "Cannot access private variable"
   Just (VariableConstant, _) -> throwError $ DomainError "Cannot modify constant variable"
 
@@ -999,12 +1035,12 @@ scopeUpdateConjunction private name ty val sc = case lookup name (scopeConjuncti
   Just (VariablePrivate, _) -> throwError $ DomainError "Cannot access private variable"
   Just (VariableConstant, _) -> throwError $ DomainError "Cannot modify constant variable"
 
-scopeModifyArray :: Bool -> String -> Array -> Scope -> St Scope
-scopeModifyArray private name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeArrays sc) of
-  Just (t, _) -> scopeUpdateArray private name t val sc
+scopeModifyNoun :: Bool -> String -> Noun -> Scope -> St Scope
+scopeModifyNoun private name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeNouns sc) of
+  Just (t, _) -> scopeUpdateNoun private name t val sc
   Nothing -> case scopeParent sc of
     Nothing -> throwError $ DomainError "Modifying a non-existent variable"
-    Just p -> readRef p >>= scopeModifyArray private name val >>= writeRef p >>= const (pure sc)
+    Just p -> readRef p >>= scopeModifyNoun private name val >>= writeRef p >>= const (pure sc)
 
 scopeModifyFunction :: Bool -> String -> Function -> Scope -> St Scope
 scopeModifyFunction private name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeFunctions sc) of
@@ -1027,9 +1063,9 @@ scopeModifyConjunction private name val sc = if name `elem` specialNames then th
     Nothing -> throwError $ DomainError "Modifying a non-existent variable"
     Just p -> readRef p >>= scopeModifyConjunction private name val >>= writeRef p >>= const (pure sc)
 
-scopeShallowModifyArray :: Bool -> String -> Array -> Scope -> St Scope
-scopeShallowModifyArray private name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeArrays sc) of
-  Just _ -> scopeUpdateArray private name VariableNormal val sc
+scopeShallowModifyNoun :: Bool -> String -> Noun -> Scope -> St Scope
+scopeShallowModifyNoun private name val sc = if name `elem` specialNames then throwError $ DomainError "Cannot modify special variable" else case lookup name (scopeNouns sc) of
+  Just _ -> scopeUpdateNoun private name VariableNormal val sc
   Nothing -> throwError $ DomainError "Modifying a non-existent variable"
 
 scopeShallowModifyFunction :: Bool -> String -> Function -> Scope -> St Scope
@@ -1109,21 +1145,21 @@ modifyRef = liftToSt .: IORef.modifyIORef
 -- * Value
 
 data Value
-  = VArray Array
+  = VNoun Noun
   | VFunction Function
   | VAdverb Adverb
   | VConjunction Conjunction
   deriving (Eq, Ord, Generic, NFData)
 
 instance Show Value where
-  show (VArray arr)        = show arr
+  show (VNoun n)           = show n
   show (VFunction fn)      = show fn
   show (VAdverb adv)       = show adv
   show (VConjunction conj) = show conj
 
-unwrapArray :: Error -> Value -> St Array
-unwrapArray _ (VArray val) = return val
-unwrapArray e _            = throwError e
+unwrapNoun :: Error -> Value -> St Noun
+unwrapNoun _ (VNoun val) = return val
+unwrapNoun e _           = throwError e
 
 unwrapFunction :: Error -> Value -> St Function
 unwrapFunction _ (VFunction val) = return val
@@ -1138,13 +1174,13 @@ unwrapConjunction _ (VConjunction val) = return val
 unwrapConjunction e _                  = throwError e
 
 callOnValue :: Adverb -> Value -> St Function
-callOnValue adv (VArray x) = callOnArray adv x
+callOnValue adv (VNoun x) = callOnNoun adv x
 callOnValue adv (VFunction x) = callOnFunction adv x
 callOnValue _ _ = throwError $ DomainError "Invalid type to adverb call"
 
 callOnValueAndValue :: Conjunction -> Value -> Value -> St Function
-callOnValueAndValue conj (VArray x) (VArray y) = callOnArrayAndArray conj x y
-callOnValueAndValue conj (VArray x) (VFunction y) = callOnArrayAndFunction conj x y
-callOnValueAndValue conj (VFunction x) (VArray y) = callOnFunctionAndArray conj x y
+callOnValueAndValue conj (VNoun x) (VNoun y) = callOnNounAndNoun conj x y
+callOnValueAndValue conj (VNoun x) (VFunction y) = callOnNounAndFunction conj x y
+callOnValueAndValue conj (VFunction x) (VNoun y) = callOnFunctionAndNoun conj x y
 callOnValueAndValue conj (VFunction x) (VFunction y) = callOnFunctionAndFunction conj x y
 callOnValueAndValue _ _ _ = throwError $ DomainError "Invalid type to conjunction call"

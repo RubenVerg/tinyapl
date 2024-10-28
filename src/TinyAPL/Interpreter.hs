@@ -21,7 +21,7 @@ import Control.Monad.Except (MonadError)
 import Data.Maybe (fromMaybe)
 import Data.Foldable (foldrM)
 
-asWraps :: MonadError Error m => Error -> Array -> m Function
+asWraps :: MonadError Error m => Error -> Noun -> m Function
 asWraps err arr = do
   if null $ arrayShape arr then asWrap err (headPromise $ arrayContents arr)
   else pure $ UnwrapArrayFunction
@@ -31,43 +31,43 @@ asWraps err arr = do
     , unwrapFunctionArray = arr }
 
 valueCategory :: Value -> Category
-valueCategory (VArray _) = CatArray
+valueCategory (VNoun _) = CatArray
 valueCategory (VFunction _) = CatFunction
 valueCategory (VAdverb _) = CatAdverb
 valueCategory (VConjunction _) = CatConjunction
 
 scopeEntries :: Scope -> [(String, (VariableType, Value))]
-scopeEntries sc = (second (second VArray) <$> scopeArrays sc) ++ (second (second VFunction) <$> scopeFunctions sc) ++ (second (second VAdverb) <$> scopeAdverbs sc) ++ (second (second VConjunction) <$> scopeConjunctions sc)
+scopeEntries sc = (second (second VNoun) <$> scopeNouns sc) ++ (second (second VFunction) <$> scopeFunctions sc) ++ (second (second VAdverb) <$> scopeAdverbs sc) ++ (second (second VConjunction) <$> scopeConjunctions sc)
 
 scopeShallowLookup :: Bool -> String -> Scope -> Maybe Value
 scopeShallowLookup private name sc =
-  VArray <$> scopeShallowLookupArray private name sc
+  VNoun <$> scopeShallowLookupNoun private name sc
   <|> VFunction <$> scopeShallowLookupFunction private name sc
   <|> VAdverb <$> scopeShallowLookupAdverb private name sc
   <|> VConjunction <$> scopeShallowLookupConjunction private name sc
 
 scopeLookup :: Bool -> String -> Scope -> St (Maybe Value)
 scopeLookup private name sc = do
-  a <- scopeLookupArray private name sc
+  a <- scopeLookupNoun private name sc
   f <- scopeLookupFunction private name sc
   adv <- scopeLookupAdverb private name sc
   conj <- scopeLookupConjunction private name sc
-  pure $ (VArray <$> a) <|> (VFunction <$> f) <|> (VAdverb <$> adv) <|> (VConjunction <$> conj)
+  pure $ (VNoun <$> a) <|> (VFunction <$> f) <|> (VAdverb <$> adv) <|> (VConjunction <$> conj)
 
 scopeUpdate :: Bool -> String -> VariableType -> Value -> Scope -> St Scope
-scopeUpdate private name ty (VArray val) sc       = scopeUpdateArray private name ty val sc
+scopeUpdate private name ty (VNoun val) sc        = scopeUpdateNoun private name ty val sc
 scopeUpdate private name ty (VFunction val) sc    = scopeUpdateFunction private name ty val sc
 scopeUpdate private name ty (VAdverb val) sc      = scopeUpdateAdverb private name ty val sc
 scopeUpdate private name ty (VConjunction val) sc = scopeUpdateConjunction private name ty val sc
 
 scopeModify :: Bool -> String -> Value -> Scope -> St Scope
-scopeModify private name (VArray val) sc       = scopeModifyArray private name val sc
+scopeModify private name (VNoun val) sc        = scopeModifyNoun private name val sc
 scopeModify private name (VFunction val) sc    = scopeModifyFunction private name val sc
 scopeModify private name (VAdverb val) sc      = scopeModifyAdverb private name val sc
 scopeModify private name (VConjunction val) sc = scopeModifyConjunction private name val sc
 
 scopeShallowModify :: Bool -> String -> Value -> Scope -> St Scope
-scopeShallowModify private name (VArray val) sc       = scopeShallowModifyArray private name val sc
+scopeShallowModify private name (VNoun val) sc        = scopeShallowModifyNoun private name val sc
 scopeShallowModify private name (VFunction val) sc    = scopeShallowModifyFunction private name val sc
 scopeShallowModify private name (VAdverb val) sc      = scopeShallowModifyAdverb private name val sc
 scopeShallowModify private name (VConjunction val) sc = scopeShallowModifyConjunction private name val sc
@@ -123,48 +123,55 @@ eval (GuardBranch _ _) = throwError $ DomainError "Guards are not allowed outsid
 eval (ExitBranch _) = throwError $ DomainError "Exits are not allowed outside of dfns"
 eval (VectorBranch es) = do
   entries <- mapM (eval >=> \case
-    VArray x -> pure $ box x
+    VNoun x -> pure $ box x
     VFunction f -> pure $ Wrap f
     VAdverb a -> pure $ AdverbWrap a
     VConjunction c -> pure $ ConjunctionWrap c) $ reverse es
-  return $ VArray $ vector $ reverse entries
+  return $ VNoun $ vector $ reverse entries
 eval (HighRankBranch es) = do
-  entries <- mapM (eval >=> unwrapArray (DomainError "Array notation entries must be arrays")) $ reverse es
+  entries <- mapM (eval >=> unwrapNoun (DomainError "Array notation entries must be arrays")) $ reverse es
   case entries of
-    [] -> return $ VArray $ fromMajorCells []
+    [] -> return $ VNoun $ fromMajorCells []
     (e:es) ->
       if all ((== arrayShape e) . arrayShape) es
-      then return $ VArray $ fromMajorCells $ reverse entries
+      then return $ VNoun $ fromMajorCells $ reverse entries
       else throwError $ DomainError "High rank notation entries must be of the same shape"
+eval (DictionaryBranch es) = do
+  let toScalar (VNoun x) = box x
+      toScalar (VFunction f) = Wrap f
+      toScalar (VAdverb a) = AdverbWrap a
+      toScalar (VConjunction c) = ConjunctionWrap c
+  entries <- mapM (\(k, v) -> liftA2 (,) (toScalar <$> eval k) (toScalar <$> eval v)) es
+  return $ VNoun $ dictionary entries
 eval (TrainBranch cat es) = evalTrain cat es
 eval (WrapBranch fn) = eval fn >>= (\case
-  VFunction fn -> pure $ VArray $ scalar $ Wrap fn
-  VAdverb adv -> pure $ VArray $ scalar $ AdverbWrap adv
-  VConjunction conj -> pure $ VArray $ scalar $ ConjunctionWrap conj
+  VFunction fn -> pure $ VNoun $ scalar $ Wrap fn
+  VAdverb adv -> pure $ VNoun $ scalar $ AdverbWrap adv
+  VConjunction conj -> pure $ VNoun $ scalar $ ConjunctionWrap conj
   _ -> throwError $ DomainError "Wrap notation: function or modifier required")
 eval (UnwrapBranch cat fn) = eval fn >>= evalUnwrap cat
 eval (StructBranch es) = evalStruct es
 eval (TernaryBranch cond true false) = do
   let err = DomainError "Ternary condition must be a scalar boolean"
-  c <- eval cond >>= unwrapArray err >>= asScalar err >>= asBool err
+  c <- eval cond >>= unwrapNoun err >>= asScalar err >>= asBool err
   if c then eval true else eval false
 
 resolve :: Context -> [String] -> St Context
 resolve ctx [] = pure ctx
 resolve ctx (name:ns) = do
   sc <- readRef $ contextScope ctx
-  arr <- scopeLookupArray False name sc >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist"))
+  arr <- scopeLookupNoun False name sc >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist"))
   asScalar (DomainError "Names of a qualifid identifier should be structs") arr
     >>= asStruct (DomainError "Names of a qualified identifier should be structs")
     >>= flip resolve ns
 
 evalLeaf :: Token -> St Value
-evalLeaf (TokenNumber x _  )              = return $ VArray $ scalar $ Number x
-evalLeaf (TokenChar [x] _)                = return $ VArray $ scalar $ Character x
-evalLeaf (TokenChar xs _)                 = return $ VArray $ vector $ Character <$> xs
-evalLeaf (TokenString xs _)               = return $ VArray $ vector $ Character <$> xs
+evalLeaf (TokenNumber x _  )              = return $ VNoun $ scalar $ Number x
+evalLeaf (TokenChar [x] _)                = return $ VNoun $ scalar $ Character x
+evalLeaf (TokenChar xs _)                 = return $ VNoun $ vector $ Character <$> xs
+evalLeaf (TokenString xs _)               = return $ VNoun $ vector $ Character <$> xs
 evalLeaf (TokenPrimArray n _)             =
-  lift $ except $ maybeToEither (SyntaxError $ "Unknown primitive array " ++ [n]) $ VArray <$> lookup n P.arrays
+  lift $ except $ maybeToEither (SyntaxError $ "Unknown primitive array " ++ [n]) $ VNoun <$> lookup n P.arrays
 evalLeaf (TokenPrimFunction n _)          =
   lift $ except $ maybeToEither (SyntaxError $ "Unknown primitive function " ++ [n]) $ VFunction <$> lookup n P.functions
 evalLeaf (TokenPrimAdverb n _)            =
@@ -184,15 +191,15 @@ evalLeaf (TokenArrayName name _)
   | name == [G.quadQuote]                 = do
     input <- gets contextIn
     str <- input
-    return $ VArray $ vector $ Character <$> str
+    return $ VNoun $ vector $ Character <$> str
   | isPrefixOf [G.quad] name              = do
     quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads
     case nilad of
-      Just x -> VArray <$> getNilad x
+      Just x -> VNoun <$> getNilad x
       Nothing -> throwError $ SyntaxError $ "Unknown quad name " ++ name
   | otherwise                             =
-    gets contextScope >>= readRef >>= scopeLookupArray True name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VArray)
+    gets contextScope >>= readRef >>= scopeLookupNoun True name >>= (lift . except . maybeToEither (SyntaxError $ "Variable " ++ name ++ " does not exist") . fmap VNoun)
 -- evalLeaf (TokenArrayName names val)       = do
 --   let (q, l) = fromJust $ unsnoc names
 --   ctx <- resolve q
@@ -242,48 +249,48 @@ evalQualified :: Value -> NonEmpty String -> St Value
 evalQualified head ns = do
   let err = DomainError "Qualified name head should be a scalar struct"
   let (q, l) = unsnocNE ns
-  headCtx <- unwrapArray err head >>= asScalar err >>= asStruct err
+  headCtx <- unwrapNoun err head >>= asScalar err >>= asStruct err
   ctx <- resolve headCtx q
   scope <- readRef $ contextScope ctx
   lift $ except $ maybeToEither (SyntaxError $ "Qualified variable " ++ l ++ " does not exist") $ scopeShallowLookup False l scope
 
 evalMonadCall :: Value -> Value -> St Value
-evalMonadCall (VFunction fn) (VArray arr) = VArray <$> callMonad fn arr
-evalMonadCall _ _                         = throwError $ DomainError "Invalid arguments to monad call evaluation"
+evalMonadCall (VFunction fn) (VNoun arr) = VNoun <$> callMonad fn arr
+evalMonadCall _ _                        = throwError $ DomainError "Invalid arguments to monad call evaluation"
 
 evalDyadCall :: Value -> Value -> St Value
-evalDyadCall (VArray arr) (VFunction f) =
+evalDyadCall (VNoun arr) (VFunction f) =
   return $ VFunction $ PartialFunction { functionMonad = Just $ callDyad f arr, functionDyad = Nothing, functionContext = functionContext f, partialFunctionFunction = f, partialFunctionLeft = arr }
-evalDyadCall _ _                        = throwError $ DomainError "Invalid arguments to dyad call evaluation"
+evalDyadCall _ _                       = throwError $ DomainError "Invalid arguments to dyad call evaluation"
 
 evalAdverbCall :: Value -> Value -> St Value
-evalAdverbCall (VArray l) (VAdverb adv)    = VFunction <$> callOnArray adv l
+evalAdverbCall (VNoun l) (VAdverb adv)     = VFunction <$> callOnNoun adv l
 evalAdverbCall (VFunction l) (VAdverb adv) = VFunction <$> callOnFunction adv l
 evalAdverbCall _ _                         = throwError $ DomainError "Invalid arguments to adverb call evaluation"
 
 evalConjunctionCall :: Value -> Value -> St Value
-evalConjunctionCall (VConjunction conj) (VArray r)    =
-  return $ VAdverb $ PartialAdverb { adverbOnArray = Just (\x -> callOnArrayAndArray conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndArray conj x r), adverbContext = conjContext conj, partialAdverbConjunction = conj, partialAdverbRight = VArray r }
+evalConjunctionCall (VConjunction conj) (VNoun r)     =
+  return $ VAdverb $ PartialAdverb { adverbOnNoun = Just (\x -> callOnNounAndNoun conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndNoun conj x r), adverbContext = conjContext conj, partialAdverbConjunction = conj, partialAdverbRight = VNoun r }
 evalConjunctionCall (VConjunction conj) (VFunction r) =
-  return $ VAdverb $ PartialAdverb { adverbOnArray = Just (\x -> callOnArrayAndFunction conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndFunction conj x r), adverbContext = conjContext conj, partialAdverbConjunction = conj, partialAdverbRight = VFunction r }
+  return $ VAdverb $ PartialAdverb { adverbOnNoun = Just (\x -> callOnNounAndFunction conj x r), adverbOnFunction = Just (\x -> callOnFunctionAndFunction conj x r), adverbContext = conjContext conj, partialAdverbConjunction = conj, partialAdverbRight = VFunction r }
 evalConjunctionCall _ _                               = throwError $ DomainError "Invalid arguments to conjunction call evaluation"
 
 evalAssign :: Bool -> Bool -> String -> AssignType -> Value -> St Value
 evalAssign shallow private name ty val
   | name == [G.quad] = if ty == AssignNormal then do
-    arr <- unwrapArray (DomainError "Cannot print non-array") val
+    arr <- unwrapNoun (DomainError "Cannot print non-array") val
     out <- gets contextOut
     out $ show arr ++ "\n"
     return val 
     else throwError $ DomainError "Can only assign normally to quads"
   | name == [G.quadQuote] = if ty == AssignNormal then do
-    arr <- unwrapArray (DomainError "Cannot print non-array") val
+    arr <- unwrapNoun (DomainError "Cannot print non-array") val
     err <- gets contextErr
     err $ show arr
     return val
     else throwError $ DomainError "Can only assign normally to quads"
   | isPrefixOf [G.quad] name = if ty == AssignNormal then do
-    arr <- unwrapArray (DomainError "Cannot set quad name to non-array") val
+    arr <- unwrapNoun (DomainError "Cannot set quad name to non-array") val
     quads <- gets contextQuads
     let nilad = lookup name $ quadArrays quads
     case nilad of
@@ -317,7 +324,7 @@ evalQualifiedAssign :: Value -> NonEmpty String -> AssignType -> Value -> St Val
 evalQualifiedAssign head ns c val = do
   let err = DomainError "Qualified name head should be a scalar struct"
   let (q, l) = unsnocNE ns
-  headCtx <- unwrapArray err head >>= asScalar err >>= asStruct err
+  headCtx <- unwrapNoun err head >>= asScalar err >>= asStruct err
   ctx <- resolve headCtx q
   runWithContext ctx $ evalAssign True False l c val
 
@@ -325,22 +332,22 @@ evalVectorAssign :: [String] -> AssignType -> Value -> St Value
 evalVectorAssign ns c val =
   if any (\(n:_) -> n == G.quad || n == G.quadQuote) ns then throwError $ DomainError "Vector assignment: cannot assign to quad names"
   else do
-    es <- fmap fromScalar <$> (unwrapArray (DomainError "Vector assign: not a vector") val >>= asVector (DomainError "Vector assignment: not a vector"))
+    es <- fmap fromScalar <$> (unwrapNoun (DomainError "Vector assign: not a vector") val >>= asVector (DomainError "Vector assignment: not a vector"))
     if length ns /= length es then throwError $ DomainError "Vector assignment: wrong number of names"
-    else zipWithM_ (\name value -> evalAssign False True name c (VArray value)) ns es $> val
+    else zipWithM_ (\name value -> evalAssign False True name c (VNoun value)) ns es $> val
 
 evalHighRankAssign :: [String] -> AssignType -> Value -> St Value
 evalHighRankAssign ns c val =
   if any (\(n:_) -> n == G.quad || n == G.quadQuote) ns then throwError $ DomainError "High rank assignment: cannot assign to quad names"
   else do
-    es <- majorCells <$> unwrapArray (DomainError "High rank assign: not an array") val
+    es <- majorCells <$> unwrapNoun (DomainError "High rank assign: not an array") val
     if length ns /= length es then throwError $ DomainError "High rank assignment: wrong number of names"
-    else zipWithM_ (\name value -> evalAssign False True name c (VArray value)) ns es $> val
+    else zipWithM_ (\name value -> evalAssign False True name c (VNoun value)) ns es $> val
 
 evalStructAssign :: [(String, Maybe (AssignType, String))] -> AssignType -> Value -> St Value
 evalStructAssign ns c val = do
   let err = DomainError "Struct assignment: not a struct"
-  s <- unwrapArray err val >>= asScalar err >>= asStruct err >>= readRef . contextScope
+  s <- unwrapNoun err val >>= asScalar err >>= asStruct err >>= readRef . contextScope
   mapM_ (\(name, alias) -> do {
       let (n, t) = case alias of {
           Nothing -> (name, c)
@@ -356,9 +363,9 @@ evalDefined :: NonEmpty Tree -> Category -> St Value
 evalDefined statements cat = let
   ev :: Tree -> St (Value, Bool)
   ev (GuardBranch check result) = do
-    c <- eval check >>= unwrapArray (DomainError "Guard check not array") >>= lift . except . asScalar (DomainError "Guard check not scalar") >>= lift . except . asBool (DomainError "Guard check not boolean")
+    c <- eval check >>= unwrapNoun (DomainError "Guard check not array") >>= lift . except . asScalar (DomainError "Guard check not scalar") >>= lift . except . asBool (DomainError "Guard check not boolean")
     if c then ev result
-    else return (VArray $ Array [0, 0] [], False)
+    else return (VNoun $ Array [0, 0] [], False)
   ev (ExitBranch result) = (, True) <$> eval result
   ev other = (, False) <$> eval other
 
@@ -369,7 +376,7 @@ evalDefined statements cat = let
       (v, r) <- ev x
       if r then return v else runDefined xs
 
-  run xs sc = inChildScope xs (runDefined statements) sc >>= unwrapArray (DomainError "Dfn must return an array")
+  run xs sc = inChildScope xs (runDefined statements) sc >>= unwrapNoun (DomainError "Dfn must return an array")
   in do
     sc <- get
     case cat of
@@ -378,8 +385,8 @@ evalDefined statements cat = let
         let dfn = DefinedFunction {
             functionRepr = "{...}"
           , functionContext = Just $ sc
-          , functionMonad = Just $ \x -> run [([G.omega], (VariableConstant, VArray x)), ([G.del], (VariableConstant, VFunction dfn))] sc
-          , functionDyad = Just $ \x y -> run [([G.alpha], (VariableConstant, VArray x)), ([G.omega], (VariableConstant, VArray y)), ([G.del], (VariableConstant, VFunction dfn))] sc
+          , functionMonad = Just $ \x -> run [([G.omega], (VariableConstant, VNoun x)), ([G.del], (VariableConstant, VFunction dfn))] sc
+          , functionDyad = Just $ \x y -> run [([G.alpha], (VariableConstant, VNoun x)), ([G.omega], (VariableConstant, VNoun y)), ([G.del], (VariableConstant, VFunction dfn))] sc
           , definedFunctionId = id }
         pure $ VFunction dfn
       CatAdverb -> do
@@ -387,20 +394,20 @@ evalDefined statements cat = let
         let dadv = DefinedAdverb {
             adverbRepr = "_{...}"
           , adverbContext = Just $ sc
-          , adverbOnArray = Just $ \a -> do
+          , adverbOnNoun = Just $ \a -> do
             id <- assignId
             let dfn = DefinedFunction {
                 functionRepr = "(" ++ show a ++ ")_{...}"
               , functionContext = Just $ sc
               , functionMonad = Just $ \x -> run
-                [ ([G.alpha, G.alpha], (VariableConstant, VArray a))
-                , ([G.omega], (VariableConstant, VArray x))
+                [ ([G.alpha, G.alpha], (VariableConstant, VNoun a))
+                , ([G.omega], (VariableConstant, VNoun x))
                 , ([G.underscore, G.del], (VariableConstant, VAdverb dadv))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc
               , functionDyad = Just $ \x y -> run
-                [ ([G.alpha, G.alpha], (VariableConstant, VArray a))
-                , ([G.alpha], (VariableConstant, VArray x))
-                , ([G.omega], (VariableConstant, VArray y))
+                [ ([G.alpha, G.alpha], (VariableConstant, VNoun a))
+                , ([G.alpha], (VariableConstant, VNoun x))
+                , ([G.omega], (VariableConstant, VNoun y))
                 , ([G.underscore, G.del], (VariableConstant, VAdverb dadv))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc
               , definedFunctionId = id }
@@ -412,12 +419,12 @@ evalDefined statements cat = let
               , functionContext = Just $ sc
               , functionMonad = Just $ \x -> run
                 [ ([G.alphaBar, G.alphaBar], (VariableConstant, VFunction a))
-                , ([G.omega], (VariableConstant, VArray x))
+                , ([G.omega], (VariableConstant, VNoun x))
                 , ([G.underscore, G.del], (VariableConstant, VAdverb dadv))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc           , functionDyad = Just $ \x y -> run
                 [ ([G.alphaBar, G.alphaBar], (VariableConstant, VFunction a))
-                , ([G.alpha], (VariableConstant, VArray x))
-                , ([G.omega], (VariableConstant, VArray y))
+                , ([G.alpha], (VariableConstant, VNoun x))
+                , ([G.omega], (VariableConstant, VNoun y))
                 , ([G.underscore, G.del], (VariableConstant, VAdverb dadv))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc
               , definedFunctionId = id }
@@ -429,62 +436,62 @@ evalDefined statements cat = let
         let dconj = DefinedConjunction {
             conjRepr = "_{...}_"
           , conjContext = Just $ sc
-          , conjOnArrayArray = Just $ \a b -> do
+          , conjOnNounNoun = Just $ \a b -> do
             id <- assignId
             let dfn = DefinedFunction {
                 functionRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
               , functionContext = Just $ sc
               , functionMonad = Just $ \x -> run
-                [ ([G.alpha, G.alpha], (VariableConstant, VArray a))
-                , ([G.omega, G.omega], (VariableConstant, VArray b))
-                , ([G.omega], (VariableConstant, VArray x))
+                [ ([G.alpha, G.alpha], (VariableConstant, VNoun a))
+                , ([G.omega, G.omega], (VariableConstant, VNoun b))
+                , ([G.omega], (VariableConstant, VNoun x))
                 , ([G.underscore, G.del, G.underscore], (VariableConstant, VConjunction dconj))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc
               , functionDyad = Just $ \x y -> run
-                [ ([G.alpha, G.alpha], (VariableConstant, VArray a))
-                , ([G.omega, G.omega], (VariableConstant, VArray b))
-                , ([G.alpha], (VariableConstant, VArray x))
-                , ([G.omega], (VariableConstant, VArray y))
+                [ ([G.alpha, G.alpha], (VariableConstant, VNoun a))
+                , ([G.omega, G.omega], (VariableConstant, VNoun b))
+                , ([G.alpha], (VariableConstant, VNoun x))
+                , ([G.omega], (VariableConstant, VNoun y))
                 , ([G.underscore, G.del, G.underscore], (VariableConstant, VConjunction dconj))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc
               , definedFunctionId = id }
             pure dfn
-          , conjOnArrayFunction = Just $ \a b -> do
+          , conjOnNounFunction = Just $ \a b -> do
             id <- assignId
             let dfn = DefinedFunction {
                 functionRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
               , functionContext = Just $ sc
               , functionMonad = Just $ \x -> run
-                [ ([G.alpha, G.alpha], (VariableConstant, VArray a))
+                [ ([G.alpha, G.alpha], (VariableConstant, VNoun a))
                 , ([G.omegaBar, G.omegaBar], (VariableConstant, VFunction b))
-                , ([G.omega], (VariableConstant, VArray x))
+                , ([G.omega], (VariableConstant, VNoun x))
                 , ([G.underscore, G.del, G.underscore], (VariableConstant, VConjunction dconj))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc
               , functionDyad = Just $ \x y -> run
-                [ ([G.alpha, G.alpha], (VariableConstant, VArray a))
+                [ ([G.alpha, G.alpha], (VariableConstant, VNoun a))
                 , ([G.omegaBar, G.omegaBar], (VariableConstant, VFunction b))
-                , ([G.alpha], (VariableConstant, VArray x))
-                , ([G.omega], (VariableConstant, VArray y))
+                , ([G.alpha], (VariableConstant, VNoun x))
+                , ([G.omega], (VariableConstant, VNoun y))
                 , ([G.underscore, G.del, G.underscore], (VariableConstant, VConjunction dconj))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc
               , definedFunctionId = id }
             pure dfn
-          , conjOnFunctionArray = Just $ \a b -> do
+          , conjOnFunctionNoun = Just $ \a b -> do
             id <- assignId
             let dfn = DefinedFunction {
                 functionRepr = "(" ++ show a ++ ")_{...}_(" ++ show b ++ ")"
               , functionContext = Just $ sc
               , functionMonad = Just $ \x -> run
                 [ ([G.alphaBar, G.alphaBar], (VariableConstant, VFunction a))
-                , ([G.omega, G.omega], (VariableConstant, VArray b))
-                , ([G.omega], (VariableConstant, VArray x))
+                , ([G.omega, G.omega], (VariableConstant, VNoun b))
+                , ([G.omega], (VariableConstant, VNoun x))
                 , ([G.underscore, G.del, G.underscore], (VariableConstant, VConjunction dconj))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc
               , functionDyad = Just $ \x y -> run
                 [ ([G.alphaBar, G.alphaBar], (VariableConstant, VFunction a))
-                , ([G.omega, G.omega], (VariableConstant, VArray b))
-                , ([G.alpha], (VariableConstant, VArray x))
-                , ([G.omega], (VariableConstant, VArray y))
+                , ([G.omega, G.omega], (VariableConstant, VNoun b))
+                , ([G.alpha], (VariableConstant, VNoun x))
+                , ([G.omega], (VariableConstant, VNoun y))
                 , ([G.underscore, G.del, G.underscore], (VariableConstant, VConjunction dconj))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc
               , definedFunctionId = id }
@@ -497,14 +504,14 @@ evalDefined statements cat = let
               , functionMonad = Just $ \x -> run
                 [ ([G.alphaBar, G.alphaBar], (VariableConstant, VFunction a))
                 , ([G.omegaBar, G.omegaBar], (VariableConstant, VFunction b))
-                , ([G.omega], (VariableConstant, VArray x))
+                , ([G.omega], (VariableConstant, VNoun x))
                 , ([G.underscore, G.del, G.underscore], (VariableConstant, VConjunction dconj))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc
               , functionDyad = Just $ \x y -> run
                 [ ([G.alphaBar, G.alphaBar], (VariableConstant, VFunction a))
                 , ([G.omegaBar, G.omegaBar], (VariableConstant, VFunction b))
-                , ([G.alpha], (VariableConstant, VArray x))
-                , ([G.omega], (VariableConstant, VArray y))
+                , ([G.alpha], (VariableConstant, VNoun x))
+                , ([G.omega], (VariableConstant, VNoun y))
                 , ([G.underscore, G.del, G.underscore], (VariableConstant, VConjunction dconj))
                 , ([G.del], (VariableConstant, VFunction dfn)) ] sc
               , definedFunctionId = id }
@@ -517,16 +524,16 @@ evalTrain :: Category -> [Maybe Tree] -> St Value
 evalTrain cat es = let
   makeValueAdverb :: (Value -> St Function) -> String -> Adverb
   makeValueAdverb a s = PrimitiveAdverb
-    { adverbOnArray = Just $ \x -> a (VArray x)
+    { adverbOnNoun = Just $ \x -> a (VNoun x)
     , adverbOnFunction = Just $ \f -> a (VFunction f)
     , adverbRepr = s
     , adverbContext = Nothing }
 
   makeValueConjunction :: (Value -> Value -> St Function) -> String -> Conjunction
   makeValueConjunction a s = PrimitiveConjunction
-    { conjOnArrayArray = Just $ \x y -> a (VArray x) (VArray y)
-    , conjOnArrayFunction = Just $ \x y -> a (VArray x) (VFunction y)
-    , conjOnFunctionArray = Just $ \x y -> a (VFunction x) (VArray y)
+    { conjOnNounNoun = Just $ \x y -> a (VNoun x) (VNoun y)
+    , conjOnNounFunction = Just $ \x y -> a (VNoun x) (VFunction y)
+    , conjOnFunctionNoun = Just $ \x y -> a (VFunction x) (VNoun y)
     , conjOnFunctionFunction = Just $ \x y -> a (VFunction x) (VFunction y)
     , conjRepr = s
     , conjContext = Nothing }
@@ -537,29 +544,29 @@ evalTrain cat es = let
   fork :: Function -> Function -> Function -> Function
   fork f g h = PrimitiveFunction { functionMonad = Just $ F.fork1 (callMonad f) (callDyad g) (callMonad h), functionDyad = Just $ F.fork2 (callDyad f) (callDyad g) (callDyad h), functionRepr = "", functionContext = Nothing }
 
-  bindLeft :: Function -> Array -> Function
+  bindLeft :: Function -> Noun -> Function
   bindLeft f x = PrimitiveFunction { functionMonad = Just $ \y -> callDyad f x y, functionDyad = Nothing, functionRepr = "", functionContext = Nothing }
 
-  bindRight :: Function -> Array -> Function
+  bindRight :: Function -> Noun -> Function
   bindRight f y = PrimitiveFunction { functionMonad = Just $ \x -> callDyad f x y, functionDyad = Nothing, functionRepr = "", functionContext = Nothing }
 
   train1 :: Value -> St Value
-  train1 (VArray x) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "", functionContext = Nothing }
+  train1 (VNoun x) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "", functionContext = Nothing }
   train1 o = pure $ o
 
   train2 :: Value -> Value -> St Value
-  train2 (VArray x) (VArray _) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "", functionContext = Nothing }
-  train2 (VArray x) (VFunction g) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ \y -> callDyad g x y, functionDyad = Nothing, functionRepr = "", functionContext = Nothing}
-  train2 (VFunction f) (VArray y) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ \x -> callDyad f x y, functionDyad = Nothing, functionRepr = "", functionContext = Nothing }
+  train2 (VNoun x) (VNoun _) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 x, functionDyad = Just $ F.constant2 x, functionRepr = "", functionContext = Nothing }
+  train2 (VNoun x) (VFunction g) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ \y -> callDyad g x y, functionDyad = Nothing, functionRepr = "", functionContext = Nothing}
+  train2 (VFunction f) (VNoun y) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ \x -> callDyad f x y, functionDyad = Nothing, functionRepr = "", functionContext = Nothing }
   train2 (VFunction f) (VFunction g) = pure $ VFunction $ atop f g
-  train2 (VArray x) (VAdverb a) = VFunction <$> callOnArray a x 
+  train2 (VNoun x) (VAdverb a) = VFunction <$> callOnNoun a x 
   train2 (VFunction f) (VAdverb a) = VFunction <$> callOnFunction a f
   train2 (VAdverb a) (VFunction g) = pure $ VAdverb $ makeValueAdverb (\u -> (`atop` g) <$> callOnValue a u) ""
   train2 (VAdverb a) (VAdverb b) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValue a u >>= callOnFunction b) ""
   train2 (VAdverb a) (VConjunction c) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValue a u >>= (\r -> callOnValueAndValue c (VFunction r) u)) ""
-  train2 x@(VArray _) (VConjunction c) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValueAndValue c x u) ""
+  train2 x@(VNoun _) (VConjunction c) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValueAndValue c x u) ""
   train2 f@(VFunction _) (VConjunction c) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValueAndValue c f u) ""
-  train2 (VConjunction c) y@(VArray _) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValueAndValue c u y) ""
+  train2 (VConjunction c) y@(VNoun _) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValueAndValue c u y) ""
   train2 (VConjunction c) g@(VFunction _) = pure $ VAdverb $ makeValueAdverb (\u -> callOnValueAndValue c u g) ""
   train2 (VConjunction c) (VAdverb a) = pure $ VConjunction $ makeValueConjunction (\u v -> callOnValueAndValue c u v >>= callOnFunction a) ""
   train2 (VConjunction c) (VConjunction d) = pure $ VConjunction $ makeValueConjunction (\u v -> do
@@ -569,19 +576,19 @@ evalTrain cat es = let
   train2 x y = throwError $ DomainError $ "2-train with " ++ show x ++ " and " ++ show y ++ "?"
 
   train3 :: Value -> Value -> Value -> St Value
-  train3 (VArray _) (VArray y) (VArray _) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
-  train3 (VArray _) (VArray y) (VFunction _) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
-  train3 (VFunction _) (VArray y) (VArray _) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
-  train3 (VFunction _) (VArray y) (VFunction _) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
+  train3 (VNoun _) (VNoun y) (VNoun _) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
+  train3 (VNoun _) (VNoun y) (VFunction _) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
+  train3 (VFunction _) (VNoun y) (VNoun _) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
+  train3 (VFunction _) (VNoun y) (VFunction _) = pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 y, functionDyad = Just $ F.constant2 y, functionRepr = "", functionContext = Nothing }
   train3 (VFunction f) (VFunction g) (VFunction h) = pure $ VFunction $ fork f g h
-  train3 (VArray x) (VFunction g) (VFunction h) = pure $ VFunction $ atop (bindLeft g x) h
-  train3 (VFunction f) (VFunction g) (VArray z) = pure $ VFunction $ atop (bindRight g z) f
-  train3 (VArray x) (VFunction g) (VArray z) = do
+  train3 (VNoun x) (VFunction g) (VFunction h) = pure $ VFunction $ atop (bindLeft g x) h
+  train3 (VFunction f) (VFunction g) (VNoun z) = pure $ VFunction $ atop (bindRight g z) f
+  train3 (VNoun x) (VFunction g) (VNoun z) = do
     r <- callDyad g x z
     pure $ VFunction $ PrimitiveFunction { functionMonad = Just $ F.constant1 r, functionDyad = Just $ F.constant2 r, functionRepr = "", functionContext = Nothing }
-  train3 (VArray x) (VConjunction c) (VArray z) = VFunction <$>callOnArrayAndArray c x z
-  train3 (VArray x) (VConjunction c) (VFunction h) = VFunction <$> callOnArrayAndFunction c x h
-  train3 (VFunction f) (VConjunction c) (VArray z) = VFunction <$> callOnFunctionAndArray c f z
+  train3 (VNoun x) (VConjunction c) (VNoun z) = VFunction <$> callOnNounAndNoun c x z
+  train3 (VNoun x) (VConjunction c) (VFunction h) = VFunction <$> callOnNounAndFunction c x h
+  train3 (VFunction f) (VConjunction c) (VNoun z) = VFunction <$> callOnFunctionAndNoun c f z
   train3 (VFunction f) (VConjunction c) (VFunction h) = VFunction <$> callOnFunctionAndFunction c f h
   train3 (VAdverb a) (VFunction g) (VFunction h) = pure $ VAdverb $ makeValueAdverb (\u -> do
     r <- callOnValue a u
@@ -590,22 +597,22 @@ evalTrain cat es = let
     r <- callOnValue a u
     s <- callOnFunction b r
     callOnFunction c s) ""
-  train3 (VArray x) (VConjunction c) (VAdverb a) = pure $ VAdverb $ makeValueAdverb (\u -> do
+  train3 (VNoun x) (VConjunction c) (VAdverb a) = pure $ VAdverb $ makeValueAdverb (\u -> do
     r <- callOnValue a u
-    callOnArrayAndFunction c x r) ""
+    callOnNounAndFunction c x r) ""
   train3 (VFunction f) (VConjunction c) (VAdverb a) = pure $ VAdverb $ makeValueAdverb (\u -> do
     r <- callOnValue a u
     callOnFunctionAndFunction c f r) ""
-  train3 (VAdverb a) (VConjunction c) (VArray z) = pure $ VAdverb $ makeValueAdverb (\u -> do
+  train3 (VAdverb a) (VConjunction c) (VNoun z) = pure $ VAdverb $ makeValueAdverb (\u -> do
     r <- callOnValue a u
-    callOnFunctionAndArray c r z) ""
+    callOnFunctionAndNoun c r z) ""
   train3 (VAdverb a) (VConjunction c) (VFunction h) = pure $ VAdverb $ makeValueAdverb (\u -> do
     r <- callOnValue a u
     callOnFunctionAndFunction c r h) ""
   train3 (VFunction f) (VFunction g) (VConjunction c) = pure $ VConjunction $ makeValueConjunction (\u v -> do
     r <- callOnValueAndValue c u v
     pure $ fork f g r) ""
-  train3 (VArray x) (VFunction g) (VConjunction c) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+  train3 (VNoun x) (VFunction g) (VConjunction c) = pure $ VConjunction $ makeValueConjunction (\u v -> do
     r <- callOnValueAndValue c u v
     pure $ atop (bindLeft g x) r) ""
   train3 (VConjunction c) (VFunction g) (VFunction h) = pure $ VConjunction $ makeValueConjunction (\u v -> do
@@ -623,9 +630,9 @@ evalTrain cat es = let
     r <- callOnValueAndValue c u v
     s <- callOnFunction a r
     callOnFunction b s) ""
-  train3 (VArray x) (VConjunction c) (VConjunction d) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+  train3 (VNoun x) (VConjunction c) (VConjunction d) = pure $ VConjunction $ makeValueConjunction (\u v -> do
     r <- callOnValueAndValue d u v
-    callOnArrayAndFunction c x r) ""
+    callOnNounAndFunction c x r) ""
   train3 (VFunction f) (VConjunction c) (VConjunction d) = pure $ VConjunction $ makeValueConjunction (\u v -> do
     r <- callOnValueAndValue d u v
     callOnFunctionAndFunction c f r) ""
@@ -637,9 +644,9 @@ evalTrain cat es = let
     r <- callOnValueAndValue d u v
     s <- callOnValue a u
     callOnFunctionAndFunction c s r) ""
-  train3 (VConjunction c) (VConjunction d) (VArray z) = pure $ VConjunction $ makeValueConjunction (\u v -> do
+  train3 (VConjunction c) (VConjunction d) (VNoun z) = pure $ VConjunction $ makeValueConjunction (\u v -> do
     r <- callOnValueAndValue c u v
-    callOnFunctionAndArray d r z) ""
+    callOnFunctionAndNoun d r z) ""
   train3 (VConjunction c) (VConjunction d) (VFunction h) = pure $ VConjunction $ makeValueConjunction (\u v -> do
     r <- callOnValueAndValue c u v
     callOnFunctionAndFunction d r h) ""
@@ -664,18 +671,18 @@ evalTrain cat es = let
   train _ = throwError $ SyntaxError "3-train can only contain empty entries as the first tine"
 
   withTrainRepr :: [Maybe Value] -> Value -> St Value
-  withTrainRepr _ (VArray _) = throwError $ DomainError "Array train?"
+  withTrainRepr _ (VNoun _) = throwError $ DomainError "Array train?"
   withTrainRepr us (VFunction f) = pure $ VFunction $ TrainFunction { functionMonad = functionMonad f, functionDyad = functionDyad f, functionContext = functionContext f, trainFunctionTines = us }
   withTrainRepr us (VAdverb a) = let a'' = TrainAdverb {
-      adverbOnArray = (\a' x -> (\fn -> DerivedFunctionArray { functionMonad = functionMonad fn, functionDyad = functionDyad fn, functionContext = functionContext fn, derivedFunctionAdverb = a'', derivedFunctionArrayLeft = x }) <$> a' x) <$> adverbOnArray a
+      adverbOnNoun = (\a' x -> (\fn -> DerivedFunctionNoun { functionMonad = functionMonad fn, functionDyad = functionDyad fn, functionContext = functionContext fn, derivedFunctionAdverb = a'', derivedFunctionNounLeft = x }) <$> a' x) <$> adverbOnNoun a
     , adverbOnFunction = (\a' f -> (\fn -> DerivedFunctionFunction { functionMonad = functionMonad fn, functionDyad = functionDyad fn, functionContext = functionContext fn, derivedFunctionAdverb = a'', derivedFunctionFunctionLeft = f }) <$> a' f) <$> adverbOnFunction a
     , adverbContext = adverbContext a
     , trainAdverbTines = us }
     in pure $ VAdverb a''
   withTrainRepr us (VConjunction c) = let c'' = TrainConjunction {
-      conjOnArrayArray = (\c' x y -> (\fn -> DerivedFunctionArrayArray { functionMonad = functionMonad fn, functionDyad = functionDyad fn, functionContext = functionContext fn, derivedFunctionConjunction = c'', derivedFunctionArrayLeft = x, derivedFunctionArrayRight = y }) <$> c' x y) <$> conjOnArrayArray c
-    , conjOnArrayFunction = (\c' x y -> (\fn -> DerivedFunctionArrayFunction { functionMonad = functionMonad fn, functionDyad = functionDyad fn, functionContext = functionContext fn, derivedFunctionConjunction = c'', derivedFunctionArrayLeft = x, derivedFunctionFunctionRight = y }) <$> c' x y) <$> conjOnArrayFunction c
-    , conjOnFunctionArray = (\c' f y -> (\fn -> DerivedFunctionFunctionArray { functionMonad = functionMonad fn, functionDyad = functionDyad fn, functionContext = functionContext fn, derivedFunctionConjunction = c'', derivedFunctionFunctionLeft = f, derivedFunctionArrayRight = y }) <$> c' f y) <$> conjOnFunctionArray c
+      conjOnNounNoun = (\c' x y -> (\fn -> DerivedFunctionNounNoun { functionMonad = functionMonad fn, functionDyad = functionDyad fn, functionContext = functionContext fn, derivedFunctionConjunction = c'', derivedFunctionNounLeft = x, derivedFunctionNounRight = y }) <$> c' x y) <$> conjOnNounNoun c
+    , conjOnNounFunction = (\c' x y -> (\fn -> DerivedFunctionNounFunction { functionMonad = functionMonad fn, functionDyad = functionDyad fn, functionContext = functionContext fn, derivedFunctionConjunction = c'', derivedFunctionNounLeft = x, derivedFunctionFunctionRight = y }) <$> c' x y) <$> conjOnNounFunction c
+    , conjOnFunctionNoun = (\c' f y -> (\fn -> DerivedFunctionFunctionNoun { functionMonad = functionMonad fn, functionDyad = functionDyad fn, functionContext = functionContext fn, derivedFunctionConjunction = c'', derivedFunctionFunctionLeft = f, derivedFunctionNounRight = y }) <$> c' f y) <$> conjOnFunctionNoun c
     , conjOnFunctionFunction = (\c' f g -> (\fn -> DerivedFunctionFunctionFunction { functionMonad = functionMonad fn, functionDyad = functionDyad fn, functionContext = functionContext fn, derivedFunctionConjunction = c'', derivedFunctionFunctionLeft = f, derivedFunctionFunctionRight = g }) <$> c' f g) <$> conjOnFunctionFunction c
     , conjContext = conjContext c
     , trainConjunctionTines = us }
@@ -699,20 +706,20 @@ evalStruct statements = do
   newScope <- createRef $ Scope [] [] [] [] (Just $ contextScope ctx)
   let newContext = ctx{ contextScope = newScope }
   mapM_ (runWithContext newContext . eval) statements
-  pure $ VArray $ scalar $ Struct newContext
+  pure $ VNoun $ scalar $ Struct newContext
 
 evalUnwrap :: Category -> Value -> St Value
 evalUnwrap CatFunction v = do
   let err = DomainError "Unwrap notation: array of wraps required"
-  VFunction <$> (unwrapArray err v >>= asWraps err)
+  VFunction <$> (unwrapNoun err v >>= asWraps err)
 evalUnwrap CatAdverb v = do
   let err = DomainError "Unwrap adverb notation: scalar array wrap required"
-  arr <- unwrapArray err v
+  arr <- unwrapNoun err v
   if null $ arrayShape arr then VAdverb <$> asAdverbWrap err (headPromise $ arrayContents arr)
   else throwError err
 evalUnwrap CatConjunction v = do
   let err = DomainError "Unwrap conjunction notation: scalar array wrap required"
-  arr <- unwrapArray err v
+  arr <- unwrapNoun err v
   if null $ arrayShape arr then VConjunction <$> asConjunctionWrap err (headPromise $ arrayContents arr)
   else throwError err
 evalUnwrap _ _ = throwError unreachable

@@ -8,7 +8,7 @@ import qualified TinyAPL.Glyphs as G
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.State (MonadState(get))
 
-piA :: Array
+piA :: Noun
 piA = scalar $ Number $ pi
 
 complementaryS :: MonadError Error m => ScalarValue -> m ScalarValue
