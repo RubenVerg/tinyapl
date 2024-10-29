@@ -574,6 +574,47 @@ halfPair y = pure $ vector [box y]
 pair :: MonadError Error m => Noun -> Noun -> m Noun
 pair x y = pure $ vector $ box <$> [x, y]
 
+keyValuePair :: MonadError Error m => Noun -> Noun -> m Noun
+keyValuePair k v = pure $ dictionary [(box k, box v)]
+
+fromPairs :: MonadError Error m => Noun -> m Noun
+fromPairs (Array [_] xs) = do
+  let err = DomainError "From Pairs argument must be a 2-column matrix or vector of pairs or dictionaries"
+  dictionary . concat <$> mapM (\x -> do
+    let x' = fromScalar x
+    case x' of
+      (Dictionary ks vs) -> pure $ zip ks vs
+      (Array [2] [a, b]) -> pure $ [(a, b)]
+      _ -> throwError err) xs
+fromPairs arr@(Array [_, 2] _) = majorCells' arr >>= fromPairs
+fromPairs _ = throwError $ DomainError "From Pairs argument must be a 2-column matrix or vector of pairs or dictionaries"
+
+fromKeysAndValues :: MonadError Error m => [ScalarValue] -> [ScalarValue] -> m Noun
+fromKeysAndValues ks vs
+  | length ks == length vs = pure $ Dictionary ks vs
+  | otherwise = throwError $ LengthError "From Keys and Values arguments must have the same length"
+
+fromKeysAndValues' :: MonadError Error m => Noun -> Noun -> m Noun
+fromKeysAndValues' k v = do
+  let err = DomainError "From Keys and Values arguments must be vectors"
+  ks <- asVector err k
+  vs <- asVector err v
+  fromKeysAndValues ks vs
+
+fromInvertedTable :: MonadError Error m => Noun -> m Noun
+fromInvertedTable (Array [2] [k, v]) = do
+  let err = DomainError "From Inverted Table argument must be a pair of vectors"
+  ks <- asVector err $ fromScalar k
+  vs <- asVector err $ fromScalar v
+  fromKeysAndValues ks vs
+fromInvertedTable es@(Array [2, _] _) = do
+  let err = DomainError "From Inverted Table argument must be a pair of vectors"
+  let [k, v] = majorCells es
+  ks <- asVector err k
+  vs <- asVector err v
+  fromKeysAndValues ks vs
+fromInvertedTable _ = throwError $ DomainError "From Inverted Table argument must be a pair of vectors"
+
 first :: MonadError Error m => Noun -> m Noun
 first (Array _ []) = throwError $ DomainError "First on empty array"
 first (Array _ (x:_)) = pure $ fromScalar x
@@ -792,10 +833,18 @@ reorderAxes' _ _ = throwError $ DomainError "Dictionaries cannot be transposed"
 reorderAxes :: MonadError Error m => [Natural] -> Noun -> m Noun
 reorderAxes is arr = reorderAxes' (vector $ Number . fromInteger . toInteger <$> is) arr
 
+invertedTable :: MonadError Error m => Noun -> m ([ScalarValue], [ScalarValue])
+invertedTable (Dictionary ks vs) = pure (ks, vs)
+invertedTable _ = throwError $ DomainError "Inverted Table argument must be a dictionary"
+
+invertedTable' :: MonadError Error m => Noun -> m Noun
+invertedTable' = invertedTable >=> uncurry (pair `on` vector)
+
 transpose :: MonadError Error m => Noun -> m Noun
-transpose arr = do
+transpose arr@(Array _ _) = do
   r <- rank' arr >>= indexGenerator' >>= reverse'
   reorderAxes' r arr
+transpose dict@(Dictionary _ _) = invertedTable' dict
 
 factorial :: MonadError Error m => ScalarValue -> m ScalarValue
 factorial (Number n) = case asInt (DomainError "") n of

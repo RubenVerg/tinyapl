@@ -455,6 +455,9 @@ spec = do
       describe "major cells" $ do
         it "returns major cells of an array" $ do
           m P.drop (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [box $ vector [Number 1, Number 2], box $ vector [Number 3, Number 4]])
+      describe "key-value pairs" $ do
+        it "returns key-value pairs of a dictionary" $ do
+          m P.drop (dictionary [(Character 'a', Number 1), (Character 'b', Number 2)]) `shouldReturn` pure (vector [box $ vector [Character 'a', Number 1], box $ vector [Character 'b', Number 2]])
 
     describe [G.left] $ do
       describe "same" $ do
@@ -676,6 +679,9 @@ spec = do
           d P.transpose (vector [Number 1, Number 0]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 3], vector [Number 2, Number 4]])
         it "extracts diagonals" $ do
           d P.transpose (vector [Number 0, Number 0]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4]]) `shouldReturn` pure (vector [Number 1, Number 4])
+      describe "inverted table" $ do
+        it "returns the inverted table of a dictionary" $ do
+          m P.transpose (dictionary [(Character 'a', Number 1), (Character 'b', Number 2)]) `shouldReturn` pure (vector [box $ vector [Character 'a', Character 'b'], box $ vector [Number 1, Number 2]])
 
     describe [G.matrixInverse] $ do
       describe "matrix inverse" $ do
@@ -781,7 +787,27 @@ spec = do
             [ vector [box $ vector [Number 2, Number 3], box $ vector [Number 2, Number 4], box $ vector [Number 2, Number 5]]
             , vector [box $ vector [Number 3, Number 3], box $ vector [Number 3, Number 4], box $ vector [Number 3, Number 5]]
             , vector [box $ vector [Number 4, Number 3], box $ vector [Number 4, Number 4], box $ vector [Number 4, Number 5]] ])
-  
+
+    describe [G.keyValue] $ do
+      describe "key-value pair" $ do
+        it "makes a key-value pair" $ do
+          d P.keyValue (vector $ Character <$> "abc") (scalar $ Number 1) `shouldReturn` pure (dictionary [(box $ vector $ Character <$> "abc", box $ scalar $ Number 1)])
+      describe "from pairs" $ do
+        it "converts a vector ofca pairs to a dictionary" $ do
+          m P.keyValue (vector [box $ vector [Character 'a', Character 'b'], box $ vector [Character 'c', Character 'd']]) `shouldReturn` pure (dictionary [(Character 'a', Character 'b'), (Character 'c', Character 'd')])
+        it "converts a 2-column matrix to a dictionary" $ do
+          m P.keyValue (fromMajorCells [vector [Character 'a', Character 'b'], vector [Character 'c', Character 'd'], vector [Character 'e', Character 'f']]) `shouldReturn` pure (dictionary [(Character 'a', Character 'b'), (Character 'c', Character 'd'), (Character 'e', Character 'f')])
+
+    describe [G.invertedTable] $ do
+      describe "from keys and values" $ do
+        it "converts vectors of keys and values to a dictionary" $ do
+          d P.invertedTable (vector [Character 'a', Character 'b']) (vector [Number 1, Number 2]) `shouldReturn` pure (dictionary [(Character 'a', Number 1), (Character 'b', Number 2)])
+      describe "from inverted table" $ do
+        it "converts a pair of vectors to a dictionary" $ do
+          m P.invertedTable (vector [box $ vector [Character 'a', Character 'b'], box $ vector [Character 'c', Character 'd']]) `shouldReturn` pure (dictionary [(Character 'a', Character 'c'), (Character 'b', Character 'd')])
+        it "converts a 2-row matrix to a dictionary" $ do
+          m P.invertedTable (fromMajorCells [vector [Character 'a', Character 'b', Character 'c'], vector [Character 'd', Character 'e', Character 'f']]) `shouldReturn` pure (dictionary [(Character 'a', Character 'd'), (Character 'b', Character 'e'), (Character 'c', Character 'f')])
+
   describe "adverbs" $ do
     describe [G.selfie] $ do
       describe "constant" $ do

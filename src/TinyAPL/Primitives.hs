@@ -9,9 +9,11 @@ import TinyAPL.Util (headPromise)
 -- * Primitive arrays
 
 zilde = vector []
+cilde = dictionary []
 
 arrays =
-  [ (G.zilde, zilde) ]
+  [ (G.zilde, zilde)
+  , (G.cilde, cilde) ]
 
 -- * Primitive functions
 
@@ -84,6 +86,8 @@ histogram = PrimitiveFunction Nothing (Just F.count) [G.histogram] Nothing
 increment = PrimitiveFunction (Just F.increment') Nothing [G.increment] Nothing
 decrement = PrimitiveFunction (Just F.decrement') (Just F.span') [G.decrement] Nothing
 range = PrimitiveFunction (Just F.oneRange) (Just F.range) [G.range] Nothing
+keyValue = PrimitiveFunction (Just F.fromPairs) (Just F.keyValuePair) [G.keyValue] Nothing
+invertedTable = PrimitiveFunction (Just F.fromInvertedTable) (Just F.fromKeysAndValues') [G.invertedTable] Nothing
 
 functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -154,7 +158,9 @@ functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.histogram
   , TinyAPL.Primitives.increment
   , TinyAPL.Primitives.decrement
-  , TinyAPL.Primitives.range ]
+  , TinyAPL.Primitives.range
+  , TinyAPL.Primitives.keyValue
+  , TinyAPL.Primitives.invertedTable ]
 
 -- * Primitive adverbs
 
