@@ -88,9 +88,9 @@ highlight str = reverse $ hColors $ execState hl (HState [] str) where
         push CStringEscape
         advance
         push CStringEscape
-      else return ()
-      advance
-      push CString
+      else do
+        advance
+        push CString
     advance
     push CString
 
