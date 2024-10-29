@@ -194,6 +194,10 @@ function toImageData(a, name) {
 }
 let imageId = 0;
 export const { register: rCreateImage, done: dCreateImage, fn: qCreateImage } = makeDyad(async (runListeners, x, y) => {
+    if (y.type !== 'array')
+        throw { code: tinyapl.errors.domain, message: '⎕CreateImage expects arrays' };
+    if (x.type !== 'array')
+        throw { code: tinyapl.errors.rank, message: '⎕CreateImage expects arrays' };
     if (y.shape.length !== 0 && x.shape.length !== 1)
         throw { code: tinyapl.errors.rank, message: '⎕CreateImage expects arrays of rank 0 or 1' };
     if (y.shape.length === 1 && x.contents.length !== 2)
@@ -206,7 +210,11 @@ export const { register: rCreateImage, done: dCreateImage, fn: qCreateImage } = 
 }, '⎕CreateImage');
 export const { register: rDisplayImage, done: dDisplayImage, fn: qDisplayImage } = makeAmbivalent1(async (runListeners, x, y) => {
     let id, a;
+    if (x.type !== 'array')
+        throw { code: tinyapl.errors.domain, message: '⎕DisplayImage expects arrays' };
     if (y) {
+        if (y.type !== 'array')
+            throw { code: tinyapl.errors.domain, message: '⎕DisplayImage expects arrays' };
         a = y;
         if (x.shape.length !== 0)
             throw { code: tinyapl.errors.rank, message: '⎕DispayImage left argument must be a scalar natural' };
@@ -220,7 +228,11 @@ export const { register: rDisplayImage, done: dDisplayImage, fn: qDisplayImage }
 }, '⎕DisplayImage');
 export const { register: rPlayAnimation, done: dPlayAnimation, fn: qPlayAnimation } = makeAmbivalent1(async (runListeners, x, y) => {
     let delay, arr;
+    if (x.type !== 'array')
+        throw { code: tinyapl.errors.domain, message: '⎕PlayAnimation expects arrays' };
     if (y) {
+        if (y.type !== 'array')
+            throw { code: tinyapl.errors.domain, message: '⎕PlayAnimation expects arrays' };
         arr = y;
         if (x.shape.length !== 0)
             throw { code: tinyapl.errors.rank, message: '⎕PlayAnimation left argument must be a scalar' };
@@ -242,7 +254,11 @@ export const { register: rPlayAnimation, done: dPlayAnimation, fn: qPlayAnimatio
 }, '⎕PlayAnimation');
 export const { register: rScatterPlot, done: dScatterPlot, fn: qScatterPlot } = makeAmbivalent1(async (runListeners, x, y) => {
     let mode = 'markers', arr;
+    if (x.type !== 'array')
+        throw { code: tinyapl.errors.domain, message: '⎕ScatterPlot expects arrays' };
     if (y) {
+        if (y.type !== 'array')
+            throw { code: tinyapl.errors.domain, message: '⎕ScatterPlot expects arrays' };
         mode = await tinyapl.joinString(x.contents);
         arr = y;
     }
@@ -284,6 +300,8 @@ export const { register: rGraph, done: dGraph, fn: qGraph } = makeAdverb1(async 
         labels = [u.repr];
     }
     else {
+        if (u.type !== 'array')
+            throw { code: tinyapl.errors.domain, message: '⎕Graph expects arrays or functions' };
         if (u.shape.length === 0) {
             fns = [u.contents[0]];
             labels = [fns[0].repr];
@@ -315,12 +333,18 @@ export const { register: rGraph, done: dGraph, fn: qGraph } = makeAdverb1(async 
         await runListeners(results, labels);
     };
     return ambivalent(async (y) => {
+        if (y.type !== 'array')
+            throw { code: tinyapl.errors.domain, message: '⎕Graph expects arrays' };
         if (y.shape.length !== 0)
             throw { code: tinyapl.errors.rank, message: '⎕Graph arguments must be scalar reals' };
         const end = y.contents[0][0];
         await graph(0, end);
         return { type: 'array', shape: [0], contents: [] };
     }, async (x, y) => {
+        if (x.type !== 'array')
+            throw { code: tinyapl.errors.domain, message: '⎕Graph expects arrays' };
+        if (y.type !== 'array')
+            throw { code: tinyapl.errors.domain, message: '⎕Graph expects arrays' };
         if (x.shape.length !== 0)
             throw { code: tinyapl.errors.rank, message: '⎕Graph arguments must be scalar reals' };
         if (y.shape.length !== 0)
@@ -333,10 +357,14 @@ export const { register: rGraph, done: dGraph, fn: qGraph } = makeAdverb1(async 
 }, '⎕_Graph');
 export const { register: rPlayAudio, done: dPlayAudio, fn: qPlayAudio } = makeAmbivalent1(async (runListeners, x, y) => {
     let sampleRate, arr;
+    if (x.type !== 'array')
+        throw { code: tinyapl.errors.domain, message: '⎕PlayAudio expects arrays' };
     if (y) {
         if (x.shape.length !== 0)
             throw { code: tinyapl.errors.rank, message: '⎕PlayAudio left argument must be scalar' };
         sampleRate = Math.floor(x.contents[0][0]);
+        if (y.type !== 'array')
+            throw { code: tinyapl.errors.domain, message: '⎕PlayAudio expects arrays' };
         arr = y;
     }
     else {
@@ -355,12 +383,18 @@ export const { register: rPlayAudio, done: dPlayAudio, fn: qPlayAudio } = makeAm
     return { type: 'array', shape: [0], contents: [] };
 }, '⎕PlayAudio');
 export const qFetch = ambivalent(async (u) => {
+    if (u.type !== 'array')
+        throw { code: tinyapl.errors.domain, message: '⎕Fetch expects arrays' };
     if (u.shape.length > 1)
         throw { code: tinyapl.errors.rank, message: '⎕Fetch expects character vectors' };
     const url = await tinyapl.joinString(u.contents);
     const text = await fetch(url).then(res => res.text());
     return { type: 'array', shape: [text.length], contents: await tinyapl.splitString(text) };
 }, async (m, u) => {
+    if (u.type !== 'array')
+        throw { code: tinyapl.errors.domain, message: '⎕Fetch expects arrays' };
+    if (m.type !== 'array')
+        throw { code: tinyapl.errors.domain, message: '⎕Fetch expects arrays' };
     if (u.shape.length > 1)
         throw { code: tinyapl.errors.rank, message: '⎕Fetch expects character vectors' };
     const url = await tinyapl.joinString(u.contents);

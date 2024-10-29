@@ -16,39 +16,45 @@ export interface Struct {
 	type: 'struct';
 	entries: Record<string, StructEntry>;
 }
-export type ScalarValue = Complex | string | Arr | Fun | Adv | Conj | Struct;
+export type ScalarValue = Complex | string | Noun | Fun | Adv | Conj | Struct;
+export type DictEntry = [ScalarValue, ScalarValue]
 export interface Arr {
 	type: 'array';
 	shape: number[];
 	contents: ScalarValue[];
 }
+export interface Dict {
+	type: 'dictionary';
+	entries: DictEntry[];
+}
+export type Noun = Arr | Dict;
 export interface Nilad {
 	type: 'nilad';
 	repr: string;
-	get?: () => PromiseLike<Err | Arr>;
-	set?: (arr: Arr) => PromiseLike<Err | void>;
+	get?: () => PromiseLike<Err | Noun>;
+	set?: (arr: Noun) => PromiseLike<Err | void>;
 }
 export interface Fun {
 	type: 'function';
 	repr: string;
-	monad?: (y: Arr) => PromiseLike<Err | Arr>;
-	dyad?: (x: Arr, y: Arr) => PromiseLike<Err | Arr>;
+	monad?: (y: Noun) => PromiseLike<Err | Noun>;
+	dyad?: (x: Noun, y: Noun) => PromiseLike<Err | Noun>;
 }
 export interface Adv {
 	type: 'adverb';
 	repr: string;
-	array?: (n: Arr) => PromiseLike<Err | Fun>;
+	array?: (n: Noun) => PromiseLike<Err | Fun>;
 	function?: (f: Fun) => PromiseLike<Err | Fun>;
 }
 export interface Conj {
 	type: 'conjunction';
 	repr: string;
-	arrayArray?: (n: Arr, m: Arr) => PromiseLike<Err | Fun>;
-	arrayFunction?: (n: Arr, f: Fun) => PromiseLike<Err | Fun>;
-	functionArray?: (f: Fun, m: Arr) => PromiseLike<Err | Fun>;
+	arrayArray?: (n: Noun, m: Noun) => PromiseLike<Err | Fun>;
+	arrayFunction?: (n: Noun, f: Fun) => PromiseLike<Err | Fun>;
+	functionArray?: (f: Fun, m: Noun) => PromiseLike<Err | Fun>;
 	functionFunction?: (f: Fun, g: Fun) => PromiseLike<Err | Fun>;
 }
-export type Value = Arr | Fun | Adv | Conj;
+export type Value = Noun | Fun | Adv | Conj;
 export interface Err {
 	code: number;
 	message: string;
@@ -109,7 +115,7 @@ export async function getGlobals(context: number): Promise<string[]> {
  * Access a global by name
  * @param context Context ID
  */
-export async function getGlobal(context: number, name: string): Promise<Err | Arr | Fun> {
+export async function getGlobal(context: number, name: string): Promise<Err | Value> {
 	return await exports.tinyapl_getGlobal(context, name);
 }
 
@@ -117,7 +123,7 @@ export async function getGlobal(context: number, name: string): Promise<Err | Ar
  * Set a global by name
  * @param context Context ID
  */
-export async function setGlobal(context: number, name: string, val: Arr | Fun): Promise<Err | void> {
+export async function setGlobal(context: number, name: string, val: Value): Promise<Err | void> {
 	return await exports.tinyapl_setGlobal(context, name, val);
 }
 

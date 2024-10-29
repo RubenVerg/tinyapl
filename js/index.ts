@@ -156,8 +156,8 @@ const context = await tinyapl.newContext(io.input.bind(io), io.output.bind(io), 
 	Debug: {
 		type: 'function',
 		repr: '⎕Debug',
-		monad: async (y: tinyapl.Arr) => { console.log('monad call', y); return y; },
-		dyad: async (x: tinyapl.Arr, y: tinyapl.Arr) => { console.log('dyad call', x, y); return y; },
+		monad: async (y: tinyapl.Noun) => { console.log('monad call', y); return y; },
+		dyad: async (x: tinyapl.Noun, y: tinyapl.Noun) => { console.log('dyad call', x, y); return y; },
 	},
 	CreateImage: quads.qCreateImage,
 	DisplayImage: quads.qDisplayImage,
@@ -225,8 +225,7 @@ async function fancyShow(result: tinyapl.Value, depth: number = 0): Promise<Node
 			tr.appendChild(td);
 		}
 		return table;
-	}
-	if (result.type === 'array' && result.shape.length === 2 && result.contents.length !== 0) {
+	} else if (result.type === 'array' && result.shape.length === 2 && result.contents.length !== 0) {
 		const table = document.createElement('table');
 		table.className = 'matrix';
 		const tbody = document.createElement('tbody');
@@ -268,6 +267,25 @@ async function fancyShow(result: tinyapl.Value, depth: number = 0): Promise<Node
 		}
 		details.appendChild(table);
 		return details;
+	} else if (result.type === 'dictionary' && result.entries.length !== 0) {
+		const table = document.createElement('table');
+		table.className = 'dictionary';
+		const tbody = document.createElement('tbody');
+		table.appendChild(tbody);
+		for (const [k, v] of result.entries) {
+			const tr = document.createElement('tr');
+			const tdName = document.createElement('td');
+			tdName.appendChild(await fsScalar(k));
+			tr.appendChild(tdName);
+			const tdColon = document.createElement('td');
+			tdColon.textContent = ':';
+			tr.appendChild(tdColon);
+			const tdValue = document.createElement('td');
+			tdValue.appendChild(await fsScalar(v));
+			tr.appendChild(tdValue);
+			tbody.appendChild(tr);
+		}
+		return table;
 	}
 	return document.createTextNode(await tinyapl.show(result));
 }
