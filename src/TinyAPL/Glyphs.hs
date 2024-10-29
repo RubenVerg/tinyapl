@@ -106,9 +106,11 @@ identifiers =
 -- * Arrays
 
 zilde = '⍬'
+cilde = '∻'
 
 arrays =
-  [ TinyAPL.Glyphs.zilde ]
+  [ TinyAPL.Glyphs.zilde
+  , TinyAPL.Glyphs.cilde ]
 
 -- * Functions
 
@@ -181,6 +183,8 @@ histogram = '⋷'
 increment = '⧺'
 decrement = 'ⵧ'
 range = '…'
+keyValue = '߹'
+invertedTable = '‥'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -251,7 +255,9 @@ functions =
   , TinyAPL.Glyphs.histogram
   , TinyAPL.Glyphs.increment
   , TinyAPL.Glyphs.decrement
-  , TinyAPL.Glyphs.range ]
+  , TinyAPL.Glyphs.range
+  , TinyAPL.Glyphs.keyValue
+  , TinyAPL.Glyphs.invertedTable ]
 
 -- * Adverbs
 

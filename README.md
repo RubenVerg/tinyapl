@@ -175,11 +175,11 @@ Marked features are supported, unmarked features are planned
 		* [x] `⍮` pair
 		* [x] `⍮` half pair
 	* dictionary functions
-		* [ ] `‥` from keys and values
-		* [ ] `߹` key-value pair
-		* [ ] `‥` from inverted table
-		* [ ] `߹` from pairs
-		* [ ] `⍉` inverted table
+		* [x] `‥` from keys and values
+		* [x] `߹` key-value pair
+		* [x] `‥` from inverted table
+		* [x] `߹` from pairs
+		* [x] `⍉` inverted table
 		* [x] `↓` key-value pairs
 	* manipulation functions
 		* [x] `↑` take
