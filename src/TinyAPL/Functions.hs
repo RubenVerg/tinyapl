@@ -728,6 +728,24 @@ roll' = scalarMonad $ \y -> do
   n <- asNumber expectedNatural y >>= asNat expectedNatural
   Number . (:+ 0) <$> roll n
 
+deal :: (MonadError Error m, MonadIO m) => Natural -> Natural -> m [Natural]
+deal count max
+  | count > max = throwError $ DomainError "Deal left must be less than or equal to right argument"
+  | otherwise = do
+    let go 0 _ = pure []
+        go n xs = do
+          index <- randomR (0, length xs - 1)
+          let num = xs !! index
+          (num :) <$> go (n - 1) (filter (/= num) xs)
+    go count [0..max-1]
+
+deal' :: (MonadError Error m, MonadIO m) => Noun -> Noun -> m Noun
+deal' count max = do
+  let err = DomainError "Deal arguments must be natural numbers"
+  c <- asScalar err count >>= asNumber err >>= asNat err
+  m <- asScalar err max >>= asNumber err >>= asNat err
+  vector . fmap (Number . (:+ 0) . fromInteger . toInteger) <$> deal c m
+
 indexCell :: MonadError Error m => Integer -> Noun -> m Noun
 indexCell i x@(Array _ _)
   | i < 0 = indexCell (genericLength (majorCells x) + i) x
