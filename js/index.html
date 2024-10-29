@@ -152,9 +152,18 @@
 		}
 
 		table.vector, table.vector > tbody > tr, table.vector > tbody > tr > td,
-		table.matrix, table.matrix > tbody > tr, table.matrix > tbody > tr > td {
+		table.matrix, table.matrix > tbody > tr, table.matrix > tbody > tr > td,
+		table.dictionary, table.dictionary > tbody > tr {
 			border: 2px solid black;
 			border-collapse: collapse;
+		}
+
+		.dictionary td:first-child {
+			text-align: right;
+		}
+
+		.dictionary td:nth-child(2) {
+			vertical-align: middle;
 		}
 
 		.struct ul {
