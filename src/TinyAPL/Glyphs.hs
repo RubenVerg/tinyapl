@@ -185,6 +185,7 @@ decrement = 'ⵧ'
 range = '…'
 keyValue = '߹'
 invertedTable = '‥'
+group = '⊆'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -257,7 +258,8 @@ functions =
   , TinyAPL.Glyphs.decrement
   , TinyAPL.Glyphs.range
   , TinyAPL.Glyphs.keyValue
-  , TinyAPL.Glyphs.invertedTable ]
+  , TinyAPL.Glyphs.invertedTable
+  , TinyAPL.Glyphs.group ]
 
 -- * Adverbs
 

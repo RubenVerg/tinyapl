@@ -88,6 +88,7 @@ decrement = PrimitiveFunction (Just F.decrement') (Just F.span') [G.decrement] N
 range = PrimitiveFunction (Just F.oneRange) (Just F.range) [G.range] Nothing
 keyValue = PrimitiveFunction (Just F.fromPairs) (Just F.keyValuePair) [G.keyValue] Nothing
 invertedTable = PrimitiveFunction (Just F.fromInvertedTable) (Just F.fromKeysAndValues') [G.invertedTable] Nothing
+group = PrimitiveFunction Nothing (Just F.group') [G.group] Nothing
 
 functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -160,7 +161,8 @@ functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.decrement
   , TinyAPL.Primitives.range
   , TinyAPL.Primitives.keyValue
-  , TinyAPL.Primitives.invertedTable ]
+  , TinyAPL.Primitives.invertedTable
+  , TinyAPL.Primitives.group ]
 
 -- * Primitive adverbs
 
