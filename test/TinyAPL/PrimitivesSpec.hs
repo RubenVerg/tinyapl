@@ -416,6 +416,9 @@ spec = do
           m P.first (vector [box $ vector [Number 1, Number 2, Number 3], box $ vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 1, Number 2, Number 3])
         it "fails on an empty array" $ do
           e2m <$> m P.first (vector []) `shouldReturn` Nothing
+      describe "keys" $ do
+        it "returns the keys of a dictionary" $ do
+          m P.first (dictionary [(Number 1, Number 2), (Number 3, Number 4)]) `shouldReturn` pure (vector [Number 1, Number 3])
     
     describe [G.last] $ do
       describe "last" $ do
@@ -425,6 +428,9 @@ spec = do
           m P.last (vector [box $ vector [Number 1, Number 2, Number 3], box $ vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (vector [Number 4, Number 5, Number 6])
         it "fails on an empty array" $ do
           e2m <$> m P.last (vector []) `shouldReturn` Nothing
+      describe "values" $ do
+        it "returns the values of a dictionary" $ do
+          m P.last (dictionary [(Number 1, Number 2), (Number 3, Number 4)]) `shouldReturn` pure (vector [Number 2, Number 4])
       describe "from" $ do
         it "indexes major cells of an array" $ do
           d P.last (vector [Number 0, Number -1]) (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [Number 1, Number 3])

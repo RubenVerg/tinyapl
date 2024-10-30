@@ -618,14 +618,12 @@ fromInvertedTable _ = throwError $ DomainError "From Inverted Table argument mus
 first :: MonadError Error m => Noun -> m Noun
 first (Array _ []) = throwError $ DomainError "First on empty array"
 first (Array _ (x:_)) = pure $ fromScalar x
-first (Dictionary _ []) = throwError $ DomainError "First on empty dictionary"
-first (Dictionary _ (x:_)) = pure $ fromScalar x
+first (Dictionary ks _) = pure $ vector ks
 
 last :: MonadError Error m => Noun -> m Noun
 last (Array _ []) = throwError $ DomainError "Last on empty array"
 last (Array _ xs) = pure $ fromScalar $ Prelude.last xs
-last (Dictionary _ []) = throwError $ DomainError "Last on empty dictionary"
-last (Dictionary _ xs) = pure $ fromScalar $ Prelude.last xs
+last (Dictionary _ vs) = pure $ vector vs
 
 indexGenerator :: MonadError Error m => Natural -> m Noun
 indexGenerator 0 = pure $ vector []

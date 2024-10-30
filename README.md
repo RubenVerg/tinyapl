@@ -181,6 +181,8 @@ Marked features are supported, unmarked features are planned
 		* [x] `߹` from pairs
 		* [x] `⍉` inverted table
 		* [x] `↓` key-value pairs
+		* [x] `⊃` keys
+		* [x] `⊇` values
 	* manipulation functions
 		* [x] `↑` take
 		* [x] `↓` drop
