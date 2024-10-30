@@ -191,7 +191,8 @@ Marked features are supported, unmarked features are planned
 		* [x] `⊂` enclose
 		* [ ] `⊆` nest
 		* [ ] `⊂` partitioned enclose
-		* [ ] `⊆` group (not partition!)
+		* [ ] `⊆` partition
+		* [ ] `⫇` group
 		* [x] `⍋` grade up
 		* [x] `⍒` grade down
 		* [x] `⍋` sort by up
@@ -299,7 +300,6 @@ Marked features are supported, unmarked features are planned
 		* [ ] `⎕JSON` convert from/to JSON
 		* [ ] `⎕Unicode` convert between unicode representations
 		* [x] `⎕Exists` does a variable exist?
-		* [ ] `⎕Partition` convert Partition representation to Group representation (so that Partition is `⎕Partition⍛⊆`)
 		* [x] `⎕Repr` convert an array to a representation that can be read with Execute
 		* [ ] `⎕Assert` assertions
 		* [x] `⎕Delay` sleep for n seconds
