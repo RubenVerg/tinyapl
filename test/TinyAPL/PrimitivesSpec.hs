@@ -811,6 +811,11 @@ spec = do
         it "converts a 2-row matrix to a dictionary" $ do
           m P.invertedTable (fromMajorCells [vector [Character 'a', Character 'b', Character 'c'], vector [Character 'd', Character 'e', Character 'f']]) `shouldReturn` pure (dictionary [(Character 'a', Character 'd'), (Character 'b', Character 'e'), (Character 'c', Character 'f')])
 
+    describe [G.group] $ do
+      describe "group" $ do
+        it "groups elements of an array by " $ do
+          d P.group (vector [Number 0, Number 3, Number 3, Number 1, Number -1]) (vector $ Character <$> "abcde")`shouldReturn` pure (vector [box $ vector $ Character <$> "a", box $ vector $ Character <$> "d", box $ vector [], box $ vector $ Character <$> "bc"])
+
   describe "adverbs" $ do
     describe [G.selfie] $ do
       describe "constant" $ do

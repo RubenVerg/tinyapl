@@ -1008,6 +1008,23 @@ majorCells' = pure . vector . fmap box . majorCells
 mix :: MonadError Error m => Noun -> m Noun
 mix = atRank1 first 0
 
+group :: MonadError Error m => [Integer] -> [a] -> m [[a]]
+group is xs = do
+  let buckets = genericTake (1 + ((-1) `Prelude.max` maximum is)) $ Prelude.repeat []
+  let go :: MonadError Error m => [[a]] -> [Integer] -> [a] -> m [[a]]
+      go buckets _ [] = pure buckets
+      go buckets (i:is) (x:xs)
+        | i < 0 = go buckets is xs
+        | otherwise = go ((genericTake i buckets) ++ [genericIndex buckets i `snoc` x] ++ (genericDrop (i + 1) buckets)) is xs
+      go _ [] _ = throwError $ DomainError "Group left argument too short"
+  go buckets is xs
+
+group' :: MonadError Error m => Noun -> Noun -> m Noun
+group' is xs = do
+  let err = DomainError "Group left argument must be a vector of integers"
+  is' <- asVector err is >>= mapM (asNumber err >=> asInt err)
+  (vector . fmap (box . fromMajorCells)) <$> TinyAPL.Functions.group is' (majorCells xs)
+
 -- * Operators
 
 compose :: MonadError Error m => (b -> m c) -> (a -> m b) -> a -> m c
@@ -1173,7 +1190,7 @@ eachRight f x = each2 f (scalar $ box x)
 
 key :: (Eq a, MonadError Error m) => (a -> [b] -> m c) -> [a] -> [b] -> m [c]
 key f ks vs
-  | length ks == length vs = mapM (uncurry f) (group ks vs)
+  | length ks == length vs = mapM (uncurry f) (TinyAPL.Util.group ks vs)
   | otherwise = throwError $ LengthError "Incompatible shapes to Key"
 
 key' :: MonadError Error m => (Noun -> Noun -> m Noun) -> Noun -> Noun -> m Noun

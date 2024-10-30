@@ -189,7 +189,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `⊂` enclose
 		* [ ] `⊆` nest
 		* [ ] `⊂` partitioned enclose
-		* [ ] `⊆` group (not partition!)
+		* [x] `⊆` group (not partition!)
 		* [x] `⍋` grade up
 		* [x] `⍒` grade down
 		* [x] `⍋` sort by up
