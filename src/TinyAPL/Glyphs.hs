@@ -185,7 +185,7 @@ decrement = 'ⵧ'
 range = '…'
 keyValue = '߹'
 invertedTable = '‥'
-group = '⊆'
+group = '⫇'
 
 functions =
   [ TinyAPL.Glyphs.plus
