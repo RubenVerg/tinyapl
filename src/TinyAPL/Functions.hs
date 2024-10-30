@@ -652,14 +652,21 @@ replicate [] [] = pure []
 replicate (r:rs) (x:xs) = (genericReplicate r x ++) <$> TinyAPL.Functions.replicate rs xs
 replicate _ _ = throwError $ LengthError "Replicate with different lengths"
 
+replicateDict :: MonadError Error m => Eq a => [(a, Bool)] -> [(a, b)] -> m [(a, b)]
+replicateDict sels xs = pure $ filter (\(k, _) -> fromMaybe False $ lookup k sels) xs
+
 replicate' :: MonadError Error m => Noun -> Noun -> m Noun
-replicate' rs arr@(Array _ _) = do
+replicate' rs@(Array _ _) arr@(Array _ _) = do
   let err = DomainError "Replicate left argument must be a natural vector or scalar"
   rs' <- asVector err rs >>= mapM (asNumber err >=> asNat err)
   let cells = majorCells arr
   rs'' <- if isScalar rs then case rs' of [r] -> pure $ Prelude.replicate (length cells) r; _ -> throwError unreachable else pure rs'
   fromMajorCells <$> TinyAPL.Functions.replicate rs'' cells
-replicate' _ (Dictionary _ _) = throwError $ DomainError "Dictionary cannot be replicated"
+replicate' (Dictionary sk sv) (Dictionary ak av) = do
+  let err = DomainError "Replicate left argument must be a dictionary with boolean values"
+  sv' <- mapM (asBool err) sv
+  dictionary <$> replicateDict (zip sk sv') (zip ak av)
+replicate' _ _ = throwError $ DomainError "Replicate left argument cannot mix arrays and dictionaries"
 
 indices :: MonadError Error m => Noun -> m Noun
 indices n = do
