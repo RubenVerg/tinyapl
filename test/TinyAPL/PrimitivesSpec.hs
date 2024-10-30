@@ -520,6 +520,9 @@ spec = do
           d P.replicate (vector [Number 1, Number 0, Number 2]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 5, Number 6]]) `shouldReturn` pure (fromMajorCells [vector [Number 1, Number 2], vector [Number 5, Number 6], vector [Number 5, Number 6]])
         it "fails when the lengths of the arguments don't match" $ do
           e2m <$> d P.replicate (vector [Number 1, Number 0]) (vector [Number 2, Number 1, Number 5]) `shouldReturn` Nothing
+      describe "dictionary replicate" $ do
+        it "selects entries of a dictionary" $ do
+          d P.replicate (dictionary [(Character 'a', Number 1), (Character 'b', Number 0)]) (dictionary [(Character 'a', Number 1), (Character 'b', Number 2), (Character 'c', Number 3)]) `shouldReturn` pure (dictionary [(Character 'a', Number 1)])
 
     describe [G.abs] $ do
       describe "abs" $ do
