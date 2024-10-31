@@ -568,8 +568,8 @@ enclose y = pure $ box y
 enclose' :: MonadError Error m => Noun -> m Noun
 enclose' = fmap scalar . enclose
 
-halfPair :: MonadError Error m => Noun -> m Noun
-halfPair y = pure $ vector [box y]
+singleton :: MonadError Error m => Noun -> m Noun
+singleton y = pure $ vector [box y]
 
 pair :: MonadError Error m => Noun -> Noun -> m Noun
 pair x y = pure $ vector $ box <$> [x, y]
@@ -1042,7 +1042,7 @@ partitionEnclose :: MonadError Error m => [Natural] -> [a] -> m [[a]]
 partitionEnclose ms xs = pure $ Prelude.reverse $ fmap Prelude.reverse $ foldl' (\ps (co, x) ->
   if (co == Nothing || co == Just 0) && null ps then ps
   else if co == Nothing || co == Just 0 then (fromJust x : headPromise ps) : tailPromise ps
-  else fromMaybe [] (singleton <$> x) : genericTake (fromJust co - 1) (Prelude.repeat []) ++ ps) [] $ zipLongest ms xs
+  else fromMaybe [] (Data.List.singleton <$> x) : genericTake (fromJust co - 1) (Prelude.repeat []) ++ ps) [] $ zipLongest ms xs
 
 partitionEnclose' :: MonadError Error m => Noun -> Noun -> m Noun
 partitionEnclose' is xs = do

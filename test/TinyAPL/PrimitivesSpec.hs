@@ -394,7 +394,7 @@ spec = do
           d P.reverse (vector [Number 1, Number 2]) (fromMajorCells [vector [Number 1, Number 2, Number 3], vector [Number 4, Number 5, Number 6]]) `shouldReturn` pure (fromMajorCells [vector [Number 6, Number 4, Number 5], vector [Number 3, Number 1, Number 2]])
     
     describe [G.pair] $ do
-      describe "half pair" $ do
+      describe "singleton" $ do
         it "wraps an array into a box into a singleton vector" $ do
           m P.pair (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (vector [box $ vector [Number 1, Number 2, Number 3]])
       describe "pair" $ do

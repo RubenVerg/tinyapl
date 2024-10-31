@@ -173,7 +173,7 @@ Marked features are supported, unmarked features are planned
 		* [x] `…` range
 		* [x] `…` one range
 		* [x] `⍮` pair
-		* [x] `⍮` half pair
+		* [x] `⍮` singleton
 	* dictionary functions
 		* [x] `‥` from keys and values
 		* [x] `߹` key-value pair

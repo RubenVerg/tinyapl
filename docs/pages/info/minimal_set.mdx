@@ -35,6 +35,7 @@ Some of the primitives are pretty much simple applications of other primitives:
 * <primitive key="sort_up" />&nbsp;is `⍋⍨`
 * <primitive key="empty_vector" />&nbsp;is `⟨⟩`
 * <primitive key="empty_dictionary" />&nbsp;is `⟨:⟩`
+* <primitive key="pair" />&nbsp;and&nbsp;<primitive key="singleton" />&nbsp;are both `,⍥⊂`
 
 ## Default argument
 
@@ -175,8 +176,3 @@ Reductions are special cases of folds where the initial value is the first/last 
 Monadic&nbsp;<primitive key="repeat" />&nbsp;is `_{ 0=⍵⍵: ■⍵ ⋄ ⍶⍶ _∇_ (⍵⍵-1) ⍶⍶ ⍵ }_`; dyadic is an application of&nbsp;<primitive key="bind" />.
 
 Similarly, monadic&nbsp;<primitive key="until" />&nbsp;is `_{(⍶⍶ ⍵) ⍶⍶ _{ ⍺ ⍹⍹ ⍵: ■⍺ ⋄ (⍶⍶ ⍺) ⍶⍶ _∇_ ⍹⍹ ⍺ }_ ⍹⍹ ⍵}_`; dyadic as above.
-
-## Half Pair and Pair
-
-* <primitive key="half_pair" />&nbsp;is `{⟨⍵⟩}`
-* <primitive key="pair" />&nbsp;is `{⟨⍺⋄⍵⟩}`
