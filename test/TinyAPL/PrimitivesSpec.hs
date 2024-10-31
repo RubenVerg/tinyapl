@@ -407,6 +407,17 @@ spec = do
           m P.enclose (vector [Number 1, Number 2, Number 3]) `shouldReturn` pure (scalar $ box $ vector [Number 1, Number 2, Number 3])
         it "leaves simple scalars untouched" $ do
           m P.enclose (scalar $ Number 1) `shouldReturn` pure (scalar $ Number 1)
+      describe "partitioned enclose" $ do
+        it "splits an array in positions marked by true value" $ do
+          d P.enclose (vector [Number 1, Number 0, Number 1, Number 0, Number 0, Number 1]) (vector $ Character <$> "abcdef") `shouldReturn` pure (vector [box $ vector $ Character <$> "ab", box $ vector $ Character <$> "cde", box $ vector $ Character <$> "f"])
+        it "introduces extra empty partitions with a larger left argument" $ do
+          d P.enclose (vector [Number 1, Number 0, Number 2, Number 0]) (vector $ Character <$> "abcd") `shouldReturn` pure (vector [box $ vector $ Character <$> "ab", box $ vector [], box $ vector $ Character <$> "cd"])
+        it "allows a short left argument" $ do
+          d P.enclose (vector [Number 1, Number 0]) (vector $ Character <$> "abcd") `shouldReturn` pure (vector [box $ vector $ Character <$> "abcd"])
+        it "allows a long left argument" $ do
+          d P.enclose (vector [Number 1, Number 0, Number 1]) (vector $ Character <$> "ab") `shouldReturn` pure (vector [box $ vector $ Character <$> "ab", box $ vector []])
+        it "drops leading entries when there is no zero" $ do 
+          d P.enclose (vector [Number 0, Number 1, Number 0]) (vector $ Character <$> "abc") `shouldReturn` pure (vector [box $ vector $ Character <$> "bc"])
     
     describe [G.first] $ do
       describe "first" $ do
@@ -821,6 +832,13 @@ spec = do
       describe "group" $ do
         it "groups elements of an array by " $ do
           d P.group (vector [Number 0, Number 3, Number 3, Number 1, Number -1]) (vector $ Character <$> "abcde")`shouldReturn` pure (vector [box $ vector $ Character <$> "a", box $ vector $ Character <$> "d", box $ vector [], box $ vector $ Character <$> "bc"])
+
+    describe [G.partition] $ do
+      describe "partition" $ do
+        it "splits an array where the numbers change" $ do
+          d P.partition (vector [Number 1, Number 1, Number 2, Number 2, Number 1]) (vector $ Character <$> "abcde") `shouldReturn` pure (vector [box $ vector $ Character <$> "ab", box $ vector $ Character <$> "cd", box $ vector $ Character <$> "e"])
+        it "drops zeros"$ do
+          d P.partition (vector [Number 1, Number 1, Number 0, Number 0, Number 4]) (vector $ Character <$> "abcde") `shouldReturn` pure (vector [box $ vector $ Character <$> "ab", box $ vector $ Character <$> "e"])
 
   describe "adverbs" $ do
     describe [G.selfie] $ do

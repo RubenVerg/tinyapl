@@ -225,3 +225,12 @@ inf = 1 / 0
 
 ninf :: RealFrac a => a
 ninf = -1 / 0
+
+zipWithLongest :: (Maybe a -> Maybe b -> c) -> [a] -> [b] -> [c]
+zipWithLongest _ [] [] = []
+zipWithLongest f (x:xs) (y:ys) = f (Just x) (Just y) : zipWithLongest f xs ys
+zipWithLongest f (x:xs) [] = (`f` Nothing) (Just x) : zipWithLongest f xs []
+zipWithLongest f [] (y:ys) = (Nothing `f`) (Just y) : zipWithLongest f [] ys
+
+zipLongest :: [a] -> [b] -> [(Maybe a, Maybe b)]
+zipLongest = zipWithLongest (,)
