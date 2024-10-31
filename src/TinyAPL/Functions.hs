@@ -12,7 +12,7 @@ import qualified TinyAPL.Complex as Cx
 import TinyAPL.Complex ( Complex((:+)) )
 import Data.Char
 import Data.Maybe (fromJust, fromMaybe)
-import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericReplicate, nub, genericIndex, sortOn, sort, find)
+import Data.List (elemIndex, genericLength, genericTake, genericDrop, genericReplicate, nub, genericIndex, sortOn, sort, find, singleton)
 import Numeric.Natural (Natural)
 import Control.Monad
 import Control.Monad.State (MonadIO)
@@ -1023,7 +1023,34 @@ group' is xs = do
   is' <- asVector err is >>= mapM (asNumber err >=> asInt err)
   (vector . fmap (box . fromMajorCells)) <$> TinyAPL.Functions.group is' (majorCells xs)
 
--- * Operators
+partition :: MonadError Error m => [Natural] -> [a] -> m [[a]]
+partition is xs = do
+  let areNewPartitions = True : mapAdjacent (/=) is
+  let ws = zip3 ((0 /=) <$> is) areNewPartitions xs
+  pure $ Prelude.reverse $ fmap Prelude.reverse $ foldl' (\ps (keep, newPart, x) ->
+    if Prelude.not keep then ps
+    else if newPart then [x] : ps
+    else (x : headPromise ps) : tailPromise ps) [] ws
+
+partition' :: MonadError Error m => Noun -> Noun -> m Noun
+partition' is xs = do
+  let err = DomainError "Partition left argument must be a vector of naturals"
+  is' <- asVector err is >>= mapM (asNumber err >=> asNat err)
+  (vector . fmap (box . fromMajorCells)) <$> partition is' (majorCells xs)
+
+partitionEnclose :: MonadError Error m => [Natural] -> [a] -> m [[a]]
+partitionEnclose ms xs = pure $ Prelude.reverse $ fmap Prelude.reverse $ foldl' (\ps (co, x) ->
+  if (co == Nothing || co == Just 0) && null ps then ps
+  else if co == Nothing || co == Just 0 then (fromJust x : headPromise ps) : tailPromise ps
+  else fromMaybe [] (singleton <$> x) : genericTake (fromJust co - 1) (Prelude.repeat []) ++ ps) [] $ zipLongest ms xs
+
+partitionEnclose' :: MonadError Error m => Noun -> Noun -> m Noun
+partitionEnclose' is xs = do
+  let err = DomainError "Partition left argument must be a vector of naturals"
+  is' <- asVector err is >>= mapM (asNumber err >=> asNat err)
+  (vector . fmap (box . fromMajorCells)) <$> partitionEnclose is' (majorCells xs)
+
+-- * Modifiers
 
 compose :: MonadError Error m => (b -> m c) -> (a -> m b) -> a -> m c
 compose f g = g >=> f

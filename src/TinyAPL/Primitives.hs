@@ -45,7 +45,7 @@ rho = PrimitiveFunction (Just F.shape') (Just F.reshape') [G.rho] Nothing
 ravel = PrimitiveFunction (Just F.ravel') (Just F.laminate) [G.ravel] Nothing
 reverse = PrimitiveFunction (Just F.reverse') (Just F.rotate') [G.reverse] Nothing
 pair = PrimitiveFunction (Just F.halfPair) (Just F.pair) [G.pair] Nothing
-enclose = PrimitiveFunction (Just F.enclose') Nothing [G.enclose] Nothing
+enclose = PrimitiveFunction (Just F.enclose') (Just F.partitionEnclose') [G.enclose] Nothing
 first = PrimitiveFunction (Just F.first) Nothing [G.first] Nothing
 last = PrimitiveFunction (Just F.last) (Just F.from) [G.last] Nothing
 take = PrimitiveFunction (Just F.mix) (Just F.take') [G.take] Nothing
@@ -89,6 +89,7 @@ range = PrimitiveFunction (Just F.oneRange) (Just F.range) [G.range] Nothing
 keyValue = PrimitiveFunction (Just F.fromPairs) (Just F.keyValuePair) [G.keyValue] Nothing
 invertedTable = PrimitiveFunction (Just F.fromInvertedTable) (Just F.fromKeysAndValues') [G.invertedTable] Nothing
 group = PrimitiveFunction Nothing (Just F.group') [G.group] Nothing
+partition = PrimitiveFunction Nothing (Just F.partition') [G.partition] Nothing
 
 functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -162,7 +163,8 @@ functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.range
   , TinyAPL.Primitives.keyValue
   , TinyAPL.Primitives.invertedTable
-  , TinyAPL.Primitives.group ]
+  , TinyAPL.Primitives.group
+  , TinyAPL.Primitives.partition ]
 
 -- * Primitive adverbs
 

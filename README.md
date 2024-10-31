@@ -190,8 +190,8 @@ Marked features are supported, unmarked features are planned
 		* [x] `↓` major cells (split is `⊂⍤1`)
 		* [x] `⊂` enclose
 		* [ ] `⊆` nest
-		* [ ] `⊂` partitioned enclose
-		* [ ] `⊆` partition
+		* [x] `⊂` partitioned enclose
+		* [x] `⊆` partition
 		* [x] `⫇` group
 		* [x] `⍋` grade up
 		* [x] `⍒` grade down
