@@ -14,6 +14,7 @@ data Error
   | NYIError String
   | SyntaxError String
   | AssertionError String
+  | IndexError String
   deriving (Eq, Ord, Generic)
 
 instance NFData Error
@@ -28,6 +29,7 @@ errorCode (RankError _) = 4
 errorCode (NYIError _) = 5
 errorCode (SyntaxError _) = 6
 errorCode (AssertionError _) = 7
+errorCode (IndexError _) = 8
 
 errorMessage :: Error -> String
 errorMessage (UserError e) = e
@@ -37,6 +39,7 @@ errorMessage (RankError e) = e
 errorMessage (NYIError e) = e
 errorMessage (SyntaxError e) = e
 errorMessage (AssertionError e) = e
+errorMessage (IndexError e) = e
 
 fromErrorCode :: Int -> String -> Error
 fromErrorCode 1 = UserError
@@ -46,6 +49,7 @@ fromErrorCode 4 = RankError
 fromErrorCode 5 = NYIError
 fromErrorCode 6 = SyntaxError
 fromErrorCode 7 = AssertionError
+fromErrorCode 8 = IndexError
 fromErrorCode _ = error "fromErrorCode: unknown error type"
 
 instance Show Error where
@@ -58,6 +62,7 @@ instance Show Error where
       NYIError msg -> ("Not yet implemented!", msg)
       SyntaxError msg -> ("Syntax error", msg)
       AssertionError msg -> ("Assertion failed", msg)
+      IndexError msg -> ("Index error", msg)
     hasNewline = '\n' `elem` errorMessage
     in if hasNewline
       then errorName ++ '\n' : errorMessage
