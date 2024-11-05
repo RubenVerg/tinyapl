@@ -507,6 +507,10 @@ spec = do
           d P.iota (vector $ Character <$> "hello world") (vector $ Character <$> "lw") `shouldReturn` pure (vector [Number 2, Number 6])
         it "returns one more than the tally when the cell is not found" $ do
           d P.iota (vector $ Character <$> "hello world") (scalar $ Character 'x') `shouldReturn` pure (scalar $ Number 11)
+      describe "index of dictionary" $ do
+        it "returns the key of the first occurrence of a value in a dictionary" $ do
+          d P.iota (dictionary [(Number 1, Number 2), (Number 3, Number 4)]) (scalar $ Number 4) `shouldReturn` pure (scalar $ Number 3)
+          e2m <$> d P.iota (dictionary [(Number 1, Number 2), (Number 3, Number 4)]) (scalar $ Number 5) `shouldReturn` Nothing
     
     describe [G.indices] $ do
       describe "where" $ do
@@ -612,11 +616,20 @@ spec = do
           d P.element (fromMajorCells [vector $ Character <$> "high", vector $ Character <$> "rank"]) (vector $ Character <$> "list arg") `shouldReturn` pure (fromMajorCells [vector [Number 0, Number 1, Number 1, Number 0], vector [Number 1, Number 1, Number 0, Number 0]])
           d P.element (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 5, Number 6], vector [Number 7, Number 8]]) (fromMajorCells [vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 1, Number 2], vector [Number 3, Number 4], vector [Number 1, Number 2]])
             `shouldReturn` pure (vector [Number 1, Number 1, Number 0, Number 0])
+      describe "element of dictionary" $ do
+        it "checks whether a value appears in a dictionary" $ do
+          d P.element (scalar $ Number 3) (dictionary [(Number 1, Number 2), (Number 3, Number 4)]) `shouldReturn` pure (scalar $ Number 0)
+          d P.element (scalar $ Number 4) (dictionary [(Number 1, Number 2), (Number 3, Number 4)]) `shouldReturn` pure (scalar $ Number 1)
 
     describe [G.histogram] $ do
       describe "count" $ do
         it "counts the number of occurrences cells of an array in the the major cells of another array" $ do
           d P.histogram (vector [Number 1, Number 2, Number 4]) (vector [Number 1, Number 3, Number 2, Number 1, Number 1, Number 5]) `shouldReturn` pure (vector [Number 3, Number 1, Number 0])
+      describe "count dictionary" $ do
+        it "counts the number of occurrences of a value in a dictionary" $ do
+          d P.histogram (scalar $ Number 3) (dictionary [(Number 1, Number 2), (Number 3, Number 4)]) `shouldReturn` pure (scalar $ Number 0)
+          d P.histogram (scalar $ Number 4) (dictionary [(Number 1, Number 2), (Number 3, Number 4)]) `shouldReturn` pure (scalar $ Number 1)
+          d P.histogram (scalar $ Number 4) (dictionary [(Number 1, Number 4), (Number 3, Number 4)]) `shouldReturn` pure (scalar $ Number 2)
 
     describe [G.squad] $ do
       describe "index" $ do
@@ -751,6 +764,7 @@ spec = do
           d P.raise (scalar $ Number 5) (vector $ Character <$> "error") `shouldReturn` throwError (NYIError "error")
           d P.raise (scalar $ Number 6) (vector $ Character <$> "error") `shouldReturn` throwError (SyntaxError "error")
           d P.raise (scalar $ Number 7) (vector $ Character <$> "error") `shouldReturn` throwError (AssertionError "error")
+          d P.raise (scalar $ Number 8) (vector $ Character <$> "error") `shouldReturn` throwError (IndexError "error")
         it "defaults to an user error" $ do
           m P.raise (vector $ Character <$> "error") `shouldReturn` throwError (UserError "error")
 
