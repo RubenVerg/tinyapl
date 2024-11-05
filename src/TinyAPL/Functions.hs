@@ -754,7 +754,7 @@ deal' count max = do
 indexCell :: MonadError Error m => Integer -> Noun -> m Noun
 indexCell i x@(Array _ _)
   | i < 0 = indexCell (genericLength (majorCells x) + i) x
-  | i > genericLength (majorCells x) = throwError $ DomainError "Index out of bounds"
+  | i > genericLength (majorCells x) = throwError $ IndexError "Index out of bounds"
   | otherwise = pure $ genericIndex (majorCells x) i
 indexCell _ (Dictionary _ _) = throwError $ DomainError "Dictionary cannot be cell-indexed"
 
@@ -774,7 +774,7 @@ squad i y@(Array _ _) = do
   go axisIndices y
 squad i d@(Dictionary _ _) = indexElement (toScalar i) d >>= (\case
   Just r -> pure $ scalar r
-  Nothing -> throwError $ DomainError "Key not found in dictionary")
+  Nothing -> throwError $ IndexError "Key not found in dictionary")
 
 from :: MonadError Error m => Noun -> Noun -> m Noun
 from x y = ((\x' -> (first `before` squad) x' y) `atRank1` 0) x
@@ -965,8 +965,8 @@ encode' _ _ = throwError $ DomainError "Encode arguments must be number arrays"
 encodeBase2 :: MonadError Error m => Noun -> m Noun
 encodeBase2 = encode' (scalar $ Number 2)
 
-searchFunction :: MonadError Error m => (Noun -> [Noun] -> m Noun) -> Noun -> Noun -> m Noun
-searchFunction f ns hs = let cutRank = arrayRank hs `naturalSaturatedSub` 1
+searchFunction :: MonadError Error m => (Noun -> [Noun] -> m Noun) -> (ScalarValue -> [ScalarValue] -> [ScalarValue] -> m ScalarValue) -> Noun -> Noun -> m Noun
+searchFunction f _ ns hs@(Array _ _) = let cutRank = arrayRank hs `naturalSaturatedSub` 1
   in if arrayRank ns < cutRank then throwError $ DomainError "Search function neelde must have rank at least equal to the rank of the major cells of the haystack"
   else do
     let hc = majorCells hs
@@ -974,20 +974,26 @@ searchFunction f ns hs = let cutRank = arrayRank hs `naturalSaturatedSub` 1
     onScalars1 (\n -> do
       n' <- first n
       f n' hc) nc
+searchFunction _ g n (Dictionary ks vs) = do
+  fromScalar <$> g (box n) ks vs
 
 elementOf :: MonadError Error m => Noun -> Noun -> m Noun
-elementOf = searchFunction $ pure .: scalar .: boolToScalar .: elem
+elementOf = searchFunction (pure .: scalar .: boolToScalar .: elem) (\e _ v -> pure $ boolToScalar $ e `elem` v)
 
 count :: MonadError Error m => Noun -> Noun -> m Noun
-count = searchFunction $ pure .: scalar .: Number .: (:+ 0) .: countEqual
+count = searchFunction (pure .: scalar .: Number .: (:+ 0) .: countEqual) (\e _ v -> pure $ Number $ countEqual e v :+ 0)
 
 indexOf :: MonadError Error m => Noun -> Noun -> m Noun
-indexOf = flip $ searchFunction $ pure .: scalar .: Number .: (:+ 0) .: (\n hs -> fromMaybe (genericLength hs) $ n `genericElemIndex` hs)
+indexOf = flip $ searchFunction
+  (pure .: scalar .: Number .: (:+ 0) .: (\n hs -> fromMaybe (genericLength hs) $ n `genericElemIndex` hs))
+  (\e k v -> case find (\(_, u) -> e == u) (zip k v) of
+    Just (i, _) -> pure i
+    Nothing -> throwError $ IndexError "Value not found in dictionary")
 
 intervalIndex :: MonadError Error m => Noun -> Noun -> m Noun
 intervalIndex hs' ns =
   if Prelude.not $ sorted $ majorCells hs' then throwError $ DomainError "Interval index left argument must be sorted"
-  else (searchFunction $ pure .: scalar .: Number .: (:+ 0) .: (\n hs -> do
+  else (searchFunction (pure .: scalar .: Number .: (:+ 0) .: (\n hs -> do
     let lowers = Nothing : fmap Just hs
     let uppers = fmap Just hs :> Nothing
     let bounds = Prelude.reverse $ zipWith3 (\l u i -> ((l, u), i)) lowers uppers [0..genericLength hs]
@@ -995,7 +1001,7 @@ intervalIndex hs' ns =
       ((Just lower, Just upper), _) | lower <= n && n < upper -> True
       ((Just lower, Nothing), _) | lower <= n -> True
       ((Nothing, Just upper), _) | n < upper -> True
-      _ -> False)) ns hs'
+      _ -> False)) (\_ _ _ -> throwError $ DomainError "Interval index only works with arrays")) ns hs'
 
 laminate :: MonadError Error m => Noun -> Noun -> m Noun
 laminate = catenate `over` promote
