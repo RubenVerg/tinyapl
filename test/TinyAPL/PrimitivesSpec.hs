@@ -765,6 +765,7 @@ spec = do
           d P.raise (scalar $ Number 6) (vector $ Character <$> "error") `shouldReturn` throwError (SyntaxError "error")
           d P.raise (scalar $ Number 7) (vector $ Character <$> "error") `shouldReturn` throwError (AssertionError "error")
           d P.raise (scalar $ Number 8) (vector $ Character <$> "error") `shouldReturn` throwError (IndexError "error")
+          d P.raise (scalar $ Number 9) (vector $ Character <$> "error") `shouldReturn` throwError (IOError "error")
         it "defaults to an user error" $ do
           m P.raise (vector $ Character <$> "error") `shouldReturn` throwError (UserError "error")
 

@@ -6,6 +6,7 @@ import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
 import qualified TinyAPL.Primitives as P
 import TinyAPL.Interpreter
+import TinyAPL.Quads.File (file)
 
 import System.Environment
 import Control.Monad (void)
@@ -28,7 +29,7 @@ cli = do
   id <- newIORef 0
   let context = Context {
       contextScope = scope
-    , contextQuads = core <> quadsFromReprs [ makeSystemInfo os arch False ] [ makeImport readImportFile Nothing ] [] []
+    , contextQuads = core <> quadsFromReprs [ makeSystemInfo os arch False, file ] [ makeImport readImportFile Nothing ] [] []
     , contextIn = liftToSt getLine
     , contextOut = \str -> do
       liftToSt $ putStr str
