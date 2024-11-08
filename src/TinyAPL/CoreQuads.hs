@@ -68,8 +68,17 @@ type_ = PrimitiveFunction (Just $ \(Array sh cs) -> return $ Array sh $ (\case
   AdverbWrap _ -> Number 4
   ConjunctionWrap _ -> Number 5
   Struct _ -> Number 6) <$> cs) Nothing (G.quad : "Type") Nothing
+measure = PrimitiveAdverb Nothing (Just $ \f -> pure $ DerivedFunctionFunction (Just $ \y -> do
+  start <- realToFrac <$> liftToSt getPOSIXTime
+  _ <- callMonad f y
+  end <- realToFrac <$> liftToSt getPOSIXTime
+  pure $ scalar $ Number $ (end - start) :+ 0) (Just $ \x y -> do
+  start <- realToFrac <$> liftToSt getPOSIXTime
+  _ <- callDyad f x y
+  end <- realToFrac <$> liftToSt getPOSIXTime
+  pure $ scalar $ Number $ (end - start) :+ 0) Nothing measure f) (G.quad : "_Measure") Nothing
 
-core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay, type_, unicode ] [] []
+core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay, type_, unicode ] [ measure ] []
 
 makeImport :: (FilePath -> St String) -> Maybe ([String] -> St String) -> Function
 makeImport read readStd = PrimitiveFunction (Just $ \x -> do
