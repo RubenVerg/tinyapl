@@ -75,6 +75,8 @@ Marked features are supported, unmarked features are planned
 	* nouns
 		* [x] `⍬` empty vector
 		* [x] `∻` empty dictionary
+		* [ ] `⦻` null
+		* [ ] `∅` nan
 	* number functions
 		* [x] `+` conjugate
 		* [x] `+` add
