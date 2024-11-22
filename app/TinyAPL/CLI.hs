@@ -16,9 +16,15 @@ import Data.Functor (($>))
 import Data.List (singleton)
 import Data.IORef
 import System.Info
+import Control.DeepSeq
 
 readImportFile :: FilePath -> St String
 readImportFile path = liftToSt $ readFile path
+
+stdin :: Nilad
+stdin = Nilad (Just $ do
+  i <- liftToSt $ getContents >>= (\x -> rnf x `seq` pure x)
+  pure $ vector $ Character <$> i) Nothing (G.quad : "stdin") Nothing
 
 cli :: IO ()
 cli = do
@@ -30,7 +36,7 @@ cli = do
   id <- newIORef 0
   let context = Context {
       contextScope = scope
-    , contextQuads = core <> quadsFromReprs [ makeSystemInfo os arch False, file ] [ makeImport readImportFile Nothing ] [] []
+    , contextQuads = core <> quadsFromReprs [ makeSystemInfo os arch False, file, TinyAPL.CLI.stdin ] [ makeImport readImportFile Nothing ] [] []
     , contextIn = liftToSt getLine
     , contextOut = \str -> do
       liftToSt $ putStr str
