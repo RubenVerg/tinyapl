@@ -3,6 +3,7 @@ module TinyAPL.CLI where
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.CoreQuads
 import TinyAPL.Error
+import qualified TinyAPL.Files as F
 import qualified TinyAPL.Glyphs as G
 import qualified TinyAPL.Primitives as P
 import TinyAPL.Interpreter
@@ -43,7 +44,7 @@ cli = do
   case args of
     []     -> repl context
     [path] -> do
-      code <- readFile path
+      code <- F.readUtf8 path
       void $ runCode False path code context
     _      -> do
       hPutStrLn stderr "Usage:"
