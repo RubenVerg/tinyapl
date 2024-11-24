@@ -29,9 +29,9 @@ stdin = Nilad (Just $ let
       done <- liftToSt $ isEOF >>= (\x -> rnf x `seq` pure x)
       if done then pure text
       else do
-        str <- liftToSt $ getContents >>= (\x -> rnf x `seq` pure x)
-        go $ text ++ str
-  in vector . fmap Character <$> go "") Nothing (G.quad : "stdin") Nothing
+        ch <- liftToSt $ getChar >>= (\x -> rnf x `seq` pure x)
+        go $ ch : text
+  in vector . fmap Character . reverse <$> go "") Nothing (G.quad : "stdin") Nothing
 
 cli :: IO ()
 cli = do
