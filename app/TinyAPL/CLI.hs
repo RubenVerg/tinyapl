@@ -3,6 +3,7 @@ module TinyAPL.CLI where
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.CoreQuads
 import TinyAPL.Error
+import qualified TinyAPL.Files as F
 import qualified TinyAPL.Glyphs as G
 import qualified TinyAPL.Primitives as P
 import TinyAPL.Interpreter
@@ -15,9 +16,22 @@ import Data.Functor (($>))
 import Data.List (singleton)
 import Data.IORef
 import System.Info
+import Control.DeepSeq
 
 readImportFile :: FilePath -> St String
 readImportFile path = liftToSt $ readFile path
+
+stdin :: Nilad
+stdin = Nilad (Just $ let
+  go text = do
+    closed <- liftToSt $ hIsClosed System.IO.stdin >>= (\x -> rnf x `seq` pure x)
+    if closed then pure text else do
+      done <- liftToSt $ isEOF >>= (\x -> rnf x `seq` pure x)
+      if done then pure text
+      else do
+        ch <- liftToSt $ getChar >>= (\x -> rnf x `seq` pure x)
+        go $ ch : text
+  in vector . fmap Character . reverse <$> go "") Nothing (G.quad : "stdin") Nothing
 
 cli :: IO ()
 cli = do
@@ -29,7 +43,7 @@ cli = do
   id <- newIORef 0
   let context = Context {
       contextScope = scope
-    , contextQuads = core <> quadsFromReprs [ makeSystemInfo os arch False, file ] [ makeImport readImportFile Nothing ] [] []
+    , contextQuads = core <> quadsFromReprs [ makeSystemInfo os arch False, file, TinyAPL.CLI.stdin ] [ makeImport readImportFile Nothing ] [] []
     , contextIn = liftToSt getLine
     , contextOut = \str -> do
       liftToSt $ putStr str
@@ -43,7 +57,7 @@ cli = do
   case args of
     []     -> repl context
     [path] -> do
-      code <- readFile path
+      code <- F.readUtf8 path
       void $ runCode False path code context
     _      -> do
       hPutStrLn stderr "Usage:"
