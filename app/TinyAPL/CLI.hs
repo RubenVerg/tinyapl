@@ -22,9 +22,16 @@ readImportFile :: FilePath -> St String
 readImportFile path = liftToSt $ readFile path
 
 stdin :: Nilad
-stdin = Nilad (Just $ do
-  i <- liftToSt $ getContents >>= (\x -> rnf x `seq` pure x)
-  pure $ vector $ Character <$> i) Nothing (G.quad : "stdin") Nothing
+stdin = Nilad (Just $ let
+  go text = do
+    closed <- liftToSt $ hIsClosed System.IO.stdin >>= (\x -> rnf x `seq` pure x)
+    if closed then pure text else do
+      done <- liftToSt $ isEOF >>= (\x -> rnf x `seq` pure x)
+      if done then pure text
+      else do
+        str <- liftToSt $ getContents >>= (\x -> rnf x `seq` pure x)
+        go str
+  in vector . fmap Character <$> go "") Nothing (G.quad : "stdin") Nothing
 
 cli :: IO ()
 cli = do
