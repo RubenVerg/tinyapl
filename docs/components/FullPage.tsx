@@ -1,7 +1,7 @@
 /** @jsx h */
 /** @jsxFrag Fragment */
 
-import Sidebar from './Sidebar.tsx';
+import Header from './Header.tsx';
 import { Pages } from '../types.d.ts';
 
 import { Fragment, h } from '../deps/x/htm.ts';
@@ -13,8 +13,7 @@ export interface FullPageProps {
 
 function FullPage({ pages, children }: FullPageProps) {
 	return <>
-		<Sidebar id='sidebar' pages={pages} />
-		<button type='button' class='btn' data-bs-toggle='offcanvas' data-bs-target='#sidebar'><i class='bi bi-list' /></button>
+		<Header pages={pages} />
 		<main class='container'>{children}</main>
 	</>;
 }
