@@ -30,7 +30,7 @@ stdin = Nilad (Just $ let
       if done then pure text
       else do
         str <- liftToSt $ getContents >>= (\x -> rnf x `seq` pure x)
-        go str
+        go $ text ++ str
   in vector . fmap Character <$> go "") Nothing (G.quad : "stdin") Nothing
 
 cli :: IO ()
