@@ -3,6 +3,7 @@
 import GlyphPage from './components/GlyphPage.tsx';
 import InfoPage from './components/InfoPage.tsx';
 import PrimitivePage from './components/PrimitivePage.tsx';
+import Primitives from './components/Primitives.tsx';
 import QuadPage from './components/QuadPage.tsx';
 import FullPage from './components/FullPage.tsx';
 import Index from './components/Index.tsx';
@@ -30,13 +31,27 @@ const scripts = [
 	'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
 ];
 
+const splashScript = `
+const splashes = [
+  '«What if we added everything?»',
+	'Check out the <a href="https://www.arraycast.com/episodes/episode88-tinyapl">Array Cast</a>!',
+	'Tiny might be a misnomer.',
+	'Check out the <a href="https://blog.rubenverg.com">blog</a>!',
+]
+
+document.querySelector('#splash').innerHTML = splashes[Math.floor(Math.random() * splashes.length)];
+`;
+
 const sharedOptions: Partial<HtmlOptions> = {
 	lang: 'en',
 	links: [
 		...stylesheets.map(href => ({ href, rel: 'stylesheet' })),
 		{ href: '/logo.svg', type: 'image/svg+xml', rel: 'icon' },
 	],
-	scripts: scripts.map(src => ({ src })),
+	scripts: [
+		...scripts.map(src => ({ src })),
+		{ text: splashScript, type: 'module' }
+	],
 	meta: {
 		viewport: 'width=device-width, initial-scale=1',
 	},
@@ -65,6 +80,10 @@ const primitivePage = (primitive: Primitive) => render(<FullPage pages={pages}><
 	title: `${primitive.name} - TinyAPL`,
 });
 
+const primitiveIndexPage = () => render(<FullPage pages={pages}><Primitives pages={pages} /></FullPage>, {
+	title: 'Primitives - TinyAPL',
+})
+
 const quadPage = (quad: Quad) => render(<FullPage pages={pages}><QuadPage quad={quad} /></FullPage>, {
 	title: `${quad.name} - TinyAPL`,
 });
@@ -89,11 +108,11 @@ const directories: Record<string, keyof typeof pages> = {
 }
 
 const renderers = {
-	index: index,
-	glyphs: glyphPage,
-	info: infoPage,
-	primitives: primitivePage,
-	quads: quadPage,
+	index: [index, undefined],
+	glyphs: [glyphPage, undefined],
+	info: [infoPage, undefined],
+	primitives: [primitivePage, primitiveIndexPage],
+	quads: [quadPage, undefined],
 };
 
 if (Deno.args.includes('--dev')) {
@@ -102,8 +121,11 @@ if (Deno.args.includes('--dev')) {
 	await loadPages();
 	for (const [typ, ps] of Object.entries(pages)) {
 		if (typ === 'index') continue;
+		const [wp, ind] = renderers[typ as keyof typeof pages] as [(p: unknown) => Promise<Response>, () => Promise<Response>];
+		if (ind !== undefined) await ind().then(x => x.text());
 		for (const p of Object.keys(ps)) {
-			await (renderers[typ as keyof typeof pages] as (p: unknown) => Promise<Response>)(ps[p]).then(x => x.text());
+			console.log(p);
+			await wp(ps[p]).then(x => x.text());
 		}
 	}
 }
@@ -142,7 +164,10 @@ async function handler(req: Request) {
 		}
 		if (pathname.startsWith(`/docs/${dir}`)) {
 			const path = pathname.replace(`/docs/${dir}`, '').replaceAll('/', '');
-			return (renderers[typ] as (p: unknown) => Promise<Response>)((pages as Pick<Pages, Exclude<keyof Pages, 'index'>>)[typ][path]);
+			const [wp, ind] = renderers[typ] as [(p: unknown) => Promise<Response>, () => Promise<Response>];
+			if (path.trim() === '' && ind !== undefined) return await ind();
+			const t = (pages as Pick<Pages, Exclude<keyof Pages, 'index'>>)[typ];
+			if (path in t) return await wp(t[path]);
 		}
 	}
 	
