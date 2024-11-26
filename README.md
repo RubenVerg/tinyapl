@@ -18,7 +18,7 @@ Featured on the [Array Cast](https://www.arraycast.com/episodes/episode88-tinyap
 * Part 10: [Wraps, Structs, a Standard Library](https://blog.rubenverg.com/tinyapl_10_wraps_structs_stdlib)
 * Part 11: [Bases and Searching](https://blog.rubenverg.com/tinyapl_11_bases_searching)
 * Part 12: [At Depth and Ordering](https://blog.rubenverg.com/tinyapl_12_at_depth_ordering)
-* Part 13: [The Biggest Mistake, The Biggest Change](http://localhost:8000/tinyapl_13_biggest_mistake_biggest_change)
+* Part 13: [The Biggest Mistake, The Biggest Change](https://blog.rubenverg.com/tinyapl_13_biggest_mistake_biggest_change)
 
 Documentation is available [here](https://tinyapl.rubenverg.com) and you can run the latest interpreter [here](https://tinyapl.rubenverg.com/run/latest)
 
