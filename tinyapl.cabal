@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               tinyapl
-version:            0.11.0.0
+version:            0.11.0.1
 synopsis:           TinyAPL is a tiny APL dialect
 
 -- A longer description of the package.

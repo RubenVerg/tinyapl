@@ -19,7 +19,6 @@ import Data.IORef (IORef)
 import Control.DeepSeq
 import GHC.Generics
 import GHC.Stack (HasCallStack)
-import Debug.Trace (traceShowId)
 
 -- * Arrays
 
