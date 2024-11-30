@@ -18,6 +18,8 @@ import qualified Data.IORef as IORef
 import Data.IORef (IORef)
 import Control.DeepSeq
 import GHC.Generics
+import GHC.Stack (HasCallStack)
+import Debug.Trace (traceShowId)
 
 -- * Arrays
 
@@ -107,11 +109,13 @@ majorCells (Array (_:sh) cs) = mapMaybe (arrayOf sh) $ chunk (product sh) cs whe
   chunk l xs = genericTake l xs : chunk l (genericDrop l xs)
 majorCells (Dictionary ks vs) = zipWith (\a b -> vector [a, b]) ks vs
 
-fromMajorCells :: [Noun] -> Noun
+fromMajorCells :: HasCallStack => [Noun] -> Noun
 fromMajorCells [] = Array [0] []
 fromMajorCells (c:cs) = let
   impl = fromJust $ arrayReshaped (1 + genericLength cs : arrayShape c) $ concatMap arrayContents $ c : cs
-  in if all ((== arrayShape c) . arrayShape) cs then impl else error "fromMajorCells: mismatched shapes"
+  in if all (\case
+    Array sh _ -> sh == arrayShape c
+    Dictionary _ _ -> False) cs then impl else error "fromMajorCells: mismatched shapes or dictionary"
 
 -- * Number comparison functions
 
