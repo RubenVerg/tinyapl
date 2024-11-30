@@ -1,0 +1,35 @@
+---
+name: Dictionaries
+planned: true
+---
+
+Dictionaries are probably the most novel concept in TinyAPL to date. I've long claimed an intent to make this APL [dialect/derivative](./derivative) an *experimentation playground* for primitives and features, but many features are just aggregates from other array languages and the few new things are either trivial or at most not groundbreaking at all. Everything changes now.
+
+Dictionaries are a new kind of array. They're not scalars, like structs or wraps, they're affine to arrays. Dictionaries and arrays are collectively called *nouns*[^1]. There are some other differences between dictionaries and structs as well: structs are mutable while dictionaries are not; structs' "keys" are identifiers and their "values" can be arrays (nouns), functions or modifiers, dictionaries' keys and values are both scalars.
+
+The easiest way to create a dictionary is via literal. Dictionary literals look like this:&nbsp;<hl code="⟨key1: val1 ⋄ key2: val2⟩" />. To get an empty dictionary you can either use&nbsp;<hl code="⟨:⟩" />&nbsp;or the primitive&nbsp;<primitive key="empty_dictionary" />.
+
+The fact that dictionaries are nouns and not scalars means that most of the array operations you expect to work on normal arrays work on dictionaries as well, with some caveats and differences. Dictionaries act sometimes like a vector of pairs and sometimes like a `⟨n⋄2⟩` matrix. For example,&nbsp;<primitive key="major_cells" />&nbsp;is extended to work on dictionaries as <primitive key="key_value_pairs" />&nbsp;and returns a list of pairs and&nbsp;<primitive key="transpose" />&nbsp;is extended to work on dictionaries as&nbsp;<primtive key="inverted_table" /> and returns an "inverted table", i.e. a pair of vector of keys and vector of values. Other primitives act in ways tailored specifically to dictionaries, for example&nbsp;<primitive key="index" />&nbsp;selects one entry by key (boxing it implicitly) and&nbsp;<primitive key="from" />&nbsp;selects multiple entries by keys.
+
+Literals don't allow you to create dictionaries programmatically. To do that, two glyphs and four functions were added:
+
+* <primitive key="key_value_pair" />: create a singleton dictionary with key `⍺` and value `⍵`.
+* <primitive key="from_pairs" />: create a dictionary with entries the pairs of `⍵`, as in the result of&nbsp;<primitive key="key_value_pairs" />.
+* <primitive key="from_keys_and_values" />: create a dictionary where entries are made by matching up the key vector `⍺` and the value vector `⍵`.
+* <primitive key="from_inverted_table" />: create a dictionary from an inverted table `⍵`, as in the result of&nbsp;<primitive key="inverted_table" />.
+
+Another common operation is combining two dictionaries. There are two primitives that allow you to do this:&nbsp;<primitive key="union" />&nbsp;and&nbsp;<primitive key="catenate" />. The difference is in the bias: the former prefers entries from the left argument when a key appears in both, the latter prefers entries from the right argument. The choice was made since&nbsp;<primitive key="union" />&nbsp;is in some sense left-biased for arrays, and&nbsp;<primitive key="catenate" />&nbsp;was the natural choice for the opposite operation. Other set operations work on dictionaries too, with the same left-bias (the set operations work on keys).
+
+The last thing you can do to dictionaries is applying scalar functions to them. Scalar monads apply to each value of the dictionary and scalar dyads apply to values where the key appears in both arguments:
+
+```
+      ⟨'a': 1 ⋄ 'b': 2⟩+⟨'a': 3 ⋄ 'c': 9⟩
+⟨'a': 4 ⋄ 'b': 2 ⋄ 'c': 9⟩
+```
+
+This might not always be the preferred operation, especially for functions which could have an identity but don't because identities don't exist in TinyAPL[^2]. It is however the most natural choice given the constraints of the language as it currently stands.
+
+Dictionaries are of course ordered. They succeed all arrays and are then ordered by first sorting the keys, and then doing lexicographical comparison on the pairs. However for all purposes other than ordering, the entries of a dictionary are to be considered unordered.
+
+[^1]: At least in the current implementation, the name isn't completely settled yet.
+[^2]: Yet?
