@@ -187,6 +187,8 @@ keyValue = '߹'
 invertedTable = '‥'
 group = '⫇'
 partition = '⊆'
+execute = '⍎'
+format = '⍕'
 
 functions =
   [ TinyAPL.Glyphs.plus
@@ -261,7 +263,9 @@ functions =
   , TinyAPL.Glyphs.keyValue
   , TinyAPL.Glyphs.invertedTable
   , TinyAPL.Glyphs.group
-  , TinyAPL.Glyphs.partition ]
+  , TinyAPL.Glyphs.partition
+  , TinyAPL.Glyphs.execute
+  , TinyAPL.Glyphs.format ]
 
 -- * Adverbs
 

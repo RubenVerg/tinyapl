@@ -358,6 +358,12 @@ asStrings _ (Array [_] vec) | all isCharacter vec = pure [asCharacter' <$> vec]
 asStrings err (Array [_] vec) = mapM (asString err . fromScalar) vec
 asStrings err _ = throwError err
 
+asArrayOfStrings :: MonadError Error m => Error -> Noun -> m ([Natural], [String])
+asArrayOfStrings _ (Array [] [Character x]) = pure ([], [[x]])
+asArrayOfStrings _ (Array [_] vec) | all isCharacter vec = pure ([], [asCharacter' <$> vec])
+asArrayOfStrings err (Array sh cs) = (sh ,) <$> mapM (asString err . fromScalar) cs
+asArrayOfStrings err _ = throwError err
+
 isScalar :: Noun -> Bool
 isScalar (Array [] _) = True
 isScalar _ = False

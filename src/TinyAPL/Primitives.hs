@@ -90,6 +90,8 @@ keyValue = PrimitiveFunction (Just F.fromPairs) (Just F.keyValuePair) [G.keyValu
 invertedTable = PrimitiveFunction (Just F.fromInvertedTable) (Just F.fromKeysAndValues') [G.invertedTable] Nothing
 group = PrimitiveFunction Nothing (Just F.group') [G.group] Nothing
 partition = PrimitiveFunction Nothing (Just F.partition') [G.partition] Nothing
+execute = PrimitiveFunction (Just F.execute') Nothing [G.execute] Nothing
+format = PrimitiveFunction (Just F.format') Nothing [G.format] Nothing
 
 functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   [ TinyAPL.Primitives.plus
@@ -164,7 +166,9 @@ functions = (\x -> (headPromise $ functionRepr x, x)) <$>
   , TinyAPL.Primitives.keyValue
   , TinyAPL.Primitives.invertedTable
   , TinyAPL.Primitives.group
-  , TinyAPL.Primitives.partition ]
+  , TinyAPL.Primitives.partition
+  , TinyAPL.Primitives.execute
+  , TinyAPL.Primitives.format ]
 
 -- * Primitive adverbs
 
