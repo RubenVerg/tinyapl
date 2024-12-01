@@ -68,6 +68,20 @@ type_ = PrimitiveFunction (Just $ \(Array sh cs) -> return $ Array sh $ (\case
   AdverbWrap _ -> Number 4
   ConjunctionWrap _ -> Number 5
   Struct _ -> Number 6) <$> cs) Nothing (G.quad : "Type") Nothing
+print_ = PrimitiveFunction (Just $ \y -> do
+  let err = DomainError "Print argument must be a string or vector of strings"
+  ss <- asStrings err y
+  out <- getsContext contextOut
+  out $ intercalate "\n" ss ++ "\n"
+  pure $ vector []
+  ) Nothing (G.quad : "P") Nothing
+errorPrint = PrimitiveFunction (Just $ \y -> do
+  let err = DomainError "Print argument must be a string or vector of strings"
+  ss <- asStrings err y
+  err <- getsContext contextErr
+  err $ intercalate "\n" ss ++ "\n"
+  pure $ vector []
+  ) Nothing (G.quad : "E") Nothing
 measure = PrimitiveAdverb Nothing (Just $ \f -> pure $ DerivedFunctionFunction (Just $ \y -> do
   start <- realToFrac <$> liftToSt getPOSIXTime
   _ <- callMonad f y
@@ -78,7 +92,7 @@ measure = PrimitiveAdverb Nothing (Just $ \f -> pure $ DerivedFunctionFunction (
   end <- realToFrac <$> liftToSt getPOSIXTime
   pure $ scalar $ Number $ (end - start) :+ 0) Nothing measure f) (G.quad : "_Measure") Nothing
 
-core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay, type_, unicode ] [ measure ] []
+core = quadsFromReprs [ io, ct, u, l, d, seed, unix, ts, math ] [ exists, repr, delay, type_, unicode, print_, errorPrint ] [ measure ] []
 
 makeImport :: (FilePath -> St String) -> Maybe ([String] -> St String) -> Function
 makeImport read readStd = PrimitiveFunction (Just $ \x -> do

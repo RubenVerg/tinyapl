@@ -180,9 +180,9 @@ evalLeaf (TokenPrimConjunction n _)       =
   lift $ except $ maybeToEither (SyntaxError $ "Unknown primitive conjunction " ++ [n]) $ VConjunction <$> lookup n P.conjunctions
 evalLeaf (TokenArrayName name _)
   | name == [G.quad]                      = do
-    out <- gets contextOut
+    err <- gets contextErr
     input <- gets contextIn
-    out $ G.quad : ": "
+    err $ G.quad : ": "
     code <- input
     context <- get
     (res, context') <- lift $ run [G.quad] code context
