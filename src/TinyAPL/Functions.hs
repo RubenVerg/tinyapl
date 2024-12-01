@@ -4,6 +4,7 @@ module TinyAPL.Functions where
 
 import TinyAPL.ArrayFunctionOperator
 import TinyAPL.Error
+import {-# SOURCE #-} TinyAPL.Interpreter
 import TinyAPL.Random
 import TinyAPL.Util
 
@@ -1055,6 +1056,28 @@ partitionEnclose' is xs = do
   let err = DomainError "Partition left argument must be a vector of naturals"
   is' <- asVector err is >>= mapM (asNumber err >=> asNat err)
   (vector . fmap (box . fromMajorCells)) <$> partitionEnclose is' (majorCells xs)
+
+execute :: String -> St Noun
+execute code = do
+  ctx <- getContext
+  scope <- createRef $ Scope [] [] [] [] Nothing -- The scope has intentionally no parent; execution runs in an isolated context
+  (res, _) <- (liftToSt $ runResult $ runSt (run' "<execute>" code) $ ctx { contextScope = scope }) >>= liftEither
+  case res of
+    (VNoun x) -> pure x
+    _ -> throwError $ DomainError "Execute code must return a noun"
+
+execute' :: Noun -> St Noun
+execute' code = do
+  let err = DomainError "Execute code must be a string or array of strings"
+  (sh, ss) <- asArrayOfStrings err code
+  res <- mapM execute ss
+  pure $ Array sh (toScalar <$> res)
+
+format :: MonadError Error m => Noun -> m String
+format x = pure $ show x
+
+format' :: MonadError Error m => Noun -> m Noun
+format' x = vector . fmap Character <$> format x
 
 -- * Modifiers
 
