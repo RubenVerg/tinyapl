@@ -29,6 +29,7 @@ library
                     , TinyAPL.ArrayFunctionOperator
                     , TinyAPL.CoreQuads
                     , TinyAPL.CoreQuads.Math
+                    , TinyAPL.CoreQuads.Regex
                     , TinyAPL.CoreQuads.Unicode
                     , TinyAPL.Complex
                     , TinyAPL.Error
@@ -67,6 +68,9 @@ library
                     , bytestring ^>=0.12.1.0
                     , text ^>=2.1.1
                     , exceptions ^>=0.10.7
+                    , regex-base ^>=0.94.0.2
+                    , regex-pcre-builtin ^>=0.95.2.3.8.44
+                    , array ^>=0.5.7.0
     if !os(wasi)
         build-depends: template-haskell ^>=2.22.0.0
     hs-source-dirs:   src

@@ -6,7 +6,6 @@ import TinyAPL.ArrayFunctionOperator
 import TinyAPL.Error
 import qualified TinyAPL.Glyphs as G
 import Control.Monad.Error.Class (MonadError)
-import Control.Monad.State (MonadState(get))
 
 piA :: Noun
 piA = scalar $ Number $ pi
@@ -118,5 +117,5 @@ math = Nilad (Just $ do
     , tanhF
     , artanhF
     ]) [] [] Nothing)
-  ctx <- get
+  ctx <- getContext
   pure $ scalar $ Struct $ ctx{ contextScope = scope } ) Nothing (G.quad : "math") Nothing
