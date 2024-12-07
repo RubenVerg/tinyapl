@@ -495,7 +495,7 @@ tokenize file source = first (makeParseErrors source) $ Text.Megaparsec.parse (s
       char $ fst G.ternary
       two <- NE.some1 bit
       char $ snd G.ternary
-      three <- NE.some1 bit
+      three <- bits
       pure $ TokenTernary one two three)
 
   definedBits :: Parser [Token]
