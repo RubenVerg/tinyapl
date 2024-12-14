@@ -9,62 +9,74 @@ planned: true
 
 * if `x` is a positive scalar, it is interpreted as `⟨x⋄1⟩`;
 * if `x` is a negative scalar, it is interpreted as `⟨|x⋄|x⟩`;
-* if `x` is a vector, it is interpreted as `⍪x`;
+* if `x` is a vector, it is interpreted as `∧x`;
 
-Each row of `x` indicates the way infixes are calculated along the corresponding axis of `y`. The first element is a positive integer and indicates the _window size_, `w`. The second element is a positive integer and indicates the _skip count_, `s`. The third element is a scalar or vector and indicates the _mode_; the first element is the mode and the other elements are parameters; modes are explained below; it defaults to `1`.
+Each row of `x` corresponds to an axis of `y` and defines the windowing along that axis. In its most general form, each row of `x` is of the form `⟨size⋄skip⋄mode⟩⍪args`. `skip` defaults to `1`; `mode` defaults to `1`; `args` defaults to `⟨⟩`.
 
 ## Modes
 
-### Mode `1`: Keep Shorter at End
+Each `mode` is a way of handling creating windows at edges of the array.
 
-The infixes are `w↑y`, `w↑s↓y`, `w↑s↓s↓y`, etc, until the result is empty. If the last infix is shorter, it is kept.
+### `1`: Keep Shorter at End; args = `⟨⟩`
 
-### Mode `¯1`: Keep Shorter at Start
+The first window starts at `0`; the next window at `skip`; and so on. All windows have length `size`, except the last one which might be shorter if the array ends.
 
-TBD
+### `¯1`: Keep Shorter at Beginning; args = `⟨⟩`
 
-### Mode `2`: Drop Shorter at End
+The last window ends at the end of the array `¯1+≢y`; the second-to-last window at `(¯1+≢y)-skip`; and so on. All windows have length `size`, except the first one which might be shorter if the array ends.
 
-The infixes are `w↓y`, `w↓s↓y`, `w↓s↓s↓y`, etc, until the result is empty. If the last infix is shorter, it is dropped.
+### `2`: Drop Shorter at End; args = `⟨⟩`
 
-### Mode `¯2`: Drop Shorter at Start
+Like mode `1`, except that if the last window is shorter it is excluded.
 
-TBD
+### `¯2`: Drop Shorter at Beginning; args = `⟨⟩`
 
-### Mode `3`: Apply Transformation at End
+Like mode `¯1`, except that if the first window is shorter it is excluded.
 
-The infixes are `w↑y`, `w↑s↓y`, `w↑s↓s↓y`, etc, until the result is empty. If the last infix is shorter, it is transformed with the transformation described by the first parameter, optionally passing the other parameters.
+### `3`: Transform at End; args = `⟨fill⟩⍪params`
 
-### Mode `¯3`: Apply Transformation at Start
+Like mode `1`, except that if the last window is shorter, it is padded using fill mode `fill` with params `params`.
 
-TBD
+### `¯3`: Transform at Beginning; args = `⟨fill⟩⍪params`
 
-### Mode `4`: Stencil
+Like mode `¯1`, except that if the first window is shorter, it is padded using fill mode `fill` with params `params`.
 
-TBD
+### `4`: Stencil; args = `⟨fill⟩⍪params`
 
-## Transformations
+The first window starts such that the first element is in the middle, if `size` is odd, or the first two elements are in the middle, if `size` is even; and continues until the last element or tow eleemnts are reached at or past the middle.
 
-### Transformation `0`: Fill
+### `5`: Continue at End; args = `⟨fill⟩⍪params`
 
-The edges are extended with the parameter.
+Like mode `3`, except that it doesn't stop when the last window encounters the last item of the array anywhere, but only at the beginning.
 
-### Transformation `1`: Replicate
+### `¯5`: Continue at Beginning; args = `⟨fill⟩⍪params`
 
-The left edge is extended with the first value of the list; the right edge is extended with the last value of the list.
+Like mode `¯3`, except that it doesn't stop where the first window encounters the first item of the array anywhere, but only at the end.
 
-### Transformation `2`: Reverse
+## Fill modes
 
-The edges are extended by catenating the reverse of the list.
+Fill modes are behaviors for when you need to generate new array elements to fill a window.
 
-### Transformation `3`: Mirror
+### `0`: Fill; params = `⟨el⟩`
 
-The left edge is extended by catenating the reverse of the tail (`1↓`) of the list; the right edge is extended by catenating the reverse of the init (`¯1↓`) of the list.
+All extra elements are `el`.
 
-### Transformation `4`: Wrap
+### `1`: Replicate; params = `⟨⟩`
 
-The edges are extended by catenating the list.
+If extending the end of the array, the last item is used; if extending the beginning of the array, the first item is used.
 
-### Custom Transformation
+### `2`: Reverse; params = `⟨⟩`
 
-If the transformation is a function, it is applied with left argument the list, and right argument the required (extra) length, negative if the left edge is being extended, positive if the right edge is extended.
+Both edges are extended by selecting items of the array in reverse order.
+
+### `3`: Mirror, params = `⟨⟩`
+
+If extending the end of the array, items of the init of the array in reverse order are used; if extending the beginning of the array, items of the tail of the list in reverse order are used.
+
+### `4`: Wrap, params = `⟨⟩`
+
+Both edges are extended by selecting items of the array.
+
+### `⊏Fn`: Custom, params = `⟨⟩`
+
+`Fn` is called with the array as right argument and the required amount of extra elements as the left argument.
